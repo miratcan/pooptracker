@@ -17,6 +17,7 @@ import { refreshSongPanel } from './ui/songPanel.js';
 import { refreshInstrumentPanel } from './ui/instrumentPanel.js';
 import './ui/transport.js';
 import './ui/files.js';
+import './ui/bug.js';
 import { startMcp } from './mcp.js';
 import { loadDemo } from './demo.js';
 
