@@ -2,6 +2,7 @@
   "name": "pooptracker",
   "version": "0.0.1-alpha",
   "private": true,
+  "license": "WTFPL",
   "type": "module",
   "description": "A tracker where the samples are videos. No build, no dependencies.",
   "scripts": {

@@ -27,3 +27,7 @@ There is no roadmap. Requests are weighed against [The Zen of PoopTracker](docs/
 it's for fun first, it stays simple, it does what FT2 does unless video needs otherwise, it isn't a video editor,
 its files are plain text and never guess, it needs no build and no internet, and an AI over MCP can do whatever you
 can do.
+
+## License
+
+[WTFPL](LICENSE): do what the fuck you want to.
