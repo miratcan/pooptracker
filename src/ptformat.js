@@ -1,8 +1,6 @@
 // PoopTracker instrument line: `TURD1;name=…;start=…;hit=…;…`
 // One text "language" shared by the video metadata (POC-01) and song.txt in .poop (POC-02).
-// Works as a classic <script> (global PTFormat) and as a Node module.
-(function (root) {
-'use strict';
+// An ES module: the same file runs in the browser and in Node (tests).
 const VERSION = 'TURD1';
 const NOTES = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-'];
 const noteStr = n => NOTES[n % 12] + Math.floor(n / 12);
@@ -448,8 +446,7 @@ function mp4WriteTag(b, value) {
   return out;
 }
 
-const PTFormat = { VERSION, format, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
+export const PTFormat = { VERSION, format, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
   checkInstrument, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
   cellField, cellStr, mp4ReadTag, mp4WriteTag, field: (k, v) => PARSE[k](k, String(v).trim()) };
-if (typeof module === 'object' && module.exports) module.exports = PTFormat; else root.PTFormat = PTFormat;
-})(this);
+export default PTFormat;
