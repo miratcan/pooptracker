@@ -125,6 +125,26 @@ The channel count is not a fixed 4 but the song's own setting: between 1 and 8.
 
 ---
 
+## Phase 7 · Foundation for 0.0.1-alpha (2026-10-12)
+The alpha is for developers as well as musicians, so the code is laid out before pull requests arrive.
+[docs/ZEN.md](ZEN.md) is the constitution; there is no roadmap beyond it. Everything is in English.
+
+- **ES modules, no build:** `src/core` (the song + commands), `src/engine` (playback, no DOM), `src/ui` (screens).
+  See [ARCHITECTURE.md](ARCHITECTURE.md).
+- **Commands are the only writer** and announce every change; the engine and the screens listen.
+- **Screens with their own keys** (one screen for now; the instrument editor can become a second one).
+- **Tests in the repo** (`npm test`, no dependencies) and a GitHub Action.
+- **MCP can do whatever the UI can do to a song** ([ZEN-AI-PARITY](ZEN.md)), including files.
+
+**Done when:**
+- [x] The split changes no behaviour: golden traces of 4 songs (every voice and every output frame) and a 40-step
+  UI + MCP scenario are identical before and after.
+- [x] `core/` and `engine/` run in Node; the engine's playback rules are tested there.
+- [x] Every song change the UI can make has an MCP tool.
+- [x] CONTRIBUTING.md, ARCHITECTURE.md, CHANGELOG.md.
+
+---
+
 ## Maybe later
 - **The song itself as a video** (POC-02): the sample videos back to back + the pattern data (since QR was rejected, where the data lives has to be rethought).
 - **Community sample library (GitHub):** a separate repo (`pooptracker-samples`), people add video instruments by PR.
