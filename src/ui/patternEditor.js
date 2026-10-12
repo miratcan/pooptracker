@@ -6,7 +6,9 @@ import { ensureAudio, isMuted } from '../engine/audio.js';
 import { player, startPlay, previewNote } from '../engine/player.js';
 import { $, ed, view, run, setStatus } from './common.js';
 import { muteChannel } from './output.js';
-import { userStop } from './transport.js';
+import { userStop, playPattern } from './transport.js';
+import { selectInst } from './instrumentPanel.js';
+import { selectOrd } from './songPanel.js';
 
 const pc = $('#pat'), pg = pc.getContext('2d');
 const PAT = { font: '12px ui-monospace, Menlo, Consolas, monospace', RH: 16, HDR: 22, VIS: 35, x0: 0, chW: 0, CW: 7 };
@@ -127,10 +129,10 @@ function clearChanges(R) {
   return out;
 }
 // edit mode off: keys that would change the pattern say so instead
-const editOff = () => { setStatus('Edit mode is off: <b>Esc</b> turns it on'); return true; };
+const editOff = () => { setStatus('Edit mode is off: <b>Space</b> turns it on'); return true; };
 export function setEditMode(on) {
   ed.edit = on; $('#patBox').classList.toggle('editing', on); view.patDirty = true;
-  setStatus(on ? 'Edit mode <b>on</b>: notes are written into the pattern (Esc: off)' : 'Edit mode <b>off</b>: notes only play (Esc: on)');
+  setStatus(on ? 'Edit mode <b>on</b>: notes are written into the pattern (Space: off)' : 'Edit mode <b>off</b>: notes only play (Space: on)');
 }
 function cutSel() { if (!ed.edit) return editOff(); copySel(); run(() => setCells(clearChanges(selRect()), 'cut')); }
 function deleteSel() { run(() => setCells(clearChanges(selRect()), 'delete selection')); }
@@ -152,6 +154,28 @@ const NOTE_KEYS = {
 export function moveRow(d) { const N = song.patterns[ed.pat].rows.length; ed.row = ((ed.row + d) % N + N) % N; }
 // edit the cell under the cursor; moves down by the step only if the change was valid
 export const editCell = (fields, label) => { if (run(() => setCells([{ pat: ed.pat, row: ed.row, ch: ed.ch, ...fields }], label))) { moveRow(ed.step); return true; } return false; };
+const NAV = { ArrowUp: -1, ArrowDown: 1, PageUp: -16, PageDown: 16 };
+// the block selection grows from the cursor (rows and whole channels)
+function extendSel(k) {
+  const N = song.patterns[ed.pat].rows.length;
+  if (!ed.sel || ed.sel.pat !== ed.pat) ed.sel = { pat: ed.pat, r0: ed.row, c0: ed.ch };
+  if (k in NAV) ed.row = clamp(ed.row + NAV[k], 0, N - 1);
+  else if (k === 'Home') ed.row = 0;
+  else if (k === 'End') ed.row = N - 1;
+  else ed.ch = clamp(ed.ch + (k === 'ArrowLeft' ? -1 : 1), 0, nch() - 1);
+  ed.sel.r1 = ed.row; ed.sel.c1 = ed.ch;
+}
+// key-off: 1, CapsLock, or the key right of the left Shift (ISO keyboards), as in FT2
+const KEYOFF_KEYS = ['Digit1', 'CapsLock', 'IntlBackslash'];
+// insert: the rows from the cursor down move one down (the last falls off); delete: they move one up
+function shiftRows(ins, channels) {
+  const pat = song.patterns[ed.pat], N = pat.rows.length, changes = [];
+  for (const ch of channels) for (let r = ed.row; r < N; r++) {
+    const from = ins ? r - 1 : r + 1;
+    changes.push({ pat: ed.pat, row: r, ch, ...(from >= ed.row && from < N ? pat.rows[from][ch] : emptyCell()) });
+  }
+  run(() => setCells(changes, ins ? 'insert row' : 'delete row'));
+}
 // every key that isn't a fixed shortcut: navigation, selection, note entry, hex digits
 function onKey(e) {
   const k = e.key, code = e.code, clears = k === 'Delete' || (k === 'Backspace' && !e.shiftKey);
@@ -159,20 +183,8 @@ function onKey(e) {
   let handled = true;
   ensureAudio();
   // navigation; with Shift it extends the block selection (rows and whole channels)
-  const NAV = { ArrowUp: -1, ArrowDown: 1, PageUp: -16, PageDown: 16 };
-  if (e.shiftKey && (k in NAV || k === 'Home' || k === 'End' || k === 'ArrowLeft' || k === 'ArrowRight')) {
-    if (!ed.sel || ed.sel.pat !== ed.pat) ed.sel = { pat: ed.pat, r0: ed.row, c0: ed.ch };
-    if (k in NAV) ed.row = clamp(ed.row + NAV[k], 0, N - 1);
-    else if (k === 'Home') ed.row = 0;
-    else if (k === 'End') ed.row = N - 1;
-    else ed.ch = clamp(ed.ch + (k === 'ArrowLeft' ? -1 : 1), 0, nch() - 1);
-    ed.sel.r1 = ed.row; ed.sel.c1 = ed.ch;
-  }
-  else if (code === 'Space') { player.playing ? userStop() : startPlay('song'); }
-  // Enter: play the song from the pattern being edited (from the selected order position)
-  else if (k === 'Enter' && !e.shiftKey) startPlay('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
-  // Esc drops the selection; with nothing selected it turns edit mode on/off
-  else if (k === 'Escape') { if (ed.sel) ed.sel = null; else setEditMode(!ed.edit); }
+  if (e.shiftKey && (k === 'PageUp' || k === 'PageDown' || k === 'Home' || k === 'End')) extendSel(k);
+  else if (k === 'Escape') ed.sel = null;
   else if (k in NAV) { moveRow(NAV[k]); ed.sel = null; }
   else if (k === 'Home') { ed.row = 0; ed.sel = null; }
   else if (k === 'End') { ed.row = N - 1; ed.sel = null; }
@@ -181,23 +193,16 @@ function onKey(e) {
   else if (k === 'Tab') { ed.ch = (ed.ch + (e.shiftKey ? nch() - 1 : 1)) % nch(); ed.col = 0; ed.sel = null; }
   // edit mode off: the note keys play the current instrument on this channel; nothing else changes the pattern
   else if (!ed.edit && ed.col === 0 && code in NOTE_KEYS) { if (!e.repeat) previewNote(instruments[ed.inst], ed.ch, clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95)); }
-  else if (!ed.edit && (clears || k === 'Insert' || k === 'Enter' && e.shiftKey || k === 'Backspace' || code === 'CapsLock' || (ed.col === 0 && code === 'Digit1') || (ed.col > 0 && k.length === 1 && !e.metaKey && !e.ctrlKey))) editOff();
-  // Backspace is the Mac's "delete" key: it clears, like Del; Shift+Backspace pulls the rows below up
+  else if (!ed.edit && (clears || k === 'Insert' || k === 'Backspace' || (ed.col === 0 && KEYOFF_KEYS.includes(code)) || (ed.col > 0 && k.length === 1 && !e.metaKey && !e.ctrlKey))) editOff();
+  // Backspace is the Mac's "delete" key: it clears, like Del (FT2's Backspace deletes the note above and pulls the
+  // channel up; we don't: it surprised everyone). Shift+Backspace pulls the rows below up
   else if (clears && ed.sel && ed.sel.pat === ed.pat) deleteSel();
   else if (clears) {
     editCell(e.shiftKey ? emptyCell() : ed.col === 0 ? { n: -1, i: 0 } : ed.col <= 2 ? { i: 0 } : ed.col <= 4 ? { v: -1 } : { f: -1, p: 0 }, 'clear');
   }
-  // Insert (or Shift+Enter: Mac keyboards have no Insert key) pushes the rest of the channel down; Shift+Backspace pulls it up
-  else if (k === 'Insert' || (k === 'Enter' && e.shiftKey) || (k === 'Backspace' && e.shiftKey)) {
-    const ins = k !== 'Backspace';
-    const changes = [];
-    for (let r = ed.row; r < N; r++) {
-      const from = ins ? r - 1 : r + 1;
-      changes.push({ pat: ed.pat, row: r, ch: ed.ch, ...(from >= ed.row && from < N ? pat.rows[from][ed.ch] : emptyCell()) });
-    }
-    run(() => setCells(changes, ins ? 'insert row' : 'delete row'));
-  }
-  else if (ed.col === 0 && (code === 'Digit1' || code === 'CapsLock')) editCell({ n: KEYOFF, i: 0 }, 'key-off');
+  // Insert (Alt+Backspace on keyboards without it) pushes the rest of the channel down; Shift+Backspace pulls it up
+  else if (k === 'Insert' || (k === 'Backspace' && e.shiftKey)) shiftRows(k !== 'Backspace', [ed.ch]);
+  else if (ed.col === 0 && KEYOFF_KEYS.includes(code)) editCell({ n: KEYOFF, i: 0 }, 'key-off');
   else if (ed.col === 0 && code in NOTE_KEYS) {
     if (e.repeat) { e.preventDefault(); return false; }
     const n = clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95), ch = ed.ch;
@@ -218,10 +223,54 @@ function onKey(e) {
 }
 
 export const focusPattern = () => pc.focus();
-export const patternScreen = {
-  name: 'pattern',
-  keys: { 'Mod+KeyC': copySel, 'Mod+KeyX': cutSel, 'Mod+KeyV': paste },
-  onKey,
+
+// ── FT2 shortcuts [ZEN-FT2]
+const edits = fn => (...a) => ed.edit ? fn(...a) : editOff(); // keys that change the pattern need edit mode
+const allChannels = () => Array.from({ length: nch() }, (_, ch) => ch);
+// a block op on a whole channel or the whole pattern: the selection is set for the op, then put back
+function onBlock(c0, c1, fn) {
+  const keep = { sel: ed.sel, row: ed.row, ch: ed.ch };
+  ed.sel = { pat: ed.pat, r0: 0, r1: song.patterns[ed.pat].rows.length - 1, c0, c1 }; ed.row = 0; ed.ch = c0;
+  fn();
+  if (fn !== paste) Object.assign(ed, keep);
+}
+const track = fn => () => onBlock(ed.ch, ed.ch, fn), whole = fn => () => onBlock(0, nch() - 1, fn);
+function setOctave(o) { ed.oct = o; $('#tOct').value = o; setStatus(`Octave ${o}`); }
+function stepBy(d) { ed.step = (ed.step + d + 17) % 17; $('#tStep').value = ed.step; setStatus(`Edit step ${ed.step}`); }
+function jumpRow(q) { ed.row = Math.floor(song.patterns[ed.pat].rows.length * q / 4); ed.sel = null; }
+const goTrack = ch => () => { if (ch < nch()) { ed.ch = ch; ed.col = 0; ed.sel = null; } };
+// Space: stops; when stopped, turns edit mode on/off
+function spaceKey(e) { if (e.repeat) return; if (player.playing) userStop(); else setEditMode(!ed.edit); }
+// Enter: plays the song from the pattern being edited (from the selected order position)
+const playFromHere = () => startPlay('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
+// Shift+↑↓: the previous / next instrument that exists
+function instBy(d) { for (let i = ed.inst + d; i > 0 && i < instruments.length; i += d) if (instruments[i]) { selectInst(i); setStatus(`Instrument ${hex2(i)}: ${instruments[i].name}`); return; } }
+function toggleFollow() { ed.follow = !ed.follow; $('#tFollow').checked = ed.follow; setStatus(`Follow ${ed.follow ? 'on' : 'off'}`); }
+const keys = {
+  'Space': spaceKey, 'Enter': playFromHere, 'Mod+Enter': playPattern, 'Mod+KeyF': toggleFollow,
+  'Shift+Enter': () => startPlay('pattern', () => ed.pat, 0, ed.row),
+  'Shift+ArrowUp': () => instBy(-1), 'Shift+ArrowDown': () => instBy(1),
+  'Shift+ArrowLeft': () => selectOrd(ed.ord - 1), 'Shift+ArrowRight': () => selectOrd(ed.ord + 1),
+  'Backquote': () => stepBy(1), 'Shift+Backquote': () => stepBy(-1),
+  'F9': () => jumpRow(0), 'F10': () => jumpRow(1), 'F11': () => jumpRow(2), 'F12': () => jumpRow(3),
+  'Shift+KeyM': () => muteChannel(ed.ch), 'Shift+KeyU': () => allChannels().forEach(ch => isMuted(ch) && muteChannel(ch)),
+  'Mod+Shift+KeyM': () => allChannels().forEach(muteChannel),
+  'Mod+ArrowLeft': () => $('#oPrev').click(), 'Mod+ArrowRight': () => $('#oNext').click(),
+  'Mod+F9': () => $('#oDel').click(), 'Mod+F10': () => $('#oAdd').click(), 'Mod+F11': () => $('#oPrev').click(), 'Mod+F12': () => $('#oNext').click(),
+  'Mod+Delete': edits(() => editCell({ v: -1, f: -1, p: 0 }, 'clear volume and effect')),
+  'Alt+Delete': edits(() => editCell({ f: -1, p: 0 }, 'clear effect')),
+  'Alt+Backspace': edits(() => shiftRows(true, [ed.ch])), 'Shift+Insert': edits(() => shiftRows(true, allChannels())),
+  'Shift+Alt+Backspace': edits(() => shiftRows(true, allChannels())),
+  'Mod+KeyC': copySel, 'Mod+KeyX': cutSel, 'Mod+KeyV': paste,
+  'Alt+F3': cutSel, 'Alt+F4': copySel, 'Alt+F5': paste,
+  'Shift+F3': track(cutSel), 'Shift+F4': track(copySel), 'Shift+F5': track(paste),
+  'Mod+F3': whole(cutSel), 'Mod+F4': whole(copySel), 'Mod+F5': whole(paste),
 };
+for (let o = 0; o < 8; o++) keys[`F${o + 1}`] = () => setOctave(o);
+// Alt+arrows select a block (FT2); Shift+arrows pick the instrument and the order position
+for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) keys[`Alt+${k}`] = keys[`Shift+Alt+${k}`] = () => extendSel(k);
+// Alt + the top / middle letter row jumps to channel 0–7 / 8–15
+['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK'].forEach((c, ch) => { keys[`Alt+${c}`] = goTrack(ch); });
+export const patternScreen = { name: 'pattern', keys, onKey };
 new ResizeObserver(() => setupPat()).observe($('#patBox'));
 $('#patBox').addEventListener('scroll', () => { view.patDirty = true; });

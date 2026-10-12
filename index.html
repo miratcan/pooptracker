@@ -199,11 +199,19 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <dialog id="keys">
   <form method="dialog"><button class="close" aria-label="Close">✕</button></form>
   <h2>Shortcuts</h2>
-  <p><b>Keyboard (FT2 layout, physical keys):</b> <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd>… lower octave, <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd>… upper octave ·
-  <kbd>1</kbd> / <kbd>CapsLock</kbd> key-off · <kbd>Esc</kbd> edit mode on/off (off: the keys only play; red frame = on) · <kbd>Space</kbd> play/stop · <kbd>Enter</kbd> play from this pattern · <kbd>↑↓←→</kbd> <kbd>Tab</kbd> <kbd>PgUp</kbd>/<kbd>PgDn</kbd> move ·
-  <kbd>Del</kbd> / <kbd>Backspace</kbd> clear field (<kbd>Shift</kbd>+<kbd>Del</kbd> cell) · <kbd>Ins</kbd> or <kbd>Shift</kbd>+<kbd>Enter</kbd> insert row · <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
-  <p><b>Editing:</b> <kbd>Shift</kbd>+arrow keys or drag with the mouse = select a block · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> copy / cut / paste (move = cut + paste) · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
+  <p><b>Keyboard (FastTracker 2 layout, physical keys):</b> <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd>… lower octave, <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd>… upper octave · <kbd>F1</kbd>–<kbd>F8</kbd> octave ·
+  <kbd>1</kbd> / <kbd>CapsLock</kbd> key-off.</p>
+  <p><b>Play:</b> <kbd>Enter</kbd> song from this pattern · <kbd>⌘/Ctrl</kbd>+<kbd>Enter</kbd> loop this pattern · <kbd>Shift</kbd>+<kbd>Enter</kbd> loop it from the cursor row · <kbd>Space</kbd> stop; when stopped, edit mode on/off (off: the keys only play; red frame = on) · <kbd>⌘/Ctrl</kbd>+<kbd>F</kbd> follow on/off ·
+  <kbd>Shift</kbd>+<kbd>M</kbd> mute channel · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> invert mutes · <kbd>Shift</kbd>+<kbd>U</kbd> unmute all.</p>
+  <p><b>Move:</b> <kbd>↑↓←→</kbd> <kbd>PgUp</kbd>/<kbd>PgDn</kbd> <kbd>Home</kbd>/<kbd>End</kbd> · <kbd>F9</kbd>–<kbd>F12</kbd> row 0, ¼, ½, ¾ · <kbd>Tab</kbd>/<kbd>Shift</kbd>+<kbd>Tab</kbd> channel · <kbd>Shift</kbd>+<kbd>↑↓</kbd> instrument · <kbd>Shift</kbd>+<kbd>←→</kbd> order position · <kbd>Alt</kbd>+<kbd>Q</kbd>…<kbd>I</kbd> channel 0–7 ·
+  <kbd>`</kbd> / <kbd>Shift</kbd>+<kbd>`</kbd> edit step up/down · <kbd>⌘/Ctrl</kbd>+<kbd>←→</kbd> pattern number in the order · <kbd>⌘/Ctrl</kbd>+<kbd>F9</kbd>/<kbd>F10</kbd> delete/insert order position.</p>
+  <p><b>Edit</b> (edit mode on): <kbd>Del</kbd> / <kbd>Backspace</kbd> clear field · <kbd>Shift</kbd>+<kbd>Del</kbd> cell · <kbd>⌘/Ctrl</kbd>+<kbd>Del</kbd> volume and effect · <kbd>Alt</kbd>+<kbd>Del</kbd> effect ·
+  <kbd>Ins</kbd> / <kbd>Alt</kbd>+<kbd>Backspace</kbd> insert space in the channel · <kbd>Shift</kbd>+<kbd>Ins</kbd> / <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>Backspace</kbd> insert a row in all channels ·
+  <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
+  <p><b>Blocks:</b> <kbd>Alt</kbd>+arrow keys (or <kbd>Shift</kbd>+<kbd>PgUp</kbd>/<kbd>PgDn</kbd>/<kbd>Home</kbd>/<kbd>End</kbd>) or drag with the mouse = select · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> or <kbd>Alt</kbd>+<kbd>F4</kbd> / <kbd>F3</kbd> / <kbd>F5</kbd> copy / cut / paste ·
+  <kbd>Shift</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the channel · <kbd>⌘/Ctrl</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the pattern · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
   <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</p>
+  <p class="dim">On a Mac the F keys need <kbd>fn</kbd> (unless "Use F1, F2… as standard function keys" is on).</p>
   <p><b>Effects:</b> 3xx tone porta · 4xy vibrato · 8xx pan · 9xx sample offset (xx/256 of the region, no pre-roll) ·
   Axy vol slide · E9x retrig (stutter from the hit) · ECx note cut · EDx note delay · Fxx speed/BPM ·
   <b style="color:var(--pink)">Video only:</b> Sxx zoom/shake punch · Ixx color-invert flash.</p>

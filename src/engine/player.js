@@ -18,13 +18,14 @@ export const onPlayer = fn => listeners.push(fn);
 const emit = () => listeners.forEach(fn => fn(player));
 
 // mode 'song' plays the order (from order position fromOrd); mode 'pattern' loops one pattern: patternOf() says which
-// (asked every row, so the pattern can change while it plays)
-export function startPlay(mode, patternOf = null, fromOrd = 0) {
+// (asked every row, so the pattern can change while it plays), the first time from row fromRow
+export function startPlay(mode, patternOf = null, fromOrd = 0, fromRow = 0) {
   ensureAudio(); stopPlay();
   player.mode = mode; player.ord = 0; player.row = 0; player.patternOf = patternOf;
   player.bpm = song.bpm; player.speed = song.speed;
   player.chans = Array.from({ length: nch() }, newChan);
   if (mode === 'song' && fromOrd > 0) skipTo(Math.min(fromOrd, song.order.length - 1));
+  if (mode === 'pattern') player.row = fromRow;
   // leave room for the longest pre-roll so even the very first note gets its wind-up
   player.nextRowTime = ctx.currentTime + 0.1 + maxPreroll() * 1.2;
   player.playing = true;

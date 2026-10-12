@@ -12,7 +12,12 @@ The first public version.
 - An instrument can be saved into its own video's metadata (MP4/MOV, key `pooptracker`, format `TURD1`).
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
-- Keys: Backspace (the Mac's "delete") clears like Del; Shift+Backspace deletes the row; Shift+Enter inserts a row
-  (like Insert, which Mac keyboards don't have).
+- Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's
+  only "delete" key and pulling rows up surprised everyone. Shift+Backspace pulls the rows below the cursor up.
 - Enter plays the song from the pattern being edited; tempo, instruments and volumes set earlier carry over.
-- Edit mode (Esc, off at start, red frame when on): off, the note keys only play; on, they write into the pattern.
+- Edit mode (off at start, red frame when on): off, the note keys only play; on, they write into the pattern.
+- FastTracker 2 keys: Space stops / toggles edit mode, Enter plays from the current pattern, Ctrl/⌘+Enter loops it,
+  F1–F8 octave, F9–F12 row jumps, ` edit step, Shift+M / Shift+U / Ctrl+Shift+M mutes, Alt+Q…I channel jumps,
+  Ctrl/Alt+Del partial clears, Shift+Ins / Alt+Backspace inserts, Alt+arrows and Alt/Shift/Ctrl+F3–F5 blocks,
+  Ctrl+←→ and Ctrl+F9/F10 order edits, Ctrl+F follow, Shift+Enter loops the pattern from the cursor row,
+  Shift+↑↓ instrument, Shift+←→ order position. Blocks are selected with Alt+arrows (Shift+arrows used to).

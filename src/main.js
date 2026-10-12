@@ -77,7 +77,7 @@ async function boot() {
   await loadDemo(ctx.sampleRate);
   requestAnimationFrame(loop);
   startMcp();
-  setStatus('Ready: <b>Space</b> plays, the note keys jam, <b>Esc</b> turns on edit mode. Drag and drop to load your own video.');
+  setStatus('Ready: <b>Enter</b> plays, <b>Space</b> stops / turns on edit mode, the note keys jam. Drag and drop to load your own video.');
   focusPattern();
 }
 // for tests and the browser console: the layers, as they are

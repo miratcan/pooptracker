@@ -27,10 +27,11 @@ function renderOrder() {
   song.order.forEach((p, k) => {
     const d = document.createElement('div'); d.className = 'ord' + (k === ed.ord ? ' sel' : '');
     d.innerHTML = `${hex2(k)} · <b>${hex2(p)}</b>`;
-    d.onclick = () => { ed.ord = k; gotoPat(p); renderOrder(); };
+    d.onclick = () => selectOrd(k);
     el.appendChild(d);
   });
 }
+export function selectOrd(k) { if (k < 0 || k >= song.order.length) return; ed.ord = k; gotoPat(song.order[k]); renderOrder(); }
 // fn edits a copy of the order and returns the position to select afterwards (null = no change)
 function orderEdit(fn, label) {
   const o = song.order.slice(), k = fn(o);

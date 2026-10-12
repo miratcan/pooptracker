@@ -4,15 +4,17 @@
 const ISSUE_URL = 'https://github.com/miratcan/pooptracker/issues/new';
 const ASK = ['Do you see a bug?', 'Click me to create an issue'];
 const TIPS = [
-  'Esc turns edit mode on and off. Off: the keys just play. On: they write.',
-  'Enter plays the song from the pattern you are on.',
+  'Space turns edit mode on and off (and stops the song). Off: the keys just play. On: they write.',
+  'Enter plays the song from the pattern you are on, Ctrl/⌘+Enter loops just this pattern.',
+  'F1–F8 pick the octave, F9–F12 jump through the pattern. Just like FastTracker 2.',
   'Drop a video anywhere on the page to make an instrument.',
   'A higher note plays the video faster too: 12 semitones up = twice as fast.',
   'Put the hit point where the sound kicks in: every note lands exactly on it.',
-  'Shift+Enter inserts a row, Shift+Backspace pulls the rows below up.',
+  'Shift+Enter plays this pattern from the cursor. Great for checking one bar.',
+  'Shift+↑↓ picks the instrument, Shift+←→ walks the order list.',
   'Sxx shakes or zooms the video, Ixx inverts its colors.',
   'Ctrl/⌘+Z undoes anything. Go wild.',
-  'Tab jumps to the next channel.',
+  'Tab jumps to the next channel, Shift+M mutes it.',
   '"Save to video" keeps an instrument inside its own MP4. Share it!',
 ];
 const SIZE = 26, SPEED = 38; // px, px per second
