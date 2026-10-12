@@ -15,36 +15,36 @@ const TIPS = [
   'Sxx shakes or zooms the video, Ixx inverts its colors.',
   'Ctrl/⌘+Z undoes anything. Go wild.',
   'Tab jumps to the next channel, Shift+M mutes it.',
-  '"Save to video" keeps an instrument inside its own MP4. Share it!',
+  'Save (under the instruments) keeps an instrument inside its own MP4. Share it!',
 ];
 const SIZE = 26, SPEED = 38; // px, px per second
 
 const css = document.createElement('style');
 css.textContent = `
-#bug{position:fixed;left:0;top:0;width:${SIZE}px;height:${SIZE}px;z-index:30;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+#bug{position:fixed;left:0;top:0;width:${SIZE}px;height:${SIZE}px;z-index:30;cursor:pointer;}
 #bug svg{display:block;width:100%;height:100%}
 #bug .legs path{animation:bugLegs .18s linear infinite alternate;transform-origin:50% 55%}
 #bug .legs path:nth-child(even){animation-direction:alternate-reverse}
 #bug.still .legs path{animation:none}
 @keyframes bugLegs{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
-#bugSay{position:fixed;z-index:31;pointer-events:none;background:#fff;color:#111;font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 9px;border-radius:10px;width:max-content;max-width:min(260px,calc(100vw - 16px));box-shadow:0 2px 8px rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
+#bugSay{position:fixed;z-index:31;pointer-events:none;background:var(--text);color:var(--bg);font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 9px;width:max-content;max-width:min(260px,calc(100vw - 16px));opacity:0;transition:opacity .2s}
 #bugSay.on{opacity:1}
-#bugSay::after{content:'';position:absolute;left:14px;bottom:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}`;
+#bugSay::after{content:'';position:absolute;left:14px;bottom:-6px;border:6px solid transparent;border-top-color:var(--text);border-bottom:0}`;
 document.head.appendChild(css);
 
 const bug = document.createElement('div');
 bug.id = 'bug'; bug.title = 'Found a bug? Click me to report it on GitHub'; bug.setAttribute('role', 'link'); bug.setAttribute('aria-label', 'Report a bug on GitHub');
 // a beetle, head up (heading 0 = up); the legs wiggle while it walks
 bug.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true">
-  <g class="legs" stroke="#2b1a10" stroke-width="1.6" stroke-linecap="round" fill="none">
+  <g class="legs" style="stroke:var(--bevelLo)" stroke-width="1.6" stroke-linecap="round" fill="none">
     <path d="M10 12 L4 9"/><path d="M22 12 L28 9"/><path d="M9 17 L3 17"/><path d="M23 17 L29 17"/><path d="M10 22 L4 26"/><path d="M22 22 L28 26"/>
   </g>
-  <path d="M13 6 L11 2 M19 6 L21 2" stroke="#2b1a10" stroke-width="1.4" stroke-linecap="round"/>
-  <circle cx="16" cy="8" r="4" fill="#2b1a10"/>
-  <ellipse cx="16" cy="18" rx="8" ry="10" fill="#e0402b"/>
-  <path d="M16 8.5 V28" stroke="#2b1a10" stroke-width="1.2"/>
-  <circle cx="12.5" cy="15" r="1.8" fill="#2b1a10"/><circle cx="19.5" cy="15" r="1.8" fill="#2b1a10"/>
-  <circle cx="12" cy="22" r="1.6" fill="#2b1a10"/><circle cx="20" cy="22" r="1.6" fill="#2b1a10"/>
+  <path d="M13 6 L11 2 M19 6 L21 2" style="stroke:var(--bevelLo)" stroke-width="1.4" stroke-linecap="round"/>
+  <circle cx="16" cy="8" r="4" style="fill:var(--bevelLo)"/>
+  <ellipse cx="16" cy="18" rx="8" ry="10" style="fill:var(--red)"/>
+  <path d="M16 8.5 V28" style="stroke:var(--bevelLo)" stroke-width="1.2"/>
+  <circle cx="12.5" cy="15" r="1.8" style="fill:var(--bevelLo)"/><circle cx="19.5" cy="15" r="1.8" style="fill:var(--bevelLo)"/>
+  <circle cx="12" cy="22" r="1.6" style="fill:var(--bevelLo)"/><circle cx="20" cy="22" r="1.6" style="fill:var(--bevelLo)"/>
 </svg>`;
 const say = document.createElement('div');
 say.id = 'bugSay';

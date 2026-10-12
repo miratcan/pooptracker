@@ -7,6 +7,7 @@ import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '
 import { previewNote, syncTest } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI } from './common.js';
 import { drawCover } from './output.js';
+import { pal, alpha } from './palette.js';
 import { saveInstrumentVideo } from './files.js';
 
 export const curInst = () => instruments[ed.inst];
@@ -78,7 +79,7 @@ $('#bSync').onclick = () => syncTest(curInst(), ed.ch);
 
 const wave = $('#wave'), wg = wave.getContext('2d'), fp = $('#framePrev'), fpg = fp.getContext('2d');
 // draggable handles on the waveform (first one wins when they overlap)
-const HANDLES = [['hit', '#ff5d5d', 'hit point'], ['loopStart', '#6bd968', 'loop start'], ['loopEnd', '#6bd968', 'loop end'], ['start', '#f2b53a', 'region start'], ['end', '#f2b53a', 'region end']];
+const HANDLES = [['hit', 'red', 'hit point'], ['loopStart', 'green', 'loop start'], ['loopEnd', 'green', 'loop end'], ['start', 'acc', 'region start'], ['end', 'acc', 'region end']]; // colors: palette names
 const handlesOf = I => HANDLES.filter(([k]) => I.loop !== 'none' || !k.startsWith('loop'));
 // where each handle may go, so that a drag can never make the instrument invalid
 function handleRange(I, k) {
@@ -94,34 +95,34 @@ function drawWave(hoverT) {
   const d = window.devicePixelRatio || 1, W = wave.clientWidth, H = wave.clientHeight;
   if (wave.width !== Math.round(W * d)) { wave.width = Math.round(W * d); wave.height = Math.round(H * d); }
   wg.setTransform(d, 0, 0, d, 0, 0);
-  wg.fillStyle = '#07090c'; wg.fillRect(0, 0, W, H);
+  wg.fillStyle = pal.well; wg.fillRect(0, 0, W, H);
   // the whole video; this instrument's region is the bright part
   const V = I.video, dur = V.dur, av = I.avOffset / 1000, TH = 50, tw = TH * 16 / 9, n = Math.max(1, Math.floor(W / tw));
   for (let k = 0; k < n; k++) drawCover(wg, videoFrame(V, (k + 0.5) / n * dur + av), k * (W / n), 0, W / n - 1, TH);
   const tx = t => t / dur * W;
-  wg.fillStyle = 'rgba(79,195,247,.14)'; wg.fillRect(tx(I.start), TH, tx(I.hit) - tx(I.start), H - TH);
-  if (loops(I)) { wg.fillStyle = 'rgba(107,217,104,.10)'; wg.fillRect(tx(I.loopStart), TH, tx(I.loopEnd) - tx(I.loopStart), H - TH); }
+  wg.fillStyle = alpha(pal.acc2, .14); wg.fillRect(tx(I.start), TH, tx(I.hit) - tx(I.start), H - TH);
+  if (loops(I)) { wg.fillStyle = alpha(pal.green, .1); wg.fillRect(tx(I.loopStart), TH, tx(I.loopEnd) - tx(I.loopStart), H - TH); }
   const mid = TH + (H - TH) / 2, amp = (H - TH) / 2 - 4, np = V.peaks.length / 2, bd = V.buffer.duration;
-  wg.strokeStyle = '#4fc3f7'; wg.beginPath();
+  wg.strokeStyle = pal.acc2; wg.beginPath();
   for (let px = 0; px < W; px++) {
     const t = px / W * dur; if (t > bd) break;
     const i = Math.floor(t / bd * np) * 2;
     wg.moveTo(px + 0.5, mid - V.peaks[i + 1] * amp); wg.lineTo(px + 0.5, mid - V.peaks[i] * amp + 1);
   }
   wg.stroke();
-  wg.fillStyle = 'rgba(0,0,0,.65)'; wg.fillRect(0, 0, tx(I.start), H); wg.fillRect(tx(I.end), 0, W - tx(I.end), H);
+  wg.fillStyle = alpha(pal.black, .65); wg.fillRect(0, 0, tx(I.start), H); wg.fillRect(tx(I.end), 0, W - tx(I.end), H);
   for (const [k, col] of handlesOf(I).reverse()) {
     const x = Math.round(tx(I[k])) + 0.5;
-    wg.strokeStyle = wg.fillStyle = col; wg.lineWidth = k === 'hit' ? 2 : 1;
+    wg.strokeStyle = wg.fillStyle = pal[col]; wg.lineWidth = k === 'hit' ? 2 : 1;
     wg.beginPath(); wg.moveTo(x, 0); wg.lineTo(x, H); wg.stroke(); wg.fillRect(x - 4, 0, 8, 8);
   }
-  wg.lineWidth = 1; wg.fillStyle = '#4fc3f7'; wg.font = '11px ui-monospace,Menlo,monospace';
+  wg.lineWidth = 1; wg.fillStyle = pal.acc2; wg.font = '11px ui-monospace,Menlo,monospace';
   if (tx(I.hit) - tx(I.start) > 60) wg.fillText('pre-roll', tx(I.start) + 6, TH + 14);
-  wg.fillStyle = '#ff5d5d'; wg.fillText(`hit ${I.hit.toFixed(3)}s`, Math.min(tx(I.hit) + 5, W - 95), H - 6);
-  if (hoverT != null) { wg.strokeStyle = 'rgba(255,255,255,.5)'; wg.beginPath(); wg.moveTo(tx(hoverT), 0); wg.lineTo(tx(hoverT), H); wg.stroke(); }
+  wg.fillStyle = pal.red; wg.fillText(`hit ${I.hit.toFixed(3)}s`, Math.min(tx(I.hit) + 5, W - 95), H - 6);
+  if (hoverT != null) { wg.strokeStyle = alpha(pal.white, .5); wg.beginPath(); wg.moveTo(tx(hoverT), 0); wg.lineTo(tx(hoverT), H); wg.stroke(); }
   drawCover(fpg, videoFrame(V, (hoverT ?? I.hit) + av), 0, 0, fp.width, fp.height);
-  fpg.fillStyle = 'rgba(0,0,0,.6)'; fpg.fillRect(0, fp.height - 22, fp.width, 22);
-  fpg.fillStyle = hoverT != null ? '#fff' : '#ff5d5d'; fpg.font = '14px ui-monospace,Menlo,monospace';
+  fpg.fillStyle = alpha(pal.black, .6); fpg.fillRect(0, fp.height - 22, fp.width, 22);
+  fpg.fillStyle = hoverT != null ? pal.white : pal.red; fpg.font = '14px ui-monospace,Menlo,monospace';
   fpg.fillText(hoverT != null ? `${hoverT.toFixed(3)} s` : `hit frame ${I.hit.toFixed(3)} s`, 8, fp.height - 7);
 }
 let waveDrag = null;

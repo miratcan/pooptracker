@@ -81,7 +81,7 @@ $('#file').onchange = async e => { for (const f of e.target.files) await loadVid
 $('#bSwap').onclick = () => { if (curInst()) $('#fileSwap').click(); };
 $('#fileSwap').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await swapVideo(ed.inst, f); };
 $('#bSave').onclick = () => saveSong();
-$('#bNew').onclick = () => { if (run(() => newSong())) setStatus('New song. Ctrl+Z brings the previous one back.'); };
+$('#bNew').onclick = () => { if (run(() => newSong())) setStatus('Zapped: a new empty song. Ctrl+Z brings the previous one back.'); };
 $('#bOpen').onclick = () => $('#songFile').click();
 $('#songFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await openSong(f); };
 

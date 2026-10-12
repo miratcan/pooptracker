@@ -45,6 +45,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The short version:
 - **Levels are hex, times are decimal.** A level (volume, sustain, effect values) is the same hex number in the
   pattern, the instrument settings and the file (`00`–`40`); times (hit point, region, loop points, envelope),
   BPM and speed are decimal, with their unit.
+- **Colors come from the palette.** Every color is a variable in `:root` at the top of `index.html`; CSS uses
+  `var(--name)`, canvas code uses `pal.name` (`src/ui/palette.js`). A new color is a new line there, never a hex in
+  the code; a test fails otherwise. (`src/demo.js` paints the demo clips: material, not UI.)
 
 ## Pull requests
 

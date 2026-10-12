@@ -5,6 +5,7 @@ import { setCells } from '../core/commands.js';
 import { ensureAudio, isMuted, ctx } from '../engine/audio.js';
 import { player, startPlay, previewNote } from '../engine/player.js';
 import { $, ed, view, run, setStatus } from './common.js';
+import { pal, alpha } from './palette.js';
 import { muteChannel } from './output.js';
 import { userStop, playPattern } from './transport.js';
 import { selectInst } from './instrumentPanel.js';
@@ -43,15 +44,15 @@ export function drawPattern() {
   pg.setTransform(dpr, 0, 0, dpr, 0, 0);
   pg.font = PAT.font; pg.textBaseline = 'middle';
   const W = pc.width / dpr, H = pc.height / dpr;
-  pg.fillStyle = '#0a0e13'; pg.fillRect(0, 0, W, H);
+  pg.fillStyle = pal.well; pg.fillRect(0, 0, W, H);
   const pat = song.patterns[ed.pat], N = pat.rows.length, top = viewTop ?? ed.row - Math.floor(VIS / 2);
   const playing = player.playing && view.vis && view.vis.pat === ed.pat, rpb = song.rowsPerBeat;
-  const rowBg = r => r === ed.row ? (playing && !ed.follow ? '#1d2a3a' : (player.playing ? '#3a2c10' : '#1d2a3a'))
-    : playing && !ed.follow && r === view.vis.row ? '#3a2c10' : r % (rpb * 4) === 0 ? '#1a212b' : r % rpb === 0 ? '#141a22' : '#0a0e13';
+  const rowBg = r => r === ed.row ? (playing && !ed.follow ? pal.acc2Dim : (player.playing ? pal.accDim : pal.acc2Dim))
+    : playing && !ed.follow && r === view.vis.row ? pal.accDim : r % (rpb * 4) === 0 ? pal.panel2 : r % rpb === 0 ? pal.panel : pal.well;
   for (let ch = 0; ch < nch(); ch++) {
     const cx = x0 + ch * chW;
-    pg.fillStyle = isMuted(ch) ? '#3a1d1d' : '#151b23'; pg.fillRect(cx, 0, chW - 2, HDR - 3);
-    pg.fillStyle = isMuted(ch) ? '#ff5d5d' : '#7d8896';
+    pg.fillStyle = isMuted(ch) ? pal.redDim : pal.panel; pg.fillRect(cx, 0, chW - 2, HDR - 3);
+    pg.fillStyle = isMuted(ch) ? pal.red : pal.dim;
     pg.fillText(`${song.channels[ch].name ? `${ch + 1} ${song.channels[ch].name}` : `CHANNEL ${ch + 1}`}${isMuted(ch) ? ' MUTE' : ''}`, cx + 4, HDR / 2 - 1);
   }
   const S = ed.sel && ed.sel.pat === ed.pat ? selRect() : null;
@@ -59,33 +60,33 @@ export function drawPattern() {
     const r = top + i; if (r < 0 || r >= N) continue;
     const y = HDR + i * RH;
     pg.fillStyle = rowBg(r); pg.fillRect(0, y, W, RH);
-    if (S && r >= S.top && r <= S.bot) { pg.fillStyle = 'rgba(79,195,247,.22)'; pg.fillRect(x0 + S.left * chW - CW * 0.6, y, (S.right - S.left + 1) * chW, RH); }
-    pg.fillStyle = r % rpb === 0 ? '#c9d1d9' : '#5d6876'; pg.fillText(hex2(r), 4, y + RH / 2);
+    if (S && r >= S.top && r <= S.bot) { pg.fillStyle = alpha(pal.acc2, .22); pg.fillRect(x0 + S.left * chW - CW * 0.6, y, (S.right - S.left + 1) * chW, RH); }
+    pg.fillStyle = r % rpb === 0 ? pal.text : pal.dim; pg.fillText(hex2(r), 4, y + RH / 2);
     for (let ch = 0; ch < nch(); ch++) {
       const c = pat.rows[r][ch], cx = x0 + ch * chW, ty = y + RH / 2;
-      pg.fillStyle = c.n < 0 ? '#39424e' : c.n === KEYOFF ? '#ff8a65' : '#e6edf3'; pg.fillText(noteName(c.n), cx, ty);
-      pg.fillStyle = c.i > 0 ? '#4fc3f7' : '#39424e'; pg.fillText(c.i > 0 ? hex2(c.i) : '··', cx + 4 * CW, ty);
-      pg.fillStyle = c.v >= 0 ? '#6bd968' : '#39424e'; pg.fillText(c.v >= 0 ? hex2(c.v) : '··', cx + 7 * CW, ty);
+      pg.fillStyle = c.n < 0 ? pal.faint : c.n === KEYOFF ? pal.red : pal.text; pg.fillText(noteName(c.n), cx, ty);
+      pg.fillStyle = c.i > 0 ? pal.acc2 : pal.faint; pg.fillText(c.i > 0 ? hex2(c.i) : '··', cx + 4 * CW, ty);
+      pg.fillStyle = c.v >= 0 ? pal.green : pal.faint; pg.fillText(c.v >= 0 ? hex2(c.v) : '··', cx + 7 * CW, ty);
       const vfx = c.f === FX.S || c.f === FX.I;
-      pg.fillStyle = c.f >= 0 ? (vfx ? '#e58cff' : '#f2b53a') : '#39424e'; pg.fillText(c.f >= 0 ? FXCH[c.f] + hex2(c.p) : '···', cx + 10 * CW, ty);
+      pg.fillStyle = c.f >= 0 ? (vfx ? pal.pink : pal.acc) : pal.faint; pg.fillText(c.f >= 0 ? FXCH[c.f] + hex2(c.p) : '···', cx + 10 * CW, ty);
     }
   }
-  pg.strokeStyle = '#232b36'; pg.lineWidth = 1;
+  pg.strokeStyle = pal.line; pg.lineWidth = 1;
   for (let ch = 0; ch <= nch(); ch++) { const lx = Math.round(x0 + ch * chW - CW * 0.6) + 0.5; pg.beginPath(); pg.moveTo(lx, 0); pg.lineTo(lx, H); pg.stroke(); }
   // scrolled sideways: the row numbers stay at the left edge of the box
   const sx = $('#patBox').scrollLeft, gw = Math.round(x0 - CW * 0.6);
   if (sx > 0) {
-    pg.fillStyle = '#0a0e13'; pg.fillRect(sx, 0, gw, H);
+    pg.fillStyle = pal.well; pg.fillRect(sx, 0, gw, H);
     for (let i = 0; i < VIS; i++) {
       const r = top + i; if (r < 0 || r >= N) continue;
       const y = HDR + i * RH; pg.fillStyle = rowBg(r); pg.fillRect(sx, y, gw, RH);
-      pg.fillStyle = r % rpb === 0 ? '#c9d1d9' : '#5d6876'; pg.fillText(hex2(r), sx + 4, y + RH / 2);
+      pg.fillStyle = r % rpb === 0 ? pal.text : pal.dim; pg.fillText(hex2(r), sx + 4, y + RH / 2);
     }
-    pg.strokeStyle = '#232b36'; pg.beginPath(); pg.moveTo(sx + gw + 0.5, 0); pg.lineTo(sx + gw + 0.5, H); pg.stroke();
+    pg.strokeStyle = pal.line; pg.beginPath(); pg.moveTo(sx + gw + 0.5, 0); pg.lineTo(sx + gw + 0.5, H); pg.stroke();
   }
   // cursor
   const cy = HDR + (ed.row - top) * RH, cx = x0 + ed.ch * chW + COL_OFF[ed.col] * CW;
-  pg.strokeStyle = '#f2b53a'; pg.lineWidth = 1.5; pg.strokeRect(cx - 1, cy + 0.5, COL_W[ed.col] * CW + 2, RH - 1);
+  pg.strokeStyle = pal.acc; pg.lineWidth = 1.5; pg.strokeRect(cx - 1, cy + 0.5, COL_W[ed.col] * CW + 2, RH - 1);
   $('#pNum').textContent = hex2(ed.pat);
   if (document.activeElement !== $('#pLen')) $('#pLen').value = N;
 }
