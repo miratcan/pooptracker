@@ -1,0 +1,12 @@
+{
+  "name": "pooptracker",
+  "version": "0.0.1-alpha",
+  "private": true,
+  "type": "module",
+  "description": "A tracker where the samples are videos. No build, no dependencies.",
+  "scripts": {
+    "test": "node --test 'test/*.test.js'",
+    "start": "python3 -m http.server 8765",
+    "mcp": "node mcp/server.mjs"
+  }
+}
