@@ -147,7 +147,7 @@ export function moveRow(d) { const N = song.patterns[ed.pat].rows.length; ed.row
 export const editCell = (fields, label) => { if (run(() => setCells([{ pat: ed.pat, row: ed.row, ch: ed.ch, ...fields }], label))) { moveRow(ed.step); return true; } return false; };
 // every key that isn't a fixed shortcut: navigation, selection, note entry, hex digits
 function onKey(e) {
-  const k = e.key, code = e.code;
+  const k = e.key, code = e.code, clears = k === 'Delete' || (k === 'Backspace' && !e.shiftKey);
   const pat = song.patterns[ed.pat], N = pat.rows.length, cell = pat.rows[ed.row][ed.ch];
   let handled = true;
   ensureAudio();
@@ -169,11 +169,12 @@ function onKey(e) {
   else if (k === 'ArrowLeft') { if (--ed.col < 0) { ed.col = 7; ed.ch = (ed.ch + nch() - 1) % nch(); } ed.sel = null; }
   else if (k === 'ArrowRight') { if (++ed.col > 7) { ed.col = 0; ed.ch = (ed.ch + 1) % nch(); } ed.sel = null; }
   else if (k === 'Tab') { ed.ch = (ed.ch + (e.shiftKey ? nch() - 1 : 1)) % nch(); ed.col = 0; ed.sel = null; }
-  else if (k === 'Delete' && ed.sel && ed.sel.pat === ed.pat) deleteSel();
-  else if (k === 'Delete') {
+  // Backspace is the Mac's "delete" key: it clears, like Del; Shift+Backspace pulls the rows below up
+  else if (clears && ed.sel && ed.sel.pat === ed.pat) deleteSel();
+  else if (clears) {
     editCell(e.shiftKey ? emptyCell() : ed.col === 0 ? { n: -1, i: 0 } : ed.col <= 2 ? { i: 0 } : ed.col <= 4 ? { v: -1 } : { f: -1, p: 0 }, 'clear');
   }
-  else if (k === 'Insert' || k === 'Backspace') {
+  else if (k === 'Insert' || (k === 'Backspace' && e.shiftKey)) {
     // shift the rest of the channel down (Insert) or up (Backspace)
     const changes = [];
     for (let r = ed.row; r < N; r++) {
