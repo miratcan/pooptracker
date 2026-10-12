@@ -3,10 +3,12 @@
 A tracker, FastTracker 2 style, where the samples are videos. Every note plays a clip, and the song comes out as a
 9:16 music video (think YTPMV).
 
-> **This is an alpha (0.0.1).** Keep your expectations low: things will break, files from today may not open
-> tomorrow, and it has only been tested in Chrome. It is made for fun, not to replace your DAW.
+> **This is an alpha (0.0.1).** Keep your expectations low: it's broken, ugly and silly everywhere, and files from
+> today may not open tomorrow. It has only been tested in Chrome. It's made for fun, not to replace your DAW.
 
-## Try it
+**Try it in your browser: https://miratcan.github.io/pooptracker/**
+
+## Run it locally
 
 ```
 python3 -m http.server 8765
