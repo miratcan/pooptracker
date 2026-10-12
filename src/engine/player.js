@@ -17,19 +17,28 @@ const listeners = [];
 export const onPlayer = fn => listeners.push(fn);
 const emit = () => listeners.forEach(fn => fn(player));
 
-// mode 'song' plays the order; mode 'pattern' loops one pattern: patternOf() says which (asked every row,
-// so the pattern can change while it plays)
-export function startPlay(mode, patternOf = null) {
+// mode 'song' plays the order (from order position fromOrd); mode 'pattern' loops one pattern: patternOf() says which
+// (asked every row, so the pattern can change while it plays)
+export function startPlay(mode, patternOf = null, fromOrd = 0) {
   ensureAudio(); stopPlay();
   player.mode = mode; player.ord = 0; player.row = 0; player.patternOf = patternOf;
   player.bpm = song.bpm; player.speed = song.speed;
   player.chans = Array.from({ length: nch() }, newChan);
+  if (mode === 'song' && fromOrd > 0) skipTo(Math.min(fromOrd, song.order.length - 1));
   // leave room for the longest pre-roll so even the very first note gets its wind-up
   player.nextRowTime = ctx.currentTime + 0.1 + maxPreroll() * 1.2;
   player.playing = true;
   player.timer = setInterval(schedule, 25);
   schedule();
   emit();
+}
+// starting mid-song: the earlier patterns are played silently, so tempo, instruments, volumes and effect
+// memory are what they would be there; notes still ringing from before aren't heard
+function skipTo(ord) {
+  const sim = { mode: 'song', ord: 0, row: 0, bpm: player.bpm, speed: player.speed, nextRowTime: 0, chans: player.chans.map(C => ({ ...C, sim: true })) };
+  while (sim.ord < ord) processRow(sim);
+  player.ord = ord; player.bpm = sim.bpm; player.speed = sim.speed;
+  player.chans = sim.chans.map(({ sim: _, ...C }) => ({ ...C, voice: null }));
 }
 export function stopPlay() {
   clearInterval(player.timer);

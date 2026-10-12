@@ -81,6 +81,17 @@ test('Fxx changes the tempo from that row on', () => {
   assert.equal(+(a.hitT - t0).toFixed(6), +(2.5 / 250 * 6).toFixed(6)); // row 0 already at 250 BPM
 });
 
+test('playing from an order position keeps the tempo and instrument set before it', () => {
+  const second = testInstrument({ name: 'second' });
+  openTestSong({ instruments: [clip(), second], patterns: [testPattern(4, { 0: { 0: { f: FX.F, p: 250 } }, 1: { 0: note(2) } }), testPattern(4, { 0: { 0: { n: 48 } } })] });
+  ctx.currentTime = 0;
+  startPlay('song', null, 1);
+  assert.equal(player.uiQueue[0].ord, 1);
+  assert.equal(player.bpm, 250);
+  for (let t = 0; t < 1; t += 0.05) { ctx.currentTime = t; schedule(); }
+  assert.equal(voices[0][0].I, second); // the note without an instrument number uses the one set in pattern 0
+});
+
 test('muted or not, a channel plays on its own bus', () => {
   openTestSong({ channels: 2, instruments: [clip()], patterns: [testPattern(16, { 0: { 0: note(), 1: note() } }, 2)] });
   play(0.3);

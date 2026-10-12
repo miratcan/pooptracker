@@ -1,7 +1,20 @@
 // A bug walks around the page. Click it to report one [ZEN-JUST-PLAY].
-// Now and then it stops and talks. It isn't part of the output video (it lives outside the canvas).
+// Now and then it stops and talks: a tip about the app, and every third time it asks for bug reports.
+// It isn't part of the output video (it lives outside the canvas).
 const ISSUE_URL = 'https://github.com/miratcan/pooptracker/issues/new';
-const LINES = ['Do you see a bug?', 'Click me to create an issue'];
+const ASK = ['Do you see a bug?', 'Click me to create an issue'];
+const TIPS = [
+  'Esc turns edit mode on and off. Off: the keys just play. On: they write.',
+  'Enter plays the song from the pattern you are on.',
+  'Drop a video anywhere on the page to make an instrument.',
+  'A higher note plays the video faster too: 12 semitones up = twice as fast.',
+  'Put the hit point where the sound kicks in: every note lands exactly on it.',
+  'Shift+Enter inserts a row, Shift+Backspace pulls the rows below up.',
+  'Sxx shakes or zooms the video, Ixx inverts its colors.',
+  'Ctrl/⌘+Z undoes anything. Go wild.',
+  'Tab jumps to the next channel.',
+  '"Save to video" keeps an instrument inside its own MP4. Share it!',
+];
 const SIZE = 26, SPEED = 38; // px, px per second
 
 const css = document.createElement('style');
@@ -12,7 +25,7 @@ css.textContent = `
 #bug .legs path:nth-child(even){animation-direction:alternate-reverse}
 #bug.still .legs path{animation:none}
 @keyframes bugLegs{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
-#bugSay{position:fixed;z-index:31;pointer-events:none;background:#fff;color:#111;font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 9px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
+#bugSay{position:fixed;z-index:31;pointer-events:none;background:#fff;color:#111;font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 9px;border-radius:10px;width:max-content;max-width:min(260px,calc(100vw - 16px));box-shadow:0 2px 8px rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
 #bugSay.on{opacity:1}
 #bugSay::after{content:'';position:absolute;left:14px;bottom:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}`;
 document.head.appendChild(css);
@@ -43,17 +56,22 @@ let talkUntil = 0, nextTalk = performance.now() + 12000 + Math.random() * 15000,
 function place() {
   bug.style.transform = `translate(${x - SIZE / 2}px, ${y - SIZE / 2}px) rotate(${heading}rad)`;
   // the bubble stays inside the window
-  say.style.left = `${Math.max(8, Math.min(innerWidth - say.offsetWidth - 8, x - 16))}px`; say.style.top = `${Math.max(8, y - SIZE / 2 - 34)}px`;
+  say.style.left = `${Math.max(8, Math.min(innerWidth - say.offsetWidth - 8, x - 16))}px`; say.style.top = `${Math.max(8, y - SIZE / 2 - say.offsetHeight - 10)}px`;
 }
-// stop, say both lines one after the other, walk on
+// stop, say the lines one after the other (long ones stay longer), walk on; the tips come in turn
+let talks = 0, tip = Math.floor(Math.random() * TIPS.length);
 function talk(now) {
+  const lines = ++talks % 3 === 0 ? ASK : [TIPS[tip++ % TIPS.length]];
   bug.classList.add('still');
-  talkUntil = now + 5200;
-  LINES.forEach((line, k) => {
-    setTimeout(() => { say.textContent = line; place(); say.classList.add('on'); }, k * 2600);
-    setTimeout(() => say.classList.remove('on'), k * 2600 + 2200);
-  });
-  nextTalk = now + 5200 + 20000 + Math.random() * 25000;
+  let at = 0;
+  for (const line of lines) {
+    const show = 1800 + line.length * 45;
+    setTimeout(() => { say.textContent = line; place(); say.classList.add('on'); }, at);
+    setTimeout(() => say.classList.remove('on'), at + show);
+    at += show + 400;
+  }
+  talkUntil = now + at;
+  nextTalk = now + at + 20000 + Math.random() * 25000;
 }
 function step(now) {
   requestAnimationFrame(step);

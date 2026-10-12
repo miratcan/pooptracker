@@ -14,3 +14,5 @@ The first public version.
 - MCP server: an AI can read and edit the open song, load videos and save files.
 - Keys: Backspace (the Mac's "delete") clears like Del; Shift+Backspace deletes the row; Shift+Enter inserts a row
   (like Insert, which Mac keyboards don't have).
+- Enter plays the song from the pattern being edited; tempo, instruments and volumes set earlier carry over.
+- Edit mode (Esc, off at start, red frame when on): off, the note keys only play; on, they write into the pattern.

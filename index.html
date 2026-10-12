@@ -35,7 +35,8 @@ label{color:var(--dim)}
 .cardHead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .cardHead h2{margin:0 6px 0 0}
 .cardHead .sep{width:6px}
-#patBox{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden}
+#patBox{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;outline:2px solid transparent;outline-offset:-2px}
+#patBox.editing{outline-color:#d9412b} /* edit mode: notes are written */
 .ord{padding:1px 6px;border-radius:3px;cursor:pointer;color:var(--dim)}
 .ord b{color:var(--text);font-weight:400}
 .ord.sel{background:#231d10;color:var(--acc)}
@@ -199,7 +200,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <form method="dialog"><button class="close" aria-label="Close">✕</button></form>
   <h2>Shortcuts</h2>
   <p><b>Keyboard (FT2 layout, physical keys):</b> <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd>… lower octave, <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd>… upper octave ·
-  <kbd>1</kbd> / <kbd>CapsLock</kbd> key-off · <kbd>Space</kbd> play/stop · <kbd>↑↓←→</kbd> <kbd>Tab</kbd> <kbd>PgUp</kbd>/<kbd>PgDn</kbd> move ·
+  <kbd>1</kbd> / <kbd>CapsLock</kbd> key-off · <kbd>Esc</kbd> edit mode on/off (off: the keys only play; red frame = on) · <kbd>Space</kbd> play/stop · <kbd>Enter</kbd> play from this pattern · <kbd>↑↓←→</kbd> <kbd>Tab</kbd> <kbd>PgUp</kbd>/<kbd>PgDn</kbd> move ·
   <kbd>Del</kbd> / <kbd>Backspace</kbd> clear field (<kbd>Shift</kbd>+<kbd>Del</kbd> cell) · <kbd>Ins</kbd> or <kbd>Shift</kbd>+<kbd>Enter</kbd> insert row · <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
   <p><b>Editing:</b> <kbd>Shift</kbd>+arrow keys or drag with the mouse = select a block · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> copy / cut / paste (move = cut + paste) · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
   <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</p>

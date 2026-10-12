@@ -126,9 +126,16 @@ function clearChanges(R) {
   for (let r = R.top; r <= R.bot; r++) for (let ch = R.left; ch <= R.right; ch++) out.push({ pat: ed.pat, row: r, ch, ...emptyCell() });
   return out;
 }
-function cutSel() { copySel(); run(() => setCells(clearChanges(selRect()), 'cut')); }
+// edit mode off: keys that would change the pattern say so instead
+const editOff = () => { setStatus('Edit mode is off: <b>Esc</b> turns it on'); return true; };
+export function setEditMode(on) {
+  ed.edit = on; $('#patBox').classList.toggle('editing', on); view.patDirty = true;
+  setStatus(on ? 'Edit mode <b>on</b>: notes are written into the pattern (Esc: off)' : 'Edit mode <b>off</b>: notes only play (Esc: on)');
+}
+function cutSel() { if (!ed.edit) return editOff(); copySel(); run(() => setCells(clearChanges(selRect()), 'cut')); }
 function deleteSel() { run(() => setCells(clearChanges(selRect()), 'delete selection')); }
 function paste() {
+  if (!ed.edit) return editOff();
   if (!clip) return setStatus('Clipboard is empty: copy or cut a block first');
   const N = song.patterns[ed.pat].rows.length, changes = [];
   clip.forEach((row, dr) => row.forEach((c, dc) => { const r = ed.row + dr, ch = ed.ch + dc; if (r < N && ch < nch()) changes.push({ pat: ed.pat, row: r, ch, ...c }); }));
@@ -162,13 +169,19 @@ function onKey(e) {
     ed.sel.r1 = ed.row; ed.sel.c1 = ed.ch;
   }
   else if (code === 'Space') { player.playing ? userStop() : startPlay('song'); }
-  else if (k === 'Escape') ed.sel = null;
+  // Enter: play the song from the pattern being edited (from the selected order position)
+  else if (k === 'Enter' && !e.shiftKey) startPlay('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
+  // Esc drops the selection; with nothing selected it turns edit mode on/off
+  else if (k === 'Escape') { if (ed.sel) ed.sel = null; else setEditMode(!ed.edit); }
   else if (k in NAV) { moveRow(NAV[k]); ed.sel = null; }
   else if (k === 'Home') { ed.row = 0; ed.sel = null; }
   else if (k === 'End') { ed.row = N - 1; ed.sel = null; }
   else if (k === 'ArrowLeft') { if (--ed.col < 0) { ed.col = 7; ed.ch = (ed.ch + nch() - 1) % nch(); } ed.sel = null; }
   else if (k === 'ArrowRight') { if (++ed.col > 7) { ed.col = 0; ed.ch = (ed.ch + 1) % nch(); } ed.sel = null; }
   else if (k === 'Tab') { ed.ch = (ed.ch + (e.shiftKey ? nch() - 1 : 1)) % nch(); ed.col = 0; ed.sel = null; }
+  // edit mode off: the note keys play the current instrument on this channel; nothing else changes the pattern
+  else if (!ed.edit && ed.col === 0 && code in NOTE_KEYS) { if (!e.repeat) previewNote(instruments[ed.inst], ed.ch, clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95)); }
+  else if (!ed.edit && (clears || k === 'Insert' || k === 'Enter' && e.shiftKey || k === 'Backspace' || code === 'CapsLock' || (ed.col === 0 && code === 'Digit1') || (ed.col > 0 && k.length === 1 && !e.metaKey && !e.ctrlKey))) editOff();
   // Backspace is the Mac's "delete" key: it clears, like Del; Shift+Backspace pulls the rows below up
   else if (clears && ed.sel && ed.sel.pat === ed.pat) deleteSel();
   else if (clears) {
