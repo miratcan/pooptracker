@@ -62,7 +62,10 @@ label{color:var(--dim)}
 #instEd .cardHead{flex-wrap:nowrap}
 #instEd .cardHead #iVideo{flex:1}
 #instEd input[type=number]{width:60px}
-#statusBar{flex:none;padding:5px 12px;margin-top:10px;background:var(--panel);border-top:1px solid var(--line);min-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statusBar{flex:none;display:flex;gap:12px;align-items:center;padding:5px 12px;margin-top:10px;background:var(--panel);border-top:1px solid var(--line);min-height:26px;white-space:nowrap}
+#statusBar #status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#ghLink{flex:none;color:var(--dim);text-decoration:none}
+#ghLink:hover{color:var(--acc)}
 button:focus-visible,input:focus-visible,select:focus-visible,#pat:focus-visible{outline:2px solid var(--acc2);outline-offset:1px}
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;max-width:860px;line-height:1.7;padding:14px 18px}
 dialog::backdrop{background:rgba(0,0,0,.6)}
@@ -189,7 +192,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   </section>
 </div>
 
-<footer id="statusBar"><span id="status" role="status"></span></footer>
+<footer id="statusBar"><span id="status" role="status"></span><a id="ghLink" href="https://github.com/miratcan/pooptracker" target="_blank" rel="noopener">GitHub ↗</a></footer>
 </div>
 
 <dialog id="keys">
