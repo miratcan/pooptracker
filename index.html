@@ -55,10 +55,9 @@ label{color:var(--dim)}
 #songCard{flex:1;display:flex;gap:10px;min-height:0;min-width:0}
 #ordCol{display:flex;flex-direction:column;min-height:0;width:96px}
 #ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
-#patCol{display:flex;flex-direction:column;min-height:0;min-width:0}
+#patCol{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
 .cardHead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .cardHead h2{margin:0 6px 0 0}
-.cardHead .sep{width:6px}
 #patBox{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;outline:2px solid transparent;outline-offset:-2px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
 #patBox.editing{outline-color:var(--red)} /* edit mode: notes are written */
 .ord{padding:1px 6px;cursor:pointer;color:var(--dim)}
@@ -161,13 +160,12 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <div class="cardHead">
         <h2>Pattern</h2>
         <button id="pPrev" aria-label="Previous pattern">◀</button><span id="pNum">00</span><button id="pNext" aria-label="Next pattern">▶</button>
-        <button id="pAdd" title="New empty pattern (same length)">+ empty</button>
-        <button id="pNew" title="New pattern as a copy of the current one">+ copy</button>
-        <button id="pDel" title="Delete the pattern (if the order doesn't use it)">delete</button>
+        <button id="pAdd" title="New empty pattern (same length)">New</button>
+        <button id="pNew" title="Duplicate: a new pattern as a copy of the current one">Dup.</button>
+        <button id="pDel" title="Delete the pattern (if the order doesn't use it)">Del.</button>
         <label>Length <input id="pLen" type="number" min="1" max="256" style="width:52px"></label>
-        <span class="sep"></span>
-        <button id="cAdd" title="Add a channel at the end (up to 8)">+ channel</button>
-        <button id="cDel" title="Delete the channel under the cursor (if empty)">− channel</button>
+        <button id="cAdd" title="Add a channel at the end (up to 8)" style="margin-left:auto">+ Chn.</button>
+        <button id="cDel" title="Delete the channel under the cursor (if empty)">− Chn.</button>
       </div>
       <div id="patBox"><canvas id="pat" tabindex="0" aria-label="Pattern editor"></canvas></div>
     </div>
@@ -208,7 +206,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <select id="iLoop" aria-label="Loop mode" title="none: plays once · forward: loop start → end, again and again · pingpong: start → end → start…"><option value="none">none</option><option value="forward">forward</option><option value="pingpong">pingpong</option></select>
       <input id="iLS" type="number" step="0.001" min="0" aria-label="Loop start (s)"> – <input id="iLE" type="number" step="0.001" min="0" aria-label="Loop end (s)">
     </fieldset>
-    <fieldset class="grp"><legend>Envelope</legend>
+    <fieldset class="grp" title="Envelope (ADSR)"><legend>Env.</legend>
       <label title="Attack: how long the note takes to rise from silence to full volume. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">A <input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
       <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D <input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
       <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S <input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
@@ -267,7 +265,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/io.js": "./src/io.js?v=ef31763387",
     "./src/main.js": "./src/main.js?v=0df4634333",
     "./src/mcp.js": "./src/mcp.js?v=6c0d9287a1",
-    "./src/ptformat.js": "./src/ptformat.js?v=c4a15372f4",
+    "./src/ptformat.js": "./src/ptformat.js?v=3b770e86ed",
     "./src/ui/bug.js": "./src/ui/bug.js?v=59c77fa4f5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=51d3b24fbd",

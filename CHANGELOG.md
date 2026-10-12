@@ -19,12 +19,11 @@ The first public version.
 - A note played from the keyboard is released (the envelope's R) when its key goes up.
 - Modules are loaded with `?v=<content hash>` (an import map in index.html, written by `npm run stamp`), so after
   an update the browser never runs new code with old cached modules.
-- **Breaking:** the sustain level is hex `00`–`40` like the volume (`s=40` = full; was `s=1`, `s=0.4`). It is
-  always two digits, so an old `s=1` is refused instead of being read as near silence; the error gives the new
-  value. In the tracker S and Vol are both hex fields.
-- **Breaking:** loop is a mode now: `loop=none|forward|pingpong` (was `loop=0|1`). Files with the old values
-  don't open; the error tells which word to write (0 → none, 1 → forward). Pingpong is new: the clip and its video
-  go loop start → end → start…
+- The sustain level is written in hex `00`–`40` like the volume (`s=40` = full; was `s=1`, `s=0.4`), always two
+  digits. Old files still open: a one-digit or dotted `s` is the old 0–1 form and is read as what it meant (`1` →
+  `40`), never as hex. In the tracker S and Vol are both hex fields.
+- Loop is a mode: `loop=none|forward|pingpong` (was `loop=0|1`). Old files still open: `0` is read as none, `1` as
+  forward. Pingpong is new: the clip and its video go loop start → end → start…
 - Controls are grouped in named frames (Transport, Tempo, Edit, Sample, Region, Loop, Envelope); the instrument
   volume and S are hex fields (00–40, like the pattern) instead of sliders; number fields have no spinner arrows.
 - FastTracker 2 keys: Space stops / toggles edit mode, Enter plays from the current pattern, Ctrl/⌘+Enter loops it,

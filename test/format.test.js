@@ -23,13 +23,18 @@ test('the format never guesses: an ADSR value without its unit is an error', () 
   assert.throws(() => PTFormat.parse(LINE.replace('a=3t', 'a=3')), /'a' value '3' is invalid \(must be written with its unit/);
 });
 
-test('the old loop=1 is refused, and the error says what to write now', () => {
-  assert.throws(() => PTFormat.parse(LINE.replace('loop=forward', 'loop=1')), /'loop' value '1' is invalid \(none, forward or pingpong; the old 1 is now 'forward'\)/);
+test('files from before 2026-10-13 still open: loop=0/1 and s=0–1 are read as what they meant', () => {
+  const old = PTFormat.parse(LINE.replace('loop=forward', 'loop=1').replace('s=1A', 's=0.4'));
+  assert.equal(old.loop, 'forward');
+  assert.equal(old.S, 26); // 0.4 of full (40 = 64)
+  assert.equal(PTFormat.parse(LINE.replace('loop=forward', 'loop=0')).loop, 'none');
+  assert.equal(PTFormat.parse(LINE.replace('s=1A', 's=1')).S, 64); // the old 1 is full, never hex 01
+  assert.equal(PTFormat.format(old), LINE.replace('s=1A', 's=1A')); // written back in today's form
 });
 
-test('the old s=1 (full) is never read as hex 01: refused, and the error gives the new value', () => {
-  assert.throws(() => PTFormat.parse(LINE.replace('s=1A', 's=1')), /'s' value '1' is invalid \(two hex digits 00–40; the old 1 is now 40\)/);
-  assert.throws(() => PTFormat.parse(LINE.replace('s=1A', 's=0.4')), /the old 0\.4 is now 1A/);
+test('a value that is neither form is still an error', () => {
+  assert.throws(() => PTFormat.parse(LINE.replace('s=1A', 's=2')), /'s' value '2' is invalid \(two hex digits 00–40\)/);
+  assert.throws(() => PTFormat.parse(LINE.replace('loop=forward', 'loop=2')), /'loop' value '2' is invalid/);
 });
 
 test('loop start before the hit point is an error', () => {

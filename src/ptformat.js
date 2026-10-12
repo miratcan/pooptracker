@@ -49,12 +49,12 @@ const PARSE = {
   base: (k, v) => { const n = noteNum(v); return n >= 0 ? n : bad(k, v, 'C-0…B-7'); },
   vol: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
   a: env, d: env, r: env,
-  // sustain level, hex like vol (00–40), always two digits: the old 0–1 values ('1', '0.4') must never be read as hex
-  // (s=1 meant full, hex 01 is near silence); the error gives the new value
+  // sustain level, hex like vol (00–40), always two digits. Files written before 2026-10-13 have it as 0–1 ('1', '0.4'):
+  // one digit or a dot, so it can never be mistaken for the hex form; it is read as what it meant (1 → 40).
   s: (k, v) => /^[0-9A-F]{2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16)
-    : bad(k, v, /^(0|1)(\.\d+)?$|^\.\d+$/.test(v) && +v <= 1 ? `two hex digits 00–40; the old ${v} is now ${hex2(Math.round(+v * 64))}` : 'two hex digits 00–40'),
-  // 0/1 are the old on/off values: the error says what they are now, the file is not guessed at
-  loop: (k, v) => LOOP_MODES.includes(v) ? v : bad(k, v, v === '0' || v === '1' ? `none, forward or pingpong; the old ${v} is now '${v === '0' ? 'none' : 'forward'}'` : 'none, forward or pingpong'),
+    : /^(0|1)(\.\d+)?$|^0?\.\d+$/.test(v) && +v <= 1 ? Math.round(+v * 64) : bad(k, v, 'two hex digits 00–40'),
+  // loop mode; files written before 2026-10-13 have 0 (off) / 1 (on), read as none / forward
+  loop: (k, v) => LOOP_MODES.includes(v) ? v : v === '0' ? 'none' : v === '1' ? 'forward' : bad(k, v, 'none, forward or pingpong'),
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol',

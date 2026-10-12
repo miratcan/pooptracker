@@ -42,9 +42,9 @@ TURD1;name=Kick 2;video=videos/kick.mp4;start=0.600;end=1.200;hit=0.850;base=D-4
 - The line starts with its format version (`TURD1`). Breaking format changes are allowed per
   [ZEN-COURAGE](ZEN.md) and are documented in the CHANGELOG; old versions are not guaranteed to be read.
 - `s` = sustain level in hex, always two digits, `00`–`40` like `vol`. It was 0–1 (`s=1`, `s=0.4`) before
-  2026-10-13; those are refused with an error that gives the new value (`1` → `40`).
+  2026-10-13; that form (one digit or a dot) is still read, as what it meant (`1` → `40`), and never written.
 - `loop` = `none`, `forward` (loop start → end, again) or `pingpong` (start → end → start…; the video plays backward too).
-  It was `0`/`1` before 2026-10-13; those are refused with an error that says the new word.
+  It was `0`/`1` before 2026-10-13; those are still read (`0` = none, `1` = forward) and never written.
 - `ls` / `le` = loop start / end (seconds), `av` = A/V offset (ms, integer). `video=` exists only in `.poop`, not in metadata.
 - All fields are always written; `ls`/`le` even when loop is off (so they aren't lost when read back).
 - **Positions in the video are in seconds, relative to the start of the video:** region start/end, hit point, loop points.
