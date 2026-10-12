@@ -2,9 +2,12 @@
 // of the command layer: same validation as the keyboard, and one Ctrl+Z undoes it. Numbers are the tracker's:
 // pattern / row / instrument / volume as 2-digit hex strings ("0C"), channels 1–(song's channel count), notes like C-4.
 import PTFormat from './ptformat.js';
-import { FX, KEYOFF, hex2, noteName, same } from './util.js';
+import { FX, KEYOFF, hex2, noteName, same, round3 } from './util.js';
 import { song, instruments, nch, emptyCell, newPattern, clonePattern } from './core/song.js';
-import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument } from './core/commands.js';
+import { makeInstrument, detectHit } from './core/instrument.js';
+import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument, newSong, addChannel, deleteChannel,
+  deletePattern, setPatternLength, addInstrument, deleteInstrument, moveInstrument } from './core/commands.js';
+import { importVideo, replaceVideo, buildSong, readSong, instrumentVideo } from './io.js';
 import { processRow, newChan } from './engine/player.js';
 import { $, setStatus, escHtml } from './ui/common.js';
 
@@ -161,32 +164,106 @@ const MCP_TOOLS = {
     return done(cmd, Object.entries(f).map(([k, v]) => `${k}=${v}`).join(', '));
   },
   set_instrument(a) {
-    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le' };
+    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le',
+      region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av' };
     for (const [k, key] of Object.entries(map)) if (k in a) {
       if (k === 'loop' && typeof a.loop !== 'boolean') fail('loop must be true or false');
-      try { f[{ name: 'name', base: 'baseNote', vol: 'vol', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : PTFormat.field(key, a[k]); }
+      try { f[{ name: 'name', base: 'baseNote', vol: 'vol', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : PTFormat.field(key, a[k]); }
       catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); } // drop the parser's line prefix, whatever its wording
     }
     if (!Object.keys(f).length) fail(`nothing to change (${Object.keys(map).join(', ')})`);
     const cmd = exec(() => setInstrument(idx, f, 'MCP: set_instrument'));
     return done(cmd, `instrument ${hex2(idx)}: ${Object.keys(f).join(', ')}`);
   },
+  new_song() {
+    exec(() => newSong());
+    return done(true, 'a new empty song: 4 channels, one empty 64-row pattern, no instruments');
+  },
+  add_channel() {
+    exec(() => addChannel());
+    return done(true, `channel ${nch()} added at the end`);
+  },
+  delete_channel(a) {
+    const ch = chArg(a.channel);
+    exec(() => deleteChannel(ch));
+    return done(true, `channel ${ch + 1} deleted; the channels after it moved down one number`);
+  },
+  delete_pattern(a) {
+    const pi = patArg(a.pattern);
+    exec(() => deletePattern(pi));
+    return done(true, `pattern ${hex2(pi)} deleted; the patterns after it moved down one number and the order follows them`);
+  },
+  set_pattern_length(a) {
+    const pi = patArg(a.pattern);
+    const cmd = exec(() => setPatternLength(pi, a.rows));
+    return done(cmd, `pattern ${hex2(pi)} has ${a.rows} rows`);
+  },
+  delete_instrument(a) {
+    const i = instArg(a.instrument);
+    exec(() => deleteInstrument(i));
+    return done(true, `instrument ${hex2(i)} deleted; the instruments after it moved down one number (the pattern cells follow them)`);
+  },
+  move_instrument(a) {
+    const i = instArg(a.instrument), d = a.direction === 'up' ? -1 : a.direction === 'down' ? 1 : fail(`direction must be "up" or "down", got: ${JSON.stringify(a.direction)}`);
+    const cmd = exec(() => moveInstrument(i, d));
+    return cmd ? done(cmd, `instrument ${hex2(i)} is now ${hex2(i + d)} (the pattern cells follow it)`) : `instrument ${hex2(i)} is already ${d < 0 ? 'the first' : 'the last'}`;
+  },
+  duplicate_instrument(a) {
+    const i = instArg(a.instrument), I = instruments[i];
+    exec(() => addInstrument(makeInstrument(I.video, I), `MCP: copy of instrument ${hex2(i)}`));
+    return done(true, `instrument ${hex2(instruments.length - 1)} created: the same video and settings as ${hex2(i)}`);
+  },
+  detect_hit(a) {
+    const i = instArg(a.instrument), I = instruments[i], hit = round3(I.start + detectHit(I.buffer));
+    const cmd = exec(() => setInstrument(i, { hit }, 'MCP: auto hit'));
+    return done(cmd, `instrument ${hex2(i)}: hit point ${fmtTime(hit)} s (found in the audio)`);
+  },
+  // files: mcp/server.mjs reads and writes them; here they arrive / leave as { name, data (base64) }
+  async load_video(a) {
+    const f = await fileArg(a.file), r = await importVideo(f, progress);
+    return done(true, `${f.name} → instrument ${hex2(r.idx)} ${r.I.name} (${r.fromMetadata ? "settings from the video's metadata" : `hit point found automatically at ${fmtTime(r.I.hit)} s`})`);
+  },
+  async replace_video(a) {
+    const i = instArg(a.instrument), f = await fileArg(a.file), cmd = await replaceVideo(i, f, progress);
+    return done(true, `instrument ${hex2(i)}: video → ${f.name}, settings kept${cmd.notes.length ? ` (the new video is shorter: ${cmd.notes.join(', ')})` : ''}`);
+  },
+  async open_song(a) {
+    const f = await fileArg(a.file), r = await readSong(f, progress);
+    if (r.errors) fail(`couldn't open ${f.name}, nothing changed:\n${r.errors.join('\n')}`);
+    setStatus(`MCP · opened ${escHtml(f.name)}`);
+    return `ok: opened ${f.name} (${song.patterns.length} patterns, ${instruments.length - 1} instruments, ${r.nVideos} videos). Opening a song can't be undone.`;
+  },
+  async save_song() {
+    const blob = await buildSong();
+    return { text: `ok: song saved (${(blob.size / 1048576).toFixed(1)} MB, ${blob.nVideos} videos)`, file: await toBase64(blob) };
+  },
+  async save_instrument_video(a) {
+    const i = instArg(a.instrument), blob = await instrumentVideo(instruments[i]);
+    return { text: `ok: instrument ${hex2(i)} ${instruments[i].name} saved into a copy of its video (in the metadata; the video itself is not re-encoded)`, file: await toBase64(blob) };
+  },
 };
+const progress = text => setStatus(`MCP · ${escHtml(text)}`);
+async function fileArg(f) {
+  if (!f || typeof f.name !== 'string' || typeof f.data !== 'string') fail('a file is missing (mcp/server.mjs should have read it from the path)');
+  return new File([await (await fetch(`data:application/octet-stream;base64,${f.data}`)).arrayBuffer()], f.name);
+}
+const toBase64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.slice(r.result.indexOf(',') + 1)); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
 
 // the bridge: reconnects quietly (3 s → 30 s) until mcp/server.mjs is running
-const MCP_PORT = 8767;
+const MCP_PORT = +new URLSearchParams(location.search).get('mcp') || 8767; // ?mcp=<port>: another MCP server (e.g. for tests)
 let mcpWs = null, mcpRetry = 3000;
 function mcpBadge() { const b = $('#mcpState'); b.textContent = mcpWs ? 'MCP ●' : 'MCP ○'; b.style.color = mcpWs ? 'var(--green)' : 'var(--dim)'; b.title = mcpWs ? 'MCP server connected' : `MCP server not connected (node mcp/server.mjs, port ${MCP_PORT})`; }
 function mcpConnect() {
   const ws = new WebSocket(`ws://localhost:${MCP_PORT}`);
   ws.onopen = () => { mcpWs = ws; mcpRetry = 3000; mcpBadge(); };
   ws.onclose = () => { if (mcpWs === ws) { mcpWs = null; mcpBadge(); } setTimeout(mcpConnect, mcpRetry); mcpRetry = Math.min(30000, mcpRetry * 2); };
-  ws.onmessage = e => {
+  ws.onmessage = async e => {
     const { id, tool, args } = JSON.parse(e.data);
     let res;
     try {
       if (!Object.hasOwn(MCP_TOOLS, tool)) fail(`unknown tool '${tool}'`);
-      res = { id, text: MCP_TOOLS[tool](args || {}) };
+      const out = await MCP_TOOLS[tool](args || {});
+      res = typeof out === 'string' ? { id, text: out } : { id, ...out };
       if (res.text.startsWith('ok:')) setStatus(`MCP · ${escHtml(res.text.replace(/ \(Ctrl\+Z in the tracker.*\)$/, ''))}`);
     } catch (err) {
       if (!(err instanceof CmdError)) console.error(err);
