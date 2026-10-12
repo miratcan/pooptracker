@@ -27,7 +27,7 @@ export class Voice {
     this.I = I; this.ch = ch; this.hitT = hitT; this.rate = rate; this.vol = o.vol; this.panV = o.pan; this.note = o.note ?? -1;
     // envelope in seconds, fixed at trigger time with the tempo of that moment
     const td = o.td ?? tickDur(song.bpm);
-    this.eA = envSec(I.A, td); this.eD = envSec(I.D, td); this.eS = I.S; this.eR = envSec(I.R, td);
+    this.eA = envSec(I.A, td); this.eD = envSec(I.D, td); this.eS = I.S / 64; this.eR = envSec(I.R, td);
     const preroll = o.startPos == null;
     // THE pre-roll math: start the sample early so its hit point lands exactly on hitT.
     // The pre-roll only uses free time: it never starts before the channel's previous note goes silent (o.freeT).

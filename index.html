@@ -30,7 +30,6 @@ input[type=number]{width:60px}
 /* no spinner arrows: values are typed (or changed with ↑↓ while the field has focus) */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-input[type=range]{width:90px;padding:0}
 label{color:var(--dim)}
 #work{flex:1;min-height:0;display:flex;gap:10px;padding:10px 10px 0}
 #leftCol{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
@@ -60,7 +59,6 @@ label{color:var(--dim)}
 #stats{color:var(--dim);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #instPanel{flex:none;display:grid;grid-template-columns:236px minmax(0,1fr);gap:10px}
 #instCard .btnRow button{padding:4px 7px}
-#iAdsrV{flex:1 1 0;min-width:80px}
 #instCard{display:flex;flex-direction:column;min-height:0}
 #instList{display:flex;flex-direction:column;gap:4px;flex:1 1 0;min-height:0;overflow:auto}
 .btnRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -192,10 +190,9 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <fieldset class="grp"><legend>Envelope</legend>
       <label>A <input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
       <label>D <input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
-      <label>S <input id="iS" type="range" min="0" max="1" step="0.01"></label>
+      <label title="Sustain level in hex, 00–40 like Vol (40 = full)">S <input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label>R <input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
     </fieldset>
-    <span id="iAdsrV" class="dim ell" title="tick follows the tempo (1 tick = 2.5/BPM s, independent of Speed), ms stays fixed"></span>
     </div>
     <div id="waveWrap"><canvas id="wave"></canvas><canvas id="framePrev" width="320" height="180"></canvas></div>
     <div class="dim legend ell">Drag: <span style="color:var(--acc)">region</span> · <span style="color:var(--red)">hit</span> · <span style="color:var(--green)">loop</span> · click empty space = hit · dark = outside the region · blue = pre-roll</div>
@@ -240,20 +237,20 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 {
   "imports": {
     "./src/core/commands.js": "./src/core/commands.js?v=e835225531",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=ef42545138",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=1d3c1416e7",
     "./src/core/song.js": "./src/core/song.js?v=f2d261d757",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=76963e43f3",
     "./src/engine/player.js": "./src/engine/player.js?v=8bcef76988",
-    "./src/engine/voice.js": "./src/engine/voice.js?v=45e14d3b4e",
+    "./src/engine/voice.js": "./src/engine/voice.js?v=b2201e4d9c",
     "./src/io.js": "./src/io.js?v=ef31763387",
     "./src/main.js": "./src/main.js?v=0df4634333",
-    "./src/mcp.js": "./src/mcp.js?v=c5f9b73028",
-    "./src/ptformat.js": "./src/ptformat.js?v=b143c204a1",
+    "./src/mcp.js": "./src/mcp.js?v=6c0d9287a1",
+    "./src/ptformat.js": "./src/ptformat.js?v=c4a15372f4",
     "./src/ui/bug.js": "./src/ui/bug.js?v=22725a4d7f",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=398ef5d5f6",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=7374b477d6",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=b671444b4f",
     "./src/ui/output.js": "./src/ui/output.js?v=6e18e1f43c",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=84a5289e5e",
     "./src/ui/screens.js": "./src/ui/screens.js?v=67ff65cecc",

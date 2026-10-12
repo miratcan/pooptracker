@@ -2,7 +2,7 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, hitPos, sliceRegion, tickDur, envSec, detectHit, loops } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, hitPos, sliceRegion, tickDur, detectHit, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
 import { previewNote, syncTest } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI } from './common.js';
@@ -24,35 +24,28 @@ function refreshInstList() {
 export function selectInst(idx) {
   ed.inst = idx; const I = curInst(); if (!I) return;
   $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol);
-  ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = I.S;
+  ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iVideo').textContent = `video: ${I.video.name} (${I.video.dur.toFixed(3)} s)`;
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
   $('#iLoop').value = I.loop; $('#iLS').disabled = $('#iLE').disabled = I.loop === 'none'; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
-  showAdsr(); refreshInstList(); drawWave(null);
+  refreshInstList(); drawWave(null);
 }
-const showAdsr = () => {
-  const I = curInst(), td = tickDur(song.bpm), s = e => envSec(e, td).toFixed(3) + 's';
-  $('#iAdsrV').textContent = `S ${I.S.toFixed(2)} · A ${s(I.A)} D ${s(I.D)} R ${s(I.R)} @${song.bpm}`;
-  $('#iAdsrV').title = `In seconds at ${song.bpm} BPM: ${$('#iAdsrV').textContent}. tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.`;
-};
 const instCmd = (fields, label, before) => run(() => setInstrument(ed.inst, fields, label, before));
 $('#iName').onchange = e => instCmd({ name: e.target.value }, 'name');
 $('#iBase').onchange = e => {
   const n = parseNote(e.target.value);
   if (n < 0 || n > 95) { showError(`base note '${e.target.value}' is invalid (C-0…B-7)`); refreshUI(); } else instCmd({ baseNote: n }, 'base note');
 };
-// sliders preview live; one command is made when the slider is released
-let liveBefore = null;
-function liveSet(key, val) { const I = curInst(); if (!liveBefore) liveBefore = { [key]: copy(I[key]) }; I[key] = val; }
-function liveCommit(key, label) { const b = liveBefore; liveBefore = null; instCmd({ [key]: curInst()[key] }, label, b || undefined); }
 // volume is hex, as everywhere in the tracker (00–40)
 $('#iVol').onchange = e => {
   const t = e.target.value.trim();
   if (!/^[0-9a-f]{1,2}$/i.test(t)) { showError(`volume '${t}' is invalid (hex 00–40)`); refreshUI(); } else instCmd({ vol: parseInt(t, 16) }, 'volume');
 };
-$('#iS').oninput = e => { liveSet('S', Math.round(+e.target.value * 100) / 100); showAdsr(); };
-$('#iS').onchange = () => liveCommit('S', 'S');
+$('#iS').onchange = e => {
+  const t = e.target.value.trim();
+  if (!/^[0-9a-f]{1,2}$/i.test(t)) { showError(`S '${t}' is invalid (hex 00–40)`); refreshUI(); } else instCmd({ S: parseInt(t, 16) }, 'S');
+};
 ['A', 'D', 'R'].forEach(p => {
   $('#i' + p).onchange = e => instCmd({ [p]: { v: num(e.target), u: curInst()[p].u } }, p);
   // switching the unit keeps the current length (at the current BPM)

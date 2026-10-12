@@ -37,10 +37,12 @@ shouldn't get lost and should be shareable: the settings should travel **with th
 
 ## Instrument line: settled fields (Phase 1, 2026-10-12)
 ```
-TURD1;name=Kick 2;video=videos/kick.mp4;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=0.4;r=250ms;loop=forward;ls=0.900;le=1.100;av=20
+TURD1;name=Kick 2;video=videos/kick.mp4;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=1A;r=250ms;loop=forward;ls=0.900;le=1.100;av=20
 ```
 - The line starts with its format version (`TURD1`). Breaking format changes are allowed per
   [ZEN-COURAGE](ZEN.md) and are documented in the CHANGELOG; old versions are not guaranteed to be read.
+- `s` = sustain level in hex, always two digits, `00`–`40` like `vol`. It was 0–1 (`s=1`, `s=0.4`) before
+  2026-10-13; those are refused with an error that gives the new value (`1` → `40`).
 - `loop` = `none`, `forward` (loop start → end, again) or `pingpong` (start → end → start…; the video plays backward too).
   It was `0`/`1` before 2026-10-13; those are refused with an error that says the new word.
 - `ls` / `le` = loop start / end (seconds), `av` = A/V offset (ms, integer). `video=` exists only in `.poop`, not in metadata.

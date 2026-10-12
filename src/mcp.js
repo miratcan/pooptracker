@@ -66,7 +66,7 @@ const MCP_TOOLS = {
       'patterns:', ...song.patterns.map((P, k) => `  ${hex2(k)}: ${P.rows.length} rows, ${P.rows.reduce((a, r) => a + r.filter(c => !same(c, emptyCell())).length, 0)} filled cells`)].join('\n');
   },
   list_instruments() {
-    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${+I.S.toFixed(2)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'}`).join('\n') || 'no instruments';
+    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'}`).join('\n') || 'no instruments';
   },
   view_rows(a) {
     const pi = patArg(a.pattern), [r0, r1] = rowRange(a, pi), P = song.patterns[pi];

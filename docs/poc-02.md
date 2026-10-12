@@ -68,10 +68,10 @@ order=00 01 00 02
 3;name=Melody;pan=A0
 
 === INSTRUMENT 01 ===
-TURD1;name=Def Dum;video=videos/def.mp4;start=0.000;end=2.400;hit=0.300;base=C-4;vol=40;a=0t;d=0t;s=1;r=800ms;loop=none
+TURD1;name=Def Dum;video=videos/def.mp4;start=0.000;end=2.400;hit=0.300;base=C-4;vol=40;a=0t;d=0t;s=40;r=800ms;loop=none
 
 === INSTRUMENT 02 ===
-TURD1;name=Def Tek;video=videos/def.mp4;start=2.400;end=3.900;hit=2.620;base=C-4;vol=40;a=0t;d=0t;s=1;r=300ms;loop=none
+TURD1;name=Def Tek;video=videos/def.mp4;start=2.400;end=3.900;hit=2.620;base=C-4;vol=40;a=0t;d=0t;s=40;r=300ms;loop=none
 ```
 - **First line:** format name + version. Breaking format changes are allowed per [ZEN-COURAGE](ZEN.md) and are
   documented in the CHANGELOG; old versions are not guaranteed to be read.

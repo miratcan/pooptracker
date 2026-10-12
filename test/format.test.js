@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import PTFormat from '../src/ptformat.js';
 
-const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=0.4;r=250ms;loop=forward;ls=0.900;le=1.100;av=20';
+const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=1A;r=250ms;loop=forward;ls=0.900;le=1.100;av=20';
 
 test('an instrument line round-trips', () => {
   const I = PTFormat.parse(LINE);
@@ -25,6 +25,11 @@ test('the format never guesses: an ADSR value without its unit is an error', () 
 
 test('the old loop=1 is refused, and the error says what to write now', () => {
   assert.throws(() => PTFormat.parse(LINE.replace('loop=forward', 'loop=1')), /'loop' value '1' is invalid \(none, forward or pingpong; the old 1 is now 'forward'\)/);
+});
+
+test('the old s=1 (full) is never read as hex 01: refused, and the error gives the new value', () => {
+  assert.throws(() => PTFormat.parse(LINE.replace('s=1A', 's=1')), /'s' value '1' is invalid \(two hex digits 00–40; the old 1 is now 40\)/);
+  assert.throws(() => PTFormat.parse(LINE.replace('s=1A', 's=0.4')), /the old 0\.4 is now 1A/);
 });
 
 test('loop start before the hit point is an error', () => {

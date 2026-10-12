@@ -28,7 +28,7 @@ function format(I, video) {
   if (video) f.push('video=' + esc(video));
   f.push('start=' + t3(I.start), 'end=' + t3(I.end), 'hit=' + t3(I.hit), 'base=' + noteStr(I.baseNote),
     'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'),
-    'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + String(+I.S.toFixed(2)), 'r=' + envStr(I.R),
+    'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + I.S.toString(16).toUpperCase().padStart(2, '0'), 'r=' + envStr(I.R),
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
   return f.join(';');
 }
@@ -49,7 +49,10 @@ const PARSE = {
   base: (k, v) => { const n = noteNum(v); return n >= 0 ? n : bad(k, v, 'C-0…B-7'); },
   vol: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
   a: env, d: env, r: env,
-  s: (k, v) => /^\d+(\.\d+)?$/.test(v) && +v <= 1 ? Math.round(+v * 100) / 100 : bad(k, v, '0–1'),
+  // sustain level, hex like vol (00–40), always two digits: the old 0–1 values ('1', '0.4') must never be read as hex
+  // (s=1 meant full, hex 01 is near silence); the error gives the new value
+  s: (k, v) => /^[0-9A-F]{2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16)
+    : bad(k, v, /^(0|1)(\.\d+)?$|^\.\d+$/.test(v) && +v <= 1 ? `two hex digits 00–40; the old ${v} is now ${hex2(Math.round(+v * 64))}` : 'two hex digits 00–40'),
   // 0/1 are the old on/off values: the error says what they are now, the file is not guessed at
   loop: (k, v) => LOOP_MODES.includes(v) ? v : bad(k, v, v === '0' || v === '1' ? `none, forward or pingpong; the old ${v} is now '${v === '0' ? 'none' : 'forward'}'` : 'none, forward or pingpong'),
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
@@ -71,7 +74,7 @@ function parse(line) {
     kv[k] = PARSE[k](k, v);
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
-  const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 1, R: { v: 0, u: 't' }, loop: 'none',
+  const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
     loopStart: kv.hit, loopEnd: kv.end, avOffset: 0 };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
@@ -96,7 +99,7 @@ function checkInstrument(I) {
     if (!e || !(e.u in ENV_MAX)) return `${k} unit must be 't' or 'ms'`;
     if (!isInt(e.v, 0, ENV_MAX[e.u])) return `${k} '${e.v}${e.u}' is invalid (0–${ENV_MAX[e.u]}${e.u}, integer)`;
   }
-  if (!(typeof I.S === 'number' && I.S >= 0 && I.S <= 1)) return `S '${I.S}' is invalid (0–1)`;
+  if (!isInt(I.S, 0, 64)) return `S '${showHex(I.S)}' is invalid (range 00–40)`;
   if (!LOOP_MODES.includes(I.loop)) return `loop '${I.loop}' is invalid (none, forward or pingpong)`;
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
