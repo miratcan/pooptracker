@@ -40,6 +40,12 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The short version:
 - **`core/` and `engine/` never touch the DOM.** They run in Node; that is what makes them testable.
 - **The UI reacts to change events**; panels don't call each other to refresh.
 
+## Conventions
+
+- **Levels are hex, times are decimal.** A level (volume, sustain, effect values) is the same hex number in the
+  pattern, the instrument settings and the file (`00`–`40`); times (hit point, region, loop points, envelope),
+  BPM and speed are decimal, with their unit.
+
 ## Pull requests
 
 - One change per pull request, with a test when it changes behaviour (`test/*.test.js`).
