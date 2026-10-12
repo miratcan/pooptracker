@@ -107,8 +107,8 @@ export function setInstrumentVideo(idx, V) {
   const ls = nu.loopStart, le = nu.loopEnd;
   if (nu.loopEnd > nu.end) nu.loopEnd = nu.end;
   if (nu.loopStart < nu.hit || nu.loopStart >= nu.loopEnd) nu.loopStart = Math.min(nu.hit, nu.loopEnd);
-  if (nu.loop && (ls !== nu.loopStart || le !== nu.loopEnd)) notes.push('loop points pulled into the region');
-  if (nu.loop && nu.loopStart >= nu.loopEnd) { nu.loop = false; notes.push('loop turned off'); }
+  if (nu.loop !== 'none' && (ls !== nu.loopStart || le !== nu.loopEnd)) notes.push('loop points pulled into the region');
+  if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) { nu.loop = 'none'; notes.push('loop turned off'); }
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);
   const set = (vals, video) => { Object.assign(I, copy(vals)); I.video = video; sliceRegion(I); };
   return { label: `${hex2(idx)} replace video`, scope: 'instrument', inst: I, notes, apply: () => set(nu, V), revert: () => set(old, oldVideo) };

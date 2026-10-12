@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import PTFormat from '../src/ptformat.js';
 
-const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=0.4;r=250ms;loop=1;ls=0.900;le=1.100;av=20';
+const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=0.4;r=250ms;loop=forward;ls=0.900;le=1.100;av=20';
 
 test('an instrument line round-trips', () => {
   const I = PTFormat.parse(LINE);
@@ -16,11 +16,15 @@ test('an instrument line round-trips', () => {
 test('a missing optional field gets its default', () => {
   const I = PTFormat.parse('TURD1;name=x;start=0;end=1;hit=0.2;base=C-4');
   assert.equal(I.vol, 64);
-  assert.equal(I.loop, false);
+  assert.equal(I.loop, 'none');
 });
 
 test('the format never guesses: an ADSR value without its unit is an error', () => {
   assert.throws(() => PTFormat.parse(LINE.replace('a=3t', 'a=3')), /'a' value '3' is invalid \(must be written with its unit/);
+});
+
+test('the old loop=1 is refused, and the error says what to write now', () => {
+  assert.throws(() => PTFormat.parse(LINE.replace('loop=forward', 'loop=1')), /'loop' value '1' is invalid \(none, forward or pingpong; the old 1 is now 'forward'\)/);
 });
 
 test('loop start before the hit point is an error', () => {

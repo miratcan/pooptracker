@@ -2,7 +2,7 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, hitPos, sliceRegion, tickDur, envSec, detectHit } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, hitPos, sliceRegion, tickDur, envSec, detectHit, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
 import { previewNote, syncTest } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI } from './common.js';
@@ -23,12 +23,12 @@ function refreshInstList() {
 }
 export function selectInst(idx) {
   ed.inst = idx; const I = curInst(); if (!I) return;
-  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = I.vol; $('#iVolV').textContent = hex2(I.vol);
+  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol);
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = I.S;
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iVideo').textContent = `video: ${I.video.name} (${I.video.dur.toFixed(3)} s)`;
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
-  $('#iLoop').checked = I.loop; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
+  $('#iLoop').value = I.loop; $('#iLS').disabled = $('#iLE').disabled = I.loop === 'none'; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
   showAdsr(); refreshInstList(); drawWave(null);
 }
 const showAdsr = () => {
@@ -46,8 +46,11 @@ $('#iBase').onchange = e => {
 let liveBefore = null;
 function liveSet(key, val) { const I = curInst(); if (!liveBefore) liveBefore = { [key]: copy(I[key]) }; I[key] = val; }
 function liveCommit(key, label) { const b = liveBefore; liveBefore = null; instCmd({ [key]: curInst()[key] }, label, b || undefined); }
-$('#iVol').oninput = e => { liveSet('vol', +e.target.value); $('#iVolV').textContent = hex2(+e.target.value); };
-$('#iVol').onchange = () => liveCommit('vol', 'volume');
+// volume is hex, as everywhere in the tracker (00–40)
+$('#iVol').onchange = e => {
+  const t = e.target.value.trim();
+  if (!/^[0-9a-f]{1,2}$/i.test(t)) { showError(`volume '${t}' is invalid (hex 00–40)`); refreshUI(); } else instCmd({ vol: parseInt(t, 16) }, 'volume');
+};
 $('#iS').oninput = e => { liveSet('S', Math.round(+e.target.value * 100) / 100); showAdsr(); };
 $('#iS').onchange = () => liveCommit('S', 'S');
 ['A', 'D', 'R'].forEach(p => {
@@ -63,10 +66,10 @@ $('#iEnd').onchange = e => instCmd({ end: round3(num(e.target)) }, 'region end')
 $('#iHit').onchange = e => instCmd({ hit: round3(num(e.target)) }, 'hit point');
 $('#iAV').onchange = e => instCmd({ avOffset: num(e.target) }, 'A/V offset');
 $('#iLoop').onchange = e => {
-  const I = curInst(), on = e.target.checked;
+  const I = curInst(), mode = e.target.value;
   // turning loop on: if the old loop points don't fit (inside the region, starting at or after the hit), start with hit → region end
   const fits = I.loopStart >= I.hit && I.loopEnd <= I.end && I.loopStart < I.loopEnd;
-  instCmd(on && !fits ? { loop: true, loopStart: I.hit, loopEnd: I.end } : { loop: on }, on ? 'loop on' : 'loop off');
+  instCmd(mode !== 'none' && !fits ? { loop: mode, loopStart: I.hit, loopEnd: I.end } : { loop: mode }, `loop: ${mode}`);
 };
 $('#iLS').onchange = e => instCmd({ loopStart: round3(num(e.target)) }, 'loop start');
 $('#iLE').onchange = e => instCmd({ loopEnd: round3(num(e.target)) }, 'loop end');
@@ -83,13 +86,13 @@ $('#bSync').onclick = () => syncTest(curInst(), ed.ch);
 const wave = $('#wave'), wg = wave.getContext('2d'), fp = $('#framePrev'), fpg = fp.getContext('2d');
 // draggable handles on the waveform (first one wins when they overlap)
 const HANDLES = [['hit', '#ff5d5d', 'hit point'], ['loopStart', '#6bd968', 'loop start'], ['loopEnd', '#6bd968', 'loop end'], ['start', '#f2b53a', 'region start'], ['end', '#f2b53a', 'region end']];
-const handlesOf = I => HANDLES.filter(([k]) => I.loop || !k.startsWith('loop'));
+const handlesOf = I => HANDLES.filter(([k]) => I.loop !== 'none' || !k.startsWith('loop'));
 // where each handle may go, so that a drag can never make the instrument invalid
 function handleRange(I, k) {
   const ms = 0.001;
-  if (k === 'start') return [0, Math.min(I.hit, I.loop ? I.loopStart : Infinity, I.end - ms)];
-  if (k === 'end') return [Math.max(I.hit, I.loop ? I.loopEnd : 0, I.start + ms), I.video.dur];
-  if (k === 'hit') return [I.start, I.loop ? Math.min(I.end, I.loopStart) : I.end];
+  if (k === 'start') return [0, Math.min(I.hit, I.loop !== 'none' ? I.loopStart : Infinity, I.end - ms)];
+  if (k === 'end') return [Math.max(I.hit, I.loop !== 'none' ? I.loopEnd : 0, I.start + ms), I.video.dur];
+  if (k === 'hit') return [I.start, I.loop !== 'none' ? Math.min(I.end, I.loopStart) : I.end];
   if (k === 'loopStart') return [I.hit, I.loopEnd - ms];
   return [I.loopStart + ms, I.end];
 }
@@ -104,7 +107,7 @@ function drawWave(hoverT) {
   for (let k = 0; k < n; k++) drawCover(wg, videoFrame(V, (k + 0.5) / n * dur + av), k * (W / n), 0, W / n - 1, TH);
   const tx = t => t / dur * W;
   wg.fillStyle = 'rgba(79,195,247,.14)'; wg.fillRect(tx(I.start), TH, tx(I.hit) - tx(I.start), H - TH);
-  if (I.loop && I.loopEnd > I.loopStart) { wg.fillStyle = 'rgba(107,217,104,.10)'; wg.fillRect(tx(I.loopStart), TH, tx(I.loopEnd) - tx(I.loopStart), H - TH); }
+  if (loops(I)) { wg.fillStyle = 'rgba(107,217,104,.10)'; wg.fillRect(tx(I.loopStart), TH, tx(I.loopEnd) - tx(I.loopStart), H - TH); }
   const mid = TH + (H - TH) / 2, amp = (H - TH) / 2 - 4, np = V.peaks.length / 2, bd = V.buffer.duration;
   wg.strokeStyle = '#4fc3f7'; wg.beginPath();
   for (let px = 0; px < W; px++) {

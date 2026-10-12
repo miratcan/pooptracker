@@ -3,7 +3,7 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { ctx, openTestSong, testInstrument, testPattern } from './helpers.js';
 import { FX } from '../src/util.js';
-import { player, startPlay, stopPlay, schedule } from '../src/engine/player.js';
+import { player, startPlay, stopPlay, schedule, previewNote } from '../src/engine/player.js';
 import { voices } from '../src/engine/voice.js';
 
 const ROW = 2.5 / 125 * 6; // 125 BPM, speed 6
@@ -48,14 +48,14 @@ test('pre-roll uses only the free time after the previous note ends', () => {
 });
 
 test('a looping note keeps the channel busy until it is cut', () => {
-  openTestSong({ instruments: [clip({ loop: true, loopStart: 1.2, loopEnd: 1.8 })], patterns: [testPattern(64, { 0: { 0: note() }, 40: { 0: note() } })] });
+  openTestSong({ instruments: [clip({ loop: 'forward', loopStart: 1.2, loopEnd: 1.8 })], patterns: [testPattern(64, { 0: { 0: note() }, 40: { 0: note() } })] });
   const { list: [a, b] } = play(6);
   assert.equal(b.start, b.hitT);
   assert.equal(+(a.cutT - b.hitT).toFixed(6), 0.006); // cut with a 6 ms fade at the new hit
 });
 
 test('key-off (===) releases the note; the next pre-roll starts when the release ends', () => {
-  const I = clip({ loop: true, loopStart: 1.2, loopEnd: 1.8, R: { v: 100, u: 'ms' } });
+  const I = clip({ loop: 'forward', loopStart: 1.2, loopEnd: 1.8, R: { v: 100, u: 'ms' } });
   openTestSong({ instruments: [I], patterns: [testPattern(64, { 0: { 0: note() }, 2: { 0: { n: 97 } }, 8: { 0: note() } })] });
   const { list: [a, b] } = play(4);
   assert.equal(+(a.relT - a.hitT).toFixed(6), +(2 * ROW).toFixed(6));
@@ -90,6 +90,31 @@ test('playing from an order position keeps the tempo and instrument set before i
   assert.equal(player.bpm, 250);
   for (let t = 0; t < 1; t += 0.05) { ctx.currentTime = t; schedule(); }
   assert.equal(voices[0][0].I, second); // the note without an instrument number uses the one set in pattern 0
+});
+
+test('a jammed note is released when its key goes up: the envelope fades over R, then the clip stops', () => {
+  const I = clip({ loop: 'forward', loopStart: 1, loopEnd: 1.5, R: { v: 200, u: 'ms' } });
+  openTestSong({ instruments: [I] });
+  ctx.currentTime = 0;
+  const v = previewNote(I, 0, 48);
+  v.letGo(0.5);
+  const ev = v.g.gain.events.at(-1);
+  assert.deepEqual([ev[1], +ev[2].toFixed(3)], [0, 0.7]); // silent R (200 ms) after the key went up
+  assert.ok(Math.abs(v.src.stopped - 0.71) < 1e-9);
+});
+
+test('pingpong: the clip loops forward then backward, and the video follows', () => {
+  const I = clip({ loop: 'pingpong', loopStart: 1, loopEnd: 1.5 });
+  openTestSong({ instruments: [I] });
+  ctx.currentTime = 0;
+  const v = previewNote(I, 0, 48);
+  const B = v.src.buffer;
+  assert.notEqual(B, I.buffer);
+  assert.equal(B.length, (1.5 + 0.5) * ctx.sampleRate); // up to the loop end, then the loop part reversed
+  assert.deepEqual([v.src.loopStart, v.src.loopEnd], [1, 2]);
+  const t0 = v.segs[0].t;
+  assert.ok(Math.abs(v.posAt(t0 + 0.25) - 1.25) < 1e-9); // on the way to the loop end
+  assert.ok(Math.abs(v.posAt(t0 + 0.75) - 1.25) < 1e-9); // on the way back
 });
 
 test('muted or not, a channel plays on its own bus', () => {

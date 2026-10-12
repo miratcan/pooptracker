@@ -2,9 +2,24 @@
 // piecewise-linear position function (segs), so they cannot drift apart [ZEN-IN-SYNC].
 import { MAX_CH, lerp } from '../util.js';
 import { song } from '../core/song.js';
-import { hitPos, tickDur, envSec } from '../core/instrument.js';
+import { hitPos, tickDur, envSec, loops } from '../core/instrument.js';
 import { ctx, chanBus } from './audio.js';
 
+// the region up to the loop end, then the loop part reversed (made once per region and loop points)
+const ppCache = new WeakMap();
+function pingpongBuffer(I) {
+  const key = `${I.loopStart},${I.loopEnd},${I.start}`, hit = ppCache.get(I.buffer);
+  if (hit && hit.key === key) return hit.buf;
+  const B = I.buffer, sr = B.sampleRate, a = Math.round((I.loopStart - I.start) * sr), b = Math.min(B.length, Math.round((I.loopEnd - I.start) * sr));
+  const buf = ctx.createBuffer(B.numberOfChannels, b + (b - a), sr);
+  for (let c = 0; c < B.numberOfChannels; c++) {
+    const src = B.getChannelData(c), out = buf.getChannelData(c);
+    out.set(src.subarray(0, b));
+    for (let k = 0; k < b - a; k++) out[b + k] = src[b - 1 - k];
+  }
+  ppCache.set(I.buffer, { key, buf });
+  return buf;
+}
 export const voices = Array.from({ length: MAX_CH }, () => []);
 export const visEv = Array.from({ length: MAX_CH }, () => []);
 export class Voice {
@@ -25,8 +40,13 @@ export class Voice {
     this.segs = [{ t: start, pos, rate }];
     this.pts = []; this.relT = null; this.cutT = null; this.started = false;
     const src = ctx.createBufferSource();
-    src.buffer = I.buffer; src.playbackRate.value = rate;
-    if (I.loop && I.loopEnd > I.loopStart) { src.loop = true; src.loopStart = I.loopStart - I.start; src.loopEnd = I.loopEnd - I.start; }
+    // Web Audio only loops forward: pingpong plays a copy whose loop is the loop part followed by itself reversed
+    // (a source's buffer can be set only once)
+    src.buffer = loops(I) && I.loop === 'pingpong' ? pingpongBuffer(I) : I.buffer; src.playbackRate.value = rate;
+    if (loops(I)) {
+      const ls = I.loopStart - I.start, L = I.loopEnd - I.loopStart;
+      src.loop = true; src.loopStart = ls; src.loopEnd = ls + (I.loop === 'pingpong' ? 2 * L : L);
+    }
     this.g = ctx.createGain(); this.g.gain.value = 0;
     this.pn = ctx.createStereoPanner(); this.pn.pan.value = (o.pan - 128) / 128;
     src.connect(this.g); this.g.connect(this.pn); this.pn.connect(chanBus[ch]);
@@ -76,6 +96,19 @@ export class Voice {
     t = Math.max(t, this.start);
     this.advance(t); this.pt(t, this.env(t) * this.vol); this.relT = t;
   }
+  // a key let go while jamming: the envelope was scheduled far ahead, so drop what comes after t, then release
+  letGo(t) {
+    if (this.relT != null || this.cutT != null) return;
+    t = Math.max(t, this.start);
+    if (this.pts[this.pts.length - 1].t > t) {
+      const p = this.g.gain; p.cancelAndHoldAtTime ? p.cancelAndHoldAtTime(t) : p.cancelScheduledValues(t);
+      this.pts = this.pts.filter(q => q.t <= t);
+    }
+    this.pt(t, this.env(t) * this.vol); this.relT = t;
+    const end = t + Math.max(this.eR, 0.006);
+    this.pt(end, 0);
+    if (this.started) try { this.src.stop(end + 0.01); } catch (e) {}
+  }
   cut(t, fade = 0.006) {
     if (this.cutT != null) return;
     t = Math.max(t, this.start);
@@ -89,7 +122,7 @@ export class Voice {
     if (this.relT != null && this.relT < envEnd) envEnd = this.relT + this.eR;
     t = Math.min(t, envEnd);
     const I = this.I;
-    if (!(I.loop && I.loopEnd > I.loopStart)) { const s = this.segs[this.segs.length - 1]; t = Math.min(t, s.t + Math.max(0, I.buffer.duration - s.pos) / s.rate); }
+    if (!loops(I)) { const s = this.segs[this.segs.length - 1]; t = Math.min(t, s.t + Math.max(0, I.buffer.duration - s.pos) / s.rate); }
     return t;
   }
   kill() { try { this.started && this.src.stop(); } catch (e) {} try { this.src.disconnect(); this.g.disconnect(); this.pn.disconnect(); } catch (e) {} this.cutT = 0; }
@@ -98,7 +131,8 @@ export class Voice {
     for (let i = this.segs.length - 1; i >= 0; i--) if (this.segs[i].t <= t) { s = this.segs[i]; break; }
     let pos = s.pos + Math.max(0, t - s.t) * s.rate;
     const I = this.I, L = I.loopEnd - I.loopStart, ls = I.loopStart - I.start;
-    if (I.loop && L > 0 && pos > ls + L) pos = ls + ((pos - ls) % L);
+    // on the video's timeline: forward wraps around, pingpong turns back at the loop end
+    if (loops(I) && pos > ls + L) { const x = (pos - ls) % (I.loop === 'pingpong' ? 2 * L : L); pos = ls + (x <= L ? x : 2 * L - x); }
     return pos;
   }
   gainAt(t) {
@@ -146,7 +180,7 @@ export class SimVoice {
   alive(t) {
     if (this.cutT != null && t >= this.cutT) return false;
     if (this.relT != null && t >= this.relT + this.eR) return false;
-    if (this.I.loop) return true;
+    if (loops(this.I)) return true;
     let s = this.segs[0]; for (const x of this.segs) if (x.t <= t) s = x;
     return s.pos + Math.max(0, t - s.t) * s.rate < this.I.buffer.duration;
   }

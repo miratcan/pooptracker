@@ -20,6 +20,8 @@ const MAX_CHANNELS = 8;
 const KEYOFF = 97, FXCH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // effects kept from FT2 (POC-02); E only as E9x / ECx / EDx
 const FX_ALLOWED = '3489AEFSI', E_ALLOWED = [0x9, 0xC, 0xD];
+// loop modes: none, forward (loop start → end, again), pingpong (start → end → start…)
+const LOOP_MODES = ['none', 'forward', 'pingpong'];
 
 function format(I, video) {
   const f = [VERSION, 'name=' + esc(I.name)];
@@ -27,7 +29,7 @@ function format(I, video) {
   f.push('start=' + t3(I.start), 'end=' + t3(I.end), 'hit=' + t3(I.hit), 'base=' + noteStr(I.baseNote),
     'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'),
     'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + String(+I.S.toFixed(2)), 'r=' + envStr(I.R),
-    'loop=' + (I.loop ? 1 : 0), 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
+    'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
   return f.join(';');
 }
 
@@ -48,7 +50,8 @@ const PARSE = {
   vol: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
   a: env, d: env, r: env,
   s: (k, v) => /^\d+(\.\d+)?$/.test(v) && +v <= 1 ? Math.round(+v * 100) / 100 : bad(k, v, '0–1'),
-  loop: (k, v) => v === '0' || v === '1' ? v === '1' : bad(k, v, '0 or 1'),
+  // 0/1 are the old on/off values: the error says what they are now, the file is not guessed at
+  loop: (k, v) => LOOP_MODES.includes(v) ? v : bad(k, v, v === '0' || v === '1' ? `none, forward or pingpong; the old ${v} is now '${v === '0' ? 'none' : 'forward'}'` : 'none, forward or pingpong'),
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol',
@@ -68,7 +71,7 @@ function parse(line) {
     kv[k] = PARSE[k](k, v);
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
-  const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 1, R: { v: 0, u: 't' }, loop: false,
+  const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 1, R: { v: 0, u: 't' }, loop: 'none',
     loopStart: kv.hit, loopEnd: kv.end, avOffset: 0 };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
@@ -94,13 +97,13 @@ function checkInstrument(I) {
     if (!isInt(e.v, 0, ENV_MAX[e.u])) return `${k} '${e.v}${e.u}' is invalid (0–${ENV_MAX[e.u]}${e.u}, integer)`;
   }
   if (!(typeof I.S === 'number' && I.S >= 0 && I.S <= 1)) return `S '${I.S}' is invalid (0–1)`;
-  if (typeof I.loop !== 'boolean') return 'loop must be on or off';
+  if (!LOOP_MODES.includes(I.loop)) return `loop '${I.loop}' is invalid (none, forward or pingpong)`;
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
   if (I.hit < I.start || I.hit > I.end) return `hit point (${t3(I.hit)}) must be inside the region (${t3(I.start)}–${t3(I.end)})`;
-  if (I.loop && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))
+  if (I.loop !== 'none' && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))
     return `loop (${t3(I.loopStart)}–${t3(I.loopEnd)}) must be inside the region, with loop start before loop end (region ${t3(I.start)}–${t3(I.end)})`;
-  if (I.loop && I.loopStart < I.hit) return `loop start (${t3(I.loopStart)}) can't be before the hit point (${t3(I.hit)})`;
+  if (I.loop !== 'none' && I.loopStart < I.hit) return `loop start (${t3(I.loopStart)}) can't be before the hit point (${t3(I.hit)})`;
   return null;
 }
 // a pattern cell { n: note, i: instrument, v: volume, f: effect index in FXCH, p: effect parameter }
@@ -446,7 +449,7 @@ function mp4WriteTag(b, value) {
   return out;
 }
 
-export const PTFormat = { VERSION, format, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
+export const PTFormat = { VERSION, LOOP_MODES, format, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
   checkInstrument, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
   cellField, cellStr, mp4ReadTag, mp4WriteTag, field: (k, v) => PARSE[k](k, String(v).trim()) };
 export default PTFormat;

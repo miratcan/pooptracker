@@ -7,10 +7,12 @@ import { FPS, clamp } from '../util.js';
 export function makeVideo(name, frames, buffer, file = null) {
   return { name, file, frames, fps: FPS, buffer, peaks: computePeaks(buffer, 1200), dur: Math.floor(buffer.duration * 1000) / 1000 };
 }
+// the clip repeats (forward or pingpong) once it reaches the loop end
+export const loops = I => I.loop !== 'none' && I.loopEnd > I.loopStart;
 export const videoFrame = (V, t) => V.frames[clamp(Math.floor(t * V.fps), 0, V.frames.length - 1)];
 export function makeInstrument(V, o) {
   const I = Object.assign({ name: '', start: 0, end: V.dur, hit: 0, baseNote: 48, vol: 64,
-    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 1, R: { v: 5, u: 't' }, loop: false, loopStart: 0, loopEnd: V.dur, avOffset: 0 }, o);
+    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 1, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0 }, o);
   I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R };
   sliceRegion(I);
   return I;

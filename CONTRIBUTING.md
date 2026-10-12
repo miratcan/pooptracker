@@ -23,7 +23,11 @@ Another port: `POOPTRACKER_MCP_PORT=8799 node mcp/server.mjs` and open the track
 
 ```
 npm test            # node --test: the file format, the commands, the engine (no browser, no dependencies)
+npm run stamp       # after changing anything in src/: puts the new module hashes into index.html
 ```
+
+The import map in `index.html` adds `?v=<hash>` to every module, so a browser never mixes a new module with an old
+one from its cache. It is written by `tools/stamp.mjs`, not by hand; a test fails while it is out of date.
 
 Node 22 or newer. The tests also run on every push and pull request (GitHub Actions).
 

@@ -55,9 +55,9 @@ test('an instrument in use is not deleted; moving one renumbers its cells', () =
 });
 
 test('loop start can never be before the hit point', () => {
-  assert.throws(() => C.exec(() => C.setInstrument(1, { loop: true, loopStart: 0.5, loopEnd: 1.5 })), /loop start \(0\.500\) can't be before the hit point/);
-  C.exec(() => C.setInstrument(1, { loop: true, loopStart: 1.2, loopEnd: 1.5 }));
-  assert.equal(instruments[1].loop, true);
+  assert.throws(() => C.exec(() => C.setInstrument(1, { loop: 'forward', loopStart: 0.5, loopEnd: 1.5 })), /loop start \(0\.500\) can't be before the hit point/);
+  C.exec(() => C.setInstrument(1, { loop: 'forward', loopStart: 1.2, loopEnd: 1.5 }));
+  assert.equal(instruments[1].loop, 'forward');
 });
 
 test('a new song is one command: undo brings everything back', () => {

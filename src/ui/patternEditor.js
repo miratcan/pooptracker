@@ -2,7 +2,7 @@
 import { KEYOFF, FX, FXCH, clamp, hex2, noteName } from '../util.js';
 import { song, instruments, nch, emptyCell } from '../core/song.js';
 import { setCells } from '../core/commands.js';
-import { ensureAudio, isMuted } from '../engine/audio.js';
+import { ensureAudio, isMuted, ctx } from '../engine/audio.js';
 import { player, startPlay, previewNote } from '../engine/player.js';
 import { $, ed, view, run, setStatus } from './common.js';
 import { muteChannel } from './output.js';
@@ -151,6 +151,12 @@ const NOTE_KEYS = {
   KeyQ: 12, Digit2: 13, KeyW: 14, Digit3: 15, KeyE: 16, KeyR: 17, Digit5: 18, KeyT: 19, Digit6: 20, KeyY: 21, Digit7: 22, KeyU: 23,
   KeyI: 24, Digit9: 25, KeyO: 26, Digit0: 27, KeyP: 28,
 };
+// a note key held down: its voice is released (the envelope's R) when the key goes up, as on a keyboard
+const held = new Map();
+function hold(code, v) { if (v) held.set(code, v); }
+const letGo = code => { const v = held.get(code); if (v) { held.delete(code); v.letGo(ctx.currentTime); } };
+document.addEventListener('keyup', e => letGo(e.code));
+window.addEventListener('blur', () => [...held.keys()].forEach(letGo)); // the key-up never comes once the window has lost focus
 export function moveRow(d) { const N = song.patterns[ed.pat].rows.length; ed.row = ((ed.row + d) % N + N) % N; }
 // edit the cell under the cursor; moves down by the step only if the change was valid
 export const editCell = (fields, label) => { if (run(() => setCells([{ pat: ed.pat, row: ed.row, ch: ed.ch, ...fields }], label))) { moveRow(ed.step); return true; } return false; };
@@ -192,7 +198,7 @@ function onKey(e) {
   else if (k === 'ArrowRight') { if (++ed.col > 7) { ed.col = 0; ed.ch = (ed.ch + 1) % nch(); } ed.sel = null; }
   else if (k === 'Tab') { ed.ch = (ed.ch + (e.shiftKey ? nch() - 1 : 1)) % nch(); ed.col = 0; ed.sel = null; }
   // edit mode off: the note keys play the current instrument on this channel; nothing else changes the pattern
-  else if (!ed.edit && ed.col === 0 && code in NOTE_KEYS) { if (!e.repeat) previewNote(instruments[ed.inst], ed.ch, clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95)); }
+  else if (!ed.edit && ed.col === 0 && code in NOTE_KEYS) { if (!e.repeat) hold(code, previewNote(instruments[ed.inst], ed.ch, clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95))); }
   else if (!ed.edit && (clears || k === 'Insert' || k === 'Backspace' || (ed.col === 0 && KEYOFF_KEYS.includes(code)) || (ed.col > 0 && k.length === 1 && !e.metaKey && !e.ctrlKey))) editOff();
   // Backspace is the Mac's "delete" key: it clears, like Del (FT2's Backspace deletes the note above and pulls the
   // channel up; we don't: it surprised everyone). Shift+Backspace pulls the rows below up
@@ -206,7 +212,7 @@ function onKey(e) {
   else if (ed.col === 0 && code in NOTE_KEYS) {
     if (e.repeat) { e.preventDefault(); return false; }
     const n = clamp(ed.oct * 12 + NOTE_KEYS[code], 0, 95), ch = ed.ch;
-    if (editCell(instruments[ed.inst] ? { n, i: ed.inst } : { n }, 'note')) previewNote(instruments[ed.inst], ch, n);
+    if (editCell(instruments[ed.inst] ? { n, i: ed.inst } : { n }, 'note')) hold(code, previewNote(instruments[ed.inst], ch, n));
   }
   else if (ed.col > 0 && k.length === 1) {
     const ch = k.toUpperCase(), hv = parseInt(ch, 16);

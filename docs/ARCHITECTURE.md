@@ -1,7 +1,8 @@
 # Architecture
 
 PoopTracker is plain JavaScript modules loaded by the browser: no build step, no framework, no dependencies
-([ZEN-STANDALONE](ZEN.md)). `index.html` holds the markup and the CSS; `src/main.js` starts everything.
+([ZEN-STANDALONE](ZEN.md)). `index.html` holds the markup and the CSS; `src/main.js` starts everything. The import map at the end of
+`index.html` is generated (`npm run stamp`): it versions every module by its content hash for the browser cache.
 
 ## Layers
 

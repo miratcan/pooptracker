@@ -127,6 +127,7 @@ export function previewNote(I, ch, note, fromStart = false) {
   v.advance(now + 30);
   if (prevVoice[ch]) prevVoice[ch].cut(now);
   prevVoice[ch] = v; addVoice(ch, v);
+  return v;
 }
 // sync test: schedule hits with pre-roll + a metronome click exactly on each hit
 export function syncTest(I, ch) {

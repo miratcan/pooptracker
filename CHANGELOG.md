@@ -16,6 +16,14 @@ The first public version.
   only "delete" key and pulling rows up surprised everyone. Shift+Backspace pulls the rows below the cursor up.
 - Enter plays the song from the pattern being edited; tempo, instruments and volumes set earlier carry over.
 - Edit mode (off at start, red frame when on): off, the note keys only play; on, they write into the pattern.
+- A note played from the keyboard is released (the envelope's R) when its key goes up.
+- Modules are loaded with `?v=<content hash>` (an import map in index.html, written by `npm run stamp`), so after
+  an update the browser never runs new code with old cached modules.
+- **Breaking:** loop is a mode now: `loop=none|forward|pingpong` (was `loop=0|1`). Files with the old values
+  don't open; the error tells which word to write (0 → none, 1 → forward). Pingpong is new: the clip and its video
+  go loop start → end → start…
+- Controls are grouped in named frames (Transport, Tempo, Edit, Sample, Region, Loop, Envelope); the instrument
+  volume is a hex field (00–40, like the pattern) instead of a slider; number fields have no spinner arrows.
 - FastTracker 2 keys: Space stops / toggles edit mode, Enter plays from the current pattern, Ctrl/⌘+Enter loops it,
   F1–F8 octave, F9–F12 row jumps, ` edit step, Shift+M / Shift+U / Ctrl+Shift+M mutes, Alt+Q…I channel jumps,
   Ctrl/Alt+Del partial clears, Shift+Ins / Alt+Backspace inserts, Alt+arrows and Alt/Shift/Ctrl+F3–F5 blocks,

@@ -49,7 +49,7 @@ const TOOLS = [
     obj({ instrument: hex('instrument number'), name: { type: 'string' }, base_note: { type: 'string', description: 'the note that plays at the original speed, e.g. C-4' },
       volume: { type: 'string', description: '"00"–"40"' }, attack: { type: 'string', description: 'with its unit: "4t" (ticks, follows the tempo) or "120ms"' },
       decay: { type: 'string', description: 'with its unit, e.g. "8t"' }, sustain: { type: 'number', minimum: 0, maximum: 1 }, release: { type: 'string', description: 'with its unit, e.g. "800ms"' },
-      loop: { type: 'boolean' }, loop_start: { type: 'number', description: 'seconds, time in the video' }, loop_end: { type: 'number', description: 'seconds, time in the video' },
+      loop: { type: 'string', enum: ['none', 'forward', 'pingpong'], description: 'none: plays once · forward: loop start → end, again · pingpong: start → end → start… (the video plays backward too)' }, loop_start: { type: 'number', description: 'seconds, time in the video' }, loop_end: { type: 'number', description: 'seconds, time in the video' },
       region_start: { type: 'number', description: 'seconds: where the instrument starts in the video' }, region_end: { type: 'number', description: 'seconds: where it ends' },
       hit: { type: 'number', description: 'seconds: the hit point, the moment that lands exactly on the row' }, av_offset: { type: 'integer', description: 'milliseconds: shifts the picture against the sound, for a video whose audio track is off' } }, ['instrument'])],
   ['detect_hit', 'Find the hit point of an instrument in its audio (the loudest onset in its region) and set it.', obj({ instrument: hex('instrument number') }, ['instrument'])],

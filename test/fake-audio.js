@@ -7,6 +7,7 @@ class Param {
   linearRampToValueAtTime(v, t) { this.events.push(['ramp', v, t]); }
   exponentialRampToValueAtTime(v, t) { this.events.push(['exp', v, t]); }
   setTargetAtTime(v, t, k) { this.events.push(['target', v, t, k]); }
+  cancelScheduledValues(t) { this.events = this.events.filter(e => e[2] < t); }
 }
 class Node {
   constructor() { this.outputs = []; }
@@ -37,6 +38,9 @@ export class FakeAudioContext {
   createBuffer(numberOfChannels, length, sampleRate) { return new FakeAudioBuffer({ numberOfChannels, length, sampleRate }); }
   createBufferSource() {
     const n = new Node(); n.playbackRate = new Param(1); n.loop = false; n.loopStart = 0; n.loopEnd = 0;
+    // like the browser: the buffer can be set only once
+    let buf = null;
+    Object.defineProperty(n, 'buffer', { get: () => buf, set: b => { if (buf) throw new Error('InvalidStateError: the buffer was already set'); buf = b; } });
     n.start = (when = 0, offset = 0) => { n.started = { when, offset }; };
     n.stop = (when = 0) => { n.stopped = when; };
     this.sources.push(n);
