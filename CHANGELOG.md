@@ -12,4 +12,5 @@ The first public version.
 - An instrument can be saved into its own video's metadata (MP4/MOV, key `pooptracker`, format `TURD1`).
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
-- Keys: Backspace (the Mac's "delete") clears like Del; Shift+Backspace deletes the row.
+- Keys: Backspace (the Mac's "delete") clears like Del; Shift+Backspace deletes the row; Shift+Enter inserts a row
+  (like Insert, which Mac keyboards don't have).

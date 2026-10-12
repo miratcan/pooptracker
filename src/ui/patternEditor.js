@@ -174,14 +174,15 @@ function onKey(e) {
   else if (clears) {
     editCell(e.shiftKey ? emptyCell() : ed.col === 0 ? { n: -1, i: 0 } : ed.col <= 2 ? { i: 0 } : ed.col <= 4 ? { v: -1 } : { f: -1, p: 0 }, 'clear');
   }
-  else if (k === 'Insert' || (k === 'Backspace' && e.shiftKey)) {
-    // shift the rest of the channel down (Insert) or up (Backspace)
+  // Insert (or Shift+Enter: Mac keyboards have no Insert key) pushes the rest of the channel down; Shift+Backspace pulls it up
+  else if (k === 'Insert' || (k === 'Enter' && e.shiftKey) || (k === 'Backspace' && e.shiftKey)) {
+    const ins = k !== 'Backspace';
     const changes = [];
     for (let r = ed.row; r < N; r++) {
-      const from = k === 'Insert' ? r - 1 : r + 1;
+      const from = ins ? r - 1 : r + 1;
       changes.push({ pat: ed.pat, row: r, ch: ed.ch, ...(from >= ed.row && from < N ? pat.rows[from][ed.ch] : emptyCell()) });
     }
-    run(() => setCells(changes, k === 'Insert' ? 'insert row' : 'delete row'));
+    run(() => setCells(changes, ins ? 'insert row' : 'delete row'));
   }
   else if (ed.col === 0 && (code === 'Digit1' || code === 'CapsLock')) editCell({ n: KEYOFF, i: 0 }, 'key-off');
   else if (ed.col === 0 && code in NOTE_KEYS) {
