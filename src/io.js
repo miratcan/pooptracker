@@ -49,16 +49,22 @@ export async function decodeVideo(file, progress = () => {}) {
 }
 
 // a video → a new instrument (one command). A video saved by PoopTracker carries its instrument in its
-// metadata (POC-01); otherwise the hit is detected. Returns { idx, I, fromMetadata }.
-export async function importVideo(file, progress) {
+// metadata (POC-01); otherwise the hit is detected. A piece cut on the workbench comes with its region
+// ({ start, end, name }: the selection inside the piece) and its hit is looked for there. region.focus (also without a
+// piece) is where the picture looks.
+// Returns { idx, I, fromMetadata }.
+export async function importVideo(file, progress, region = null) {
   let line = null;
   try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
   const s = line == null ? null : PTFormat.parse(line);
   if (s && 'video' in s) throw new Error("the instrument line in the metadata can't have a 'video' field");
   const V = await decodeVideo(file, progress);
   if (s && s.end > V.dur) throw new Error(`metadata: region end (${s.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
-  const hit = s ? 0 : round3(Math.min(detectHit(V.buffer), V.dur));
-  const I = makeInstrument(V, s || { name: file.name.replace(/\.[^.]+$/, '').slice(0, 16), hit, loopStart: hit });
+  if (region?.end != null && region.end > V.dur + 0.001) throw new Error(`the piece is ${region.end.toFixed(3)} s; an instrument can be at most ${MAX_SAMPLE_SEC} s`);
+  const name = region?.name ?? file.name.replace(/\.[^.]+$/, '').slice(0, 16);
+  const span = region?.end != null ? { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) } : {};
+  const hit = s ? 0 : round3(Math.min((span.start ?? 0) + detectHit(makeInstrument(V, span).buffer), V.dur));
+  const I = makeInstrument(V, s || { name, ...span, hit, loopStart: hit, focus: region?.focus ?? [] });
   exec(() => addInstrument(I, `load ${file.name}`));
   addVideo(V);
   return { idx: instruments.indexOf(I), I, fromMetadata: !!s };

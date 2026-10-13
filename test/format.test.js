@@ -86,3 +86,18 @@ test('an instrument line is written into MP4 metadata and read back', () => {
   assert.equal(PTFormat.mp4ReadTag(tagged), LINE);
   assert.equal(PTFormat.mp4ReadTag(PTFormat.mp4WriteTag(tagged, LINE.replace('Kick 2', 'Kick 3'))), LINE.replace('Kick 2', 'Kick 3'));
 });
+
+test('the focus path round-trips; without one the picture looks at the middle', () => {
+  const line = LINE + ';focus=0.000:0.300,0.450|1.200:0.350,0.440';
+  const I = PTFormat.parse(line);
+  assert.deepEqual(I.focus, [{ t: 0, x: 0.3, y: 0.45 }, { t: 1.2, x: 0.35, y: 0.44 }]);
+  assert.equal(PTFormat.format(I), line);
+  assert.deepEqual(PTFormat.parse(LINE).focus, []);
+  assert.equal(PTFormat.format(PTFormat.parse(LINE)), LINE);
+});
+
+test('a focus key out of the frame, or out of time order, is an error that says why', () => {
+  assert.throws(() => PTFormat.parse(LINE + ';focus=0:1.2,0.5'), /time:x,y with x and y 0–1/);
+  assert.throws(() => PTFormat.parse(LINE + ';focus=0:0.5'), /time:x,y/);
+  assert.throws(() => PTFormat.parse(LINE + ';focus=1:0.5,0.5|0.5:0.5,0.5'), /focus key 2: time 0.500 must be after the key before it/);
+});

@@ -21,8 +21,6 @@ body{margin:0;background:var(--bg);color:var(--text);font:12px/1.4 ui-monospace,
 html,body{height:100%}
 #shell{display:flex;flex-direction:column;height:100vh;min-height:640px}
 header{display:flex;flex-wrap:wrap;gap:6px 9px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
-header .minor{margin-left:auto;color:var(--dim)}
-header .minor label,#mcpState{color:var(--dim)}
 header h1{font-size:14px;margin:0 6px 0 0;color:var(--acc);letter-spacing:.5px}
 .grp{display:flex;gap:6px;align-items:center}
 /* a group with a name on its frame */
@@ -52,6 +50,17 @@ label{color:var(--dim)}
 #work{flex:1;min-height:0;display:flex;margin-top:-1px}
 #leftCol{flex:1;min-width:0;display:flex;flex-direction:column}
 #app{flex:1;min-height:0;display:flex}
+[hidden]{display:none!important}
+/* the workbench: in place of order + pattern; the video fills what is left above the timeline */
+#bench{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column}
+#bView{flex:1;min-height:0;display:flex;background:var(--black);position:relative}
+#bVideo{flex:1;min-width:0;min-height:0;width:100%;object-fit:contain;cursor:crosshair}
+#bFocus{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#bEmpty{margin:auto;padding:16px;text-align:center;color:var(--text);line-height:2}
+#bTime{display:block;width:100%;height:42px;margin-top:6px;cursor:pointer;border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
+#bBar{margin:6px 0 0}
+#bSel{flex:1;white-space:pre}
+button.cur{background:var(--accDim);color:var(--acc)} /* the open screen */
 #songCard{flex:1;display:flex;gap:10px;min-height:0;min-width:0}
 #ordCol{display:flex;flex-direction:column;min-height:0;width:96px}
 #ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
@@ -92,8 +101,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 #statusBar{flex:none;display:flex;gap:12px;align-items:center;padding:5px 12px;margin-top:-1px;background:var(--panel);border-top:1px solid var(--line);min-height:26px;white-space:nowrap}
 #statusBar #status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-#ghLink{flex:none;color:var(--dim);text-decoration:none}
-#ghLink:hover{color:var(--acc)}
+/* small links in the status bar instead of buttons: Keys, MCP, GitHub */
+.footLink,#mcpState{flex:none;color:var(--dim);text-decoration:none}
+.footLink:hover{color:var(--acc)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc2);outline-offset:1px}
 #pat{outline:none} /* the pattern has the focus nearly always (it gets it on start); its cursor shows where you are */
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);max-width:860px;line-height:1.7;padding:14px 18px}
@@ -109,7 +119,7 @@ dialog .close{float:right}
 .row{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:6px}
 #waveWrap{display:flex;gap:10px;align-items:flex-start}
 #wave{flex:1;min-width:0;height:126px;background:var(--well);cursor:crosshair;display:block}
-#framePrev{width:224px;height:126px;background:var(--black);flex:none}
+#framePrev{width:224px;height:126px;background:var(--black);flex:none;cursor:crosshair}
 #status{color:var(--acc2)}
 #status a{color:var(--acc)}
 kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:0 4px;color:var(--text)}
@@ -121,7 +131,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <header>
   <h1>▦ PoopTracker</h1>
   <fieldset class="grp"><legend>Module</legend>
-    <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file">Save</button>
+    <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file, ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S">Save</button>
     <input id="songFile" type="file" accept=".poop" hidden>
     <input id="tTitle" maxlength="64" style="width:160px" placeholder="song title" aria-label="Song title">
   </fieldset>
@@ -140,10 +150,9 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <label>Step <input id="tStep" type="number" min="0" max="16" value="1" style="width:38px"></label>
     <label><input type="checkbox" id="tFollow" checked> Follow</label>
   </fieldset>
-  <div class="grp minor">
-    <span id="mcpState">MCP ○</span>
-    <button id="bKeys" title="Keyboard shortcuts and effects">Keys</button>
-  </div>
+  <fieldset class="grp"><legend>Screen</legend>
+    <button id="bScreenPat" class="cur" title="Pattern editor (⌘/Ctrl+B switches)">Pattern</button><button id="bScreenBench" title="Workbench: cut pieces out of long videos (⌘/Ctrl+B switches)">Bench</button>
+  </fieldset>
 </header>
 
 <div id="work">
@@ -171,6 +180,23 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     </div>
   </section>
 </main>
+<section class="card" id="bench" hidden aria-label="Workbench">
+  <div class="cardHead"><h2>Bench</h2>
+    <button id="bBenchLoad" title="Put a long video on the bench (or drop it here while the bench is open)">Load</button><input id="bFile" type="file" accept="video/*" hidden>
+    <span id="bName" class="dim ell"></span>
+    <button id="bClear" title="Throw the video off the bench (nothing is saved)" style="margin-left:auto">Clear</button>
+  </div>
+  <div id="bView">
+    <video id="bVideo" playsinline hidden title="Click: the focus, the point the instrument's tiles keep in view · Backspace: back to the middle"></video><canvas id="bFocus"></canvas>
+    <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument.<br><span class="dim">MP4/MOV only. From YouTube: <code>yt-dlp -f mp4 &lt;url&gt;</code></span></div>
+  </div>
+  <canvas id="bTime" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
+  <div class="row" id="bBar">
+    <span id="bSel" class="dim"></span>
+    <button id="bPlaySel" title="Play the marked piece (Shift+Space)">▶ Piece</button>
+    <button id="bCut" title="Cut the marked piece into a new instrument, without re-encoding (Enter)">Cut → Inst.</button>
+  </div>
+</section>
 
 <div id="instPanel">
   <section class="card" id="instCard">
@@ -213,7 +239,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R <input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
     </fieldset>
     </div>
-    <div id="waveWrap"><canvas id="wave"></canvas><canvas id="framePrev" width="320" height="180"></canvas></div>
+    <div id="waveWrap"><canvas id="wave"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
     <div class="dim legend ell">Drag: <span style="color:var(--acc)">region</span> · <span style="color:var(--red)">hit</span> · <span style="color:var(--green)">loop</span> · click empty space = hit · dark = outside the region · blue = pre-roll</div>
   </section>
 </div>
@@ -225,7 +251,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   </section>
 </div>
 
-<footer id="statusBar"><span id="status" role="status"></span><a id="ghLink" href="https://github.com/miratcan/pooptracker" target="_blank" rel="noopener">GitHub ↗</a></footer>
+<footer id="statusBar"><span id="status" role="status"></span><a id="bKeys" class="footLink" href="#keys" title="Keyboard shortcuts and effects">Keys</a><span id="mcpState" class="dim">MCP ○</span><a id="ghLink" class="footLink" href="https://github.com/miratcan/pooptracker" target="_blank" rel="noopener">GitHub ↗</a></footer>
 </div>
 
 <dialog id="keys">
@@ -242,44 +268,50 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
   <p><b>Blocks:</b> <kbd>Alt</kbd>+arrow keys (or <kbd>Shift</kbd>+<kbd>PgUp</kbd>/<kbd>PgDn</kbd>/<kbd>Home</kbd>/<kbd>End</kbd>) or drag with the mouse = select · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> or <kbd>Alt</kbd>+<kbd>F4</kbd> / <kbd>F3</kbd> / <kbd>F5</kbd> copy / cut / paste ·
   <kbd>Shift</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the channel · <kbd>⌘/Ctrl</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the pattern · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
-  <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</p>
+  <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>⌘/Ctrl</kbd>+<kbd>S</kbd> save the song · <kbd>⌘/Ctrl</kbd>+<kbd>O</kbd> load a song.</p>
   <p class="dim">On a Mac the F keys need <kbd>fn</kbd> (unless "Use F1, F2… as standard function keys" is on).</p>
   <p><b>Effects:</b> 3xx tone porta · 4xy vibrato · 8xx pan · 9xx sample offset (xx/256 of the region, no pre-roll) ·
   Axy vol slide · E9x retrig (stutter from the hit) · ECx note cut · EDx note delay · Fxx speed/BPM ·
   <b style="color:var(--pink)">Video only:</b> Sxx zoom/shake punch · Ixx color-invert flash.</p>
   <p><b>What you see:</b> volume × envelope = brightness · pitch = video speed (C-5 twice as fast, C-3 half-speed slow motion) · vibrato makes the video wobble too.</p>
   <p><b>Adding videos:</b> drop a video on the page → new instrument · drop a <code>.poop</code> → open the song.</p>
+  <p><b>Bench</b> (<kbd>⌘/Ctrl</kbd>+<kbd>B</kbd>, a long video in, pieces out as instruments): <kbd>Space</kbd> play/pause · <kbd>←→</kbd> 1 s · <kbd>Shift</kbd>+<kbd>←→</kbd> 10 s · <kbd>,</kbd> <kbd>.</kbd> a frame ·
+  <kbd>Home</kbd>/<kbd>End</kbd> · timeline zoom: wheel or pinch, <kbd>=</kbd> / <kbd>-</kbd>, <kbd>0</kbd> all; sideways scroll or <kbd>Shift</kbd>+wheel moves along · <kbd>I</kbd> / <kbd>O</kbd> piece start / end (or drag on the timeline) · <kbd>Shift</kbd>+<kbd>Space</kbd> play the piece · <kbd>Enter</kbd> cut it → new instrument (not re-encoded; MP4/MOV) · <kbd>Esc</kbd> unmark · click the picture: the focus, the point the instrument's tiles keep in view (the frame shows what a one-channel tile sees) · <kbd>Backspace</kbd> focus back to the middle.
+  The bench is never saved: what isn't cut is thrown away.</p>
 </dialog>
-<div id="drop">Drop a video → new instrument · drop a .poop → open the song</div>
+<div id="drop">Drop a video → new instrument (on the bench: onto the bench) · drop a .poop → open the song</div>
 
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=e835225531",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=1d3c1416e7",
+    "./src/core/commands.js": "./src/core/commands.js?v=cbf96cf194",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=2b4314c6bb",
     "./src/core/song.js": "./src/core/song.js?v=f2d261d757",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=76963e43f3",
     "./src/engine/player.js": "./src/engine/player.js?v=8bcef76988",
-    "./src/engine/voice.js": "./src/engine/voice.js?v=b2201e4d9c",
-    "./src/io.js": "./src/io.js?v=ef31763387",
-    "./src/main.js": "./src/main.js?v=0df4634333",
-    "./src/mcp.js": "./src/mcp.js?v=6c0d9287a1",
-    "./src/ptformat.js": "./src/ptformat.js?v=3b770e86ed",
+    "./src/engine/voice.js": "./src/engine/voice.js?v=32817cff4a",
+    "./src/io.js": "./src/io.js?v=66960fa1d3",
+    "./src/main.js": "./src/main.js?v=e740ccc804",
+    "./src/mcp.js": "./src/mcp.js?v=e6e873b4bb",
+    "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
+    "./src/mp4cut.js": "./src/mp4cut.js?v=a8afa9b6ff",
+    "./src/ptformat.js": "./src/ptformat.js?v=8619b4daf4",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=1b603ee9e7",
     "./src/ui/bug.js": "./src/ui/bug.js?v=59c77fa4f5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=51d3b24fbd",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=4558f6ad74",
-    "./src/ui/output.js": "./src/ui/output.js?v=b6b99b2267",
+    "./src/ui/files.js": "./src/ui/files.js?v=4740dea854",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=00cc19e287",
+    "./src/ui/output.js": "./src/ui/output.js?v=d987a3a195",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
-    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=1110655a05",
-    "./src/ui/screens.js": "./src/ui/screens.js?v=67ff65cecc",
+    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=7715e57f8e",
+    "./src/ui/screens.js": "./src/ui/screens.js?v=9a4a196256",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=5a919e4b84",
-    "./src/ui/transport.js": "./src/ui/transport.js?v=cd1f62d054",
+    "./src/ui/transport.js": "./src/ui/transport.js?v=6f43b5d379",
     "./src/util.js": "./src/util.js?v=b90bcc0c6d"
   }
 }
 </script>
-<script type="module" src="src/main.js?v=0df4634333"></script>
+<script type="module" src="src/main.js?v=e740ccc804"></script>
 </body>
 </html>

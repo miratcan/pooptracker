@@ -2,11 +2,11 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, hitPos, sliceRegion, tickDur, detectHit, loops } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
 import { previewNote, syncTest } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI } from './common.js';
-import { drawCover } from './output.js';
+import { drawCover, coverRect } from './output.js';
 import { pal, alpha } from './palette.js';
 import { saveInstrumentVideo } from './files.js';
 
@@ -120,11 +120,33 @@ function drawWave(hoverT) {
   if (tx(I.hit) - tx(I.start) > 60) wg.fillText('pre-roll', tx(I.start) + 6, TH + 14);
   wg.fillStyle = pal.red; wg.fillText(`hit ${I.hit.toFixed(3)}s`, Math.min(tx(I.hit) + 5, W - 95), H - 6);
   if (hoverT != null) { wg.strokeStyle = alpha(pal.white, .5); wg.beginPath(); wg.moveTo(tx(hoverT), 0); wg.lineTo(tx(hoverT), H); wg.stroke(); }
-  drawCover(fpg, videoFrame(V, (hoverT ?? I.hit) + av), 0, 0, fp.width, fp.height);
+  const img = videoFrame(V, (hoverT ?? I.hit) + av);
+  drawCover(fpg, img, 0, 0, fp.width, fp.height);
+  // the focus point, and what a one-channel (9:16) tile sees around it
+  if (I.focus.length) {
+    const p = fpPos(img), f = focusAt(I, (hoverT ?? I.hit) + av), tile = coverRect(img.width, img.height, 9 / 16, f);
+    const [x0, y0] = p.to(tile.x / img.width, tile.y / img.height), [x1, y1] = p.to((tile.x + tile.w) / img.width, (tile.y + tile.h) / img.height), [fx, fy] = p.to(f.x, f.y);
+    fpg.fillStyle = alpha(pal.black, .45); fpg.fillRect(0, 0, x0, fp.height); fpg.fillRect(x1, 0, fp.width - x1, fp.height);
+    fpg.strokeStyle = pal.acc; fpg.lineWidth = 2; fpg.strokeRect(x0 + 1, y0 + 1, x1 - x0 - 2, y1 - y0 - 2);
+    fpg.fillStyle = pal.acc; fpg.fillRect(fx - 7, fy - 1, 14, 2); fpg.fillRect(fx - 1, fy - 7, 2, 14);
+  }
   fpg.fillStyle = alpha(pal.black, .6); fpg.fillRect(0, fp.height - 22, fp.width, 22);
   fpg.fillStyle = hoverT != null ? pal.white : pal.red; fpg.font = '14px ui-monospace,Menlo,monospace';
   fpg.fillText(hoverT != null ? `${hoverT.toFixed(3)} s` : `hit frame ${I.hit.toFixed(3)} s`, 8, fp.height - 7);
 }
+// the frame preview shows the middle of the frame: from 0–1 frame coordinates to its pixels and back
+function fpPos(img) {
+  const r = coverRect(img.width, img.height, fp.width / fp.height);
+  return { to: (x, y) => [(x * img.width - r.x) / r.w * fp.width, (y * img.height - r.y) / r.h * fp.height],
+    from: (px, py) => [clamp((r.x + px / fp.width * r.w) / img.width, 0, 1), clamp((r.y + py / fp.height * r.h) / img.height, 0, 1)] };
+}
+// click: the tiles keep this point in view · Alt+click: back to the middle
+fp.onclick = e => {
+  const I = curInst(); if (!I) return;
+  if (e.altKey) return instCmd({ focus: [] }, 'focus');
+  const b = fp.getBoundingClientRect(), [x, y] = fpPos(videoFrame(I.video, I.hit + I.avOffset / 1000)).from((e.clientX - b.left) / b.width * fp.width, (e.clientY - b.top) / b.height * fp.height);
+  instCmd({ focus: [{ t: round3(I.start), x: round3(x), y: round3(y) }] }, 'focus');
+};
 let waveDrag = null;
 const waveX = e => e.clientX - wave.getBoundingClientRect().left;
 const waveT = e => clamp(waveX(e) / wave.clientWidth, 0, 1) * curInst().video.dur;

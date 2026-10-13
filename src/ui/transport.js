@@ -29,7 +29,8 @@ $('#bStop').onclick = () => userStop();
 $('#bRec').onclick = () => {
   if (recorder) { recorder.stop(); return; }
   ensureAudio();
-  const mimes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  // MP4 (H.264 + AAC) first: it opens everywhere (QuickTime, phones, Instagram, WhatsApp); WebM where the browser can't
+  const mimes = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
   const mime = mimes.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
   if (!mime) { setStatus("This browser doesn't support MediaRecorder."); return; }
   const stream = new MediaStream([...out.captureStream(30).getVideoTracks(), ...recDest.stream.getAudioTracks()]);

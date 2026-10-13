@@ -9,6 +9,7 @@ import { $, view } from './common.js';
 let current = null;
 const global = {};
 export const setGlobalKeys = keys => Object.assign(global, keys);
+export const activeScreen = () => current;
 export function showScreen(s) {
   if (current === s) return;
   if (current) { current.leave?.(); if (current.el) current.el.hidden = true; }
@@ -18,9 +19,11 @@ export function showScreen(s) {
 }
 const keyName = e => `${e.metaKey || e.ctrlKey ? 'Mod+' : ''}${e.altKey ? 'Alt+' : ''}${e.shiftKey ? 'Shift+' : ''}${e.code}`;
 
+// keys that work even while typing in a field: the browser would take them otherwise (Save page, Open file)
+const ANYWHERE = ['Mod+KeyS', 'Mod+KeyO'];
 document.addEventListener('keydown', e => {
   // typing in a field or reading the Keys dialog: no shortcuts
-  if (e.target.matches('input,select,textarea') || $('#keys').open) return;
+  if ((e.target.matches('input,select,textarea') || $('#keys').open) && !ANYWHERE.includes(keyName(e))) return;
   const fn = current?.keys?.[keyName(e)] ?? global[keyName(e)];
   if (fn) { fn(e); e.preventDefault(); view.patDirty = true; return; }
   if (e.altKey || e.metaKey || e.ctrlKey) return;

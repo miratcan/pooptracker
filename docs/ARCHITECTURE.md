@@ -9,6 +9,8 @@ PoopTracker is plain JavaScript modules loaded by the browser: no build step, no
 ```
 src/
   ptformat.js     the file formats: TURD1 instrument lines, .poop songs, MP4 metadata   (no DOM, no audio)
+  mp4.js          MP4/MOV boxes: reading and writing them                            (no DOM, no audio)
+  mp4cut.js       cuts a piece out of an MP4/MOV without re-encoding (the workbench)  (no DOM, no audio)
   util.js         constants and small helpers                                        (no DOM, no audio)
   core/           the song and the commands that change it                           (no DOM, no audio)
     song.js         song, instruments, videos: the data
@@ -26,10 +28,10 @@ src/
     patternEditor.js, songPanel.js, instrumentPanel.js, output.js, transport.js, files.js
   demo.js         the demo instruments and beat shown at startup
 mcp/server.mjs    the MCP server (Node, stdio ⇄ WebSocket to the tab); reads and writes files for MCP
-test/             node --test: format, commands, engine (on a fake AudioContext)
+test/             node --test: format, commands, engine (on a fake AudioContext), cutting (fixtures/av.mp4)
 ```
 
-Dependencies only point down: `ui` → `io`, `engine`, `core` → `ptformat`, `util`. `core` and `engine` never import
+Dependencies only point down: `ui` → `io`, `engine`, `core` → `ptformat`, `mp4cut` → `mp4`, `util`. `core` and `engine` never import
 `ui`, so they run in Node; that is how the tests play songs without a browser.
 
 ## The rules

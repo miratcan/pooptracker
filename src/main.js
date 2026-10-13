@@ -10,11 +10,12 @@ import { initAudio, ensureAudio, visualTime, ctx } from './engine/audio.js';
 import { player } from './engine/player.js';
 import * as engine from './engine/player.js';
 import { $, ed, view, setStatus, refreshUI, onRefresh, clampEditor } from './ui/common.js';
-import { showScreen, setGlobalKeys } from './ui/screens.js';
+import { showScreen, setGlobalKeys, activeScreen } from './ui/screens.js';
 import { drawOutput, sizeOut, fitOut, updateStats } from './ui/output.js';
 import { patternScreen, setupPat, drawPattern, focusPattern } from './ui/patternEditor.js';
 import { refreshSongPanel } from './ui/songPanel.js';
 import { refreshInstrumentPanel } from './ui/instrumentPanel.js';
+import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
 import './ui/files.js';
 import './ui/bug.js';
@@ -40,12 +41,18 @@ setGlobalKeys({
   'Mod+KeyZ': () => undo() || setStatus('Nothing to undo'),
   'Mod+Shift+KeyZ': () => redo() || setStatus('Nothing to redo'),
   'Mod+KeyY': () => redo() || setStatus('Nothing to redo'),
+  'Mod+KeyB': () => showScreen(activeScreen() === benchScreen ? patternScreen : benchScreen),
+  // the browser's own Save / Open would save the page itself, not the song
+  'Mod+KeyS': () => $('#bSave').click(),
+  'Mod+KeyO': () => $('#bOpen').click(),
 });
+$('#bScreenPat').onclick = () => showScreen(patternScreen);
+$('#bScreenBench').onclick = () => showScreen(benchScreen);
 
 // ── small page behaviour
 document.querySelectorAll('header input, header select, header button').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Escape') el.blur(); }));
 document.querySelectorAll('button').forEach(b => b.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); } }));
-$('#bKeys').onclick = () => $('#keys').showModal();
+$('#bKeys').onclick = e => { e.preventDefault(); $('#keys').showModal(); };
 
 // ── one frame: follow the row being heard, draw the output, redraw the pattern if needed
 let fpsCount = 0, fpsLast = performance.now(), fpsVal = 0;

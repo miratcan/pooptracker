@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { cutMp4 } from '../src/mp4cut.js';
 
 const PORT = +process.env.POOPTRACKER_MCP_PORT || 8767; // the tab connects to 8767 unless its URL says ?mcp=<port>
 const log = (...a) => process.stderr.write(`[pooptracker-mcp] ${a.join(' ')}\n`);
@@ -17,6 +18,7 @@ const hex = d => ({ type: 'string', pattern: '^[0-9A-Fa-f]{2}$', description: d 
 const chan = { type: 'integer', minimum: 1, maximum: 8, description: 'channel number, 1–N (N = the song\'s channel count, at most 8; get_song tells it)' };
 const range = { from_row: hex('first row (default 00)'), to_row: hex('last row, inclusive (default: the last row)') };
 const filePath = d => ({ type: 'string', description: `${d}; an absolute path (or ~/…)` });
+const focusArg = { type: 'string', description: 'where the picture looks: the point the tiles keep in view, as time:x,y keys joined by | (x, y 0–1 across the frame, 0,0 top left; time in seconds on the video\'s timeline; between keys the point moves in a straight line), e.g. "0:0.30,0.45" or "0:0.3,0.5|1.2:0.6,0.5"; "" = the middle' };
 const obj = (props, required = []) => ({ type: 'object', properties: props, required, additionalProperties: false });
 const TOOLS = [
   ['get_song', 'Song summary: title, bpm, speed, rowsPerBeat, channels, order and the pattern list. Call this first.', obj({})],
@@ -51,7 +53,8 @@ const TOOLS = [
       decay: { type: 'string', description: 'with its unit, e.g. "8t"' }, sustain: { type: 'string', description: 'level after the decay, "00"–"40" like volume' }, release: { type: 'string', description: 'with its unit, e.g. "800ms"' },
       loop: { type: 'string', enum: ['none', 'forward', 'pingpong'], description: 'none: plays once · forward: loop start → end, again · pingpong: start → end → start… (the video plays backward too)' }, loop_start: { type: 'number', description: 'seconds, time in the video' }, loop_end: { type: 'number', description: 'seconds, time in the video' },
       region_start: { type: 'number', description: 'seconds: where the instrument starts in the video' }, region_end: { type: 'number', description: 'seconds: where it ends' },
-      hit: { type: 'number', description: 'seconds: the hit point, the moment that lands exactly on the row' }, av_offset: { type: 'integer', description: 'milliseconds: shifts the picture against the sound, for a video whose audio track is off' } }, ['instrument'])],
+      hit: { type: 'number', description: 'seconds: the hit point, the moment that lands exactly on the row' }, av_offset: { type: 'integer', description: 'milliseconds: shifts the picture against the sound, for a video whose audio track is off' },
+      focus: focusArg } }, ['instrument'])],
   ['detect_hit', 'Find the hit point of an instrument in its audio (the loudest onset in its region) and set it.', obj({ instrument: hex('instrument number') }, ['instrument'])],
   ['duplicate_instrument', 'A new instrument with the same video and settings (then change its region, hit or pitch).', obj({ instrument: hex('instrument number') }, ['instrument'])],
   ['move_instrument', 'Swap an instrument with its neighbour; the pattern cells follow it.', obj({ instrument: hex('instrument number'), direction: { type: 'string', enum: ['up', 'down'] } }, ['instrument', 'direction'])],
@@ -61,8 +64,8 @@ const TOOLS = [
   ['delete_channel', 'Delete an empty channel; the channels after it move down one number.', obj({ channel: chan }, ['channel'])],
   ['delete_pattern', 'Delete a pattern the order doesn\'t use; the patterns after it move down one number and the order follows them.', obj({ pattern: hex('pattern number') }, ['pattern'])],
   ['set_pattern_length', 'Change the number of rows of a pattern (rows past the new end are cut off; Ctrl+Z brings them back).', obj({ pattern: hex('pattern number'), rows: { type: 'integer', minimum: 1, maximum: 256 } }, ['pattern', 'rows'])],
-  ['load_video', 'Load a video file as a new instrument. A video saved by PoopTracker brings its settings from its metadata; otherwise the hit point is found automatically. Only the first 8 seconds are used.',
-    obj({ path: filePath('the video file (mp4, mov, webm…)') }, ['path'])],
+  ['load_video', 'Load a video file as a new instrument. A video saved by PoopTracker brings its settings from its metadata; otherwise the hit point is found automatically. Only the first 8 seconds are used. With start and end, a piece is cut out of a long video (MP4/MOV, any length) like on the workbench: without re-encoding; the instrument is exactly start–end.',
+    obj({ path: filePath('the video file (mp4, mov, webm…)'), start: { type: 'number', minimum: 0, description: 'cut a piece: where it starts in the video (seconds); needs end' }, end: { type: 'number', description: 'where the piece ends (seconds); at most 8 s after start' }, focus: focusArg }, ['path'])],
   ['replace_video', 'Give an instrument another video; all its settings stay (times past the end of a shorter video are pulled in).', obj({ instrument: hex('instrument number'), path: filePath('the new video file') }, ['instrument', 'path'])],
   ['open_song', 'Open a .poop song file. It replaces the current song and CAN\'T be undone: save the current song first if it matters. Nothing changes if the file has errors.', obj({ path: filePath('the .poop file') }, ['path'])],
   ['save_song', 'Save the song with its videos as one .poop file.', obj({ path: filePath('where to write the .poop file'), overwrite: { type: 'boolean', description: 'replace an existing file (default false: an existing file is never touched)' } }, ['path'])],
@@ -141,14 +144,32 @@ function resolvePath(p) {
   if (!path.isAbsolute(p)) throw new Error(`path must be absolute (or start with ~/), got: ${p}`);
   return p;
 }
+// a piece of a long video, cut here (only the piece travels to the tab); its region goes along as args.region
+async function cutPiece(p, size, args) {
+  const { start, end } = args; delete args.start; delete args.end;
+  if (typeof start !== 'number' || typeof end !== 'number') throw new Error('a piece needs both start and end (seconds)');
+  if (!(end > start)) throw new Error(`end (${end}) must be after start (${start})`);
+  if (end - start > 8) throw new Error(`the piece is ${(end - start).toFixed(3)} s; an instrument can be at most 8 s`);
+  const fd = await fs.promises.open(p, 'r');
+  try {
+    const read = async (o, n) => { const b = new Uint8Array(n); await fd.read(b, 0, n, o); return b; };
+    const piece = await cutMp4(read, size, start, end);
+    const base = path.basename(p).replace(/\.[^.]+$/, '');
+    args.region = { start: piece.start, end: piece.end, name: `${base.slice(0, 8)} ${Math.floor(start / 60)}:${String(Math.floor(start % 60)).padStart(2, '0')}` };
+    return { name: `${base} ${start.toFixed(3)}.mp4`, data: Buffer.from(piece.bytes).toString('base64') };
+  } finally { await fd.close(); }
+}
 async function runTool(name, args) {
   let out = null;
   if (READS.has(name)) {
     const p = resolvePath(args.path); delete args.path;
     const st = await fs.promises.stat(p).catch(() => { throw new Error(`no such file: ${p}`); });
     if (!st.isFile()) throw new Error(`not a file: ${p}`);
-    if (st.size > MAX_FILE) throw new Error(`${p} is ${(st.size / 1048576).toFixed(0)} MB; files up to ${MAX_FILE / 1048576} MB are accepted`);
-    args.file = { name: path.basename(p), data: (await fs.promises.readFile(p)).toString('base64') };
+    if (name === 'load_video' && (args.start != null || args.end != null)) args.file = await cutPiece(p, st.size, args);
+    else {
+      if (st.size > MAX_FILE) throw new Error(`${p} is ${(st.size / 1048576).toFixed(0)} MB; files up to ${MAX_FILE / 1048576} MB are accepted`);
+      args.file = { name: path.basename(p), data: (await fs.promises.readFile(p)).toString('base64') };
+    }
   }
   if (WRITES.has(name)) {
     out = resolvePath(args.path); delete args.path;

@@ -15,6 +15,7 @@ The first public version.
 - Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's
   only "delete" key and pulling rows up surprised everyone. Shift+Backspace pulls the rows below the cursor up.
 - Enter plays the song from the pattern being edited; tempo, instruments and volumes set earlier carry over.
+- ⌘/Ctrl+S saves the song and ⌘/Ctrl+O loads one (the browser would otherwise save the page itself).
 - Edit mode (off at start, red frame when on): off, the note keys only play; on, they write into the pattern.
 - A note played from the keyboard is released (the envelope's R) when its key goes up.
 - Modules are loaded with `?v=<content hash>` (an import map in index.html, written by `npm run stamp`), so after
@@ -31,3 +32,7 @@ The first public version.
   Ctrl/Alt+Del partial clears, Shift+Ins / Alt+Backspace inserts, Alt+arrows and Alt/Shift/Ctrl+F3–F5 blocks,
   Ctrl+←→ and Ctrl+F9/F10 order edits, Ctrl+F follow, Shift+Enter loops the pattern from the cursor row,
   Shift+↑↓ instrument, Shift+←→ order position. Blocks are selected with Alt+arrows (Shift+arrows used to).
+- The workbench (⌘/Ctrl+B): a long video goes on it, a piece is marked and cut into a new instrument without
+  re-encoding (MP4/MOV); the bench itself is never saved. MCP `load_video` takes `start` / `end` for the same.
+- An instrument can have a focus (`focus=` in the instrument line): the point its tiles keep in view instead of the
+  middle of the frame. Set by clicking the picture on the bench or the frame preview; MCP `set_instrument focus`.

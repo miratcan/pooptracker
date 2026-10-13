@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { openTestSong, testInstrument, testPattern } from './helpers.js';
 import { song, instruments } from '../src/core/song.js';
 import * as C from '../src/core/commands.js';
+import { focusAt } from '../src/core/instrument.js';
 
 const changes = [];
 C.onChange(c => changes.push({ scope: c.scope, how: c.how }));
@@ -75,4 +76,14 @@ test('opening a song clears the history', () => {
   openTestSong({ patterns: [testPattern(16)] });
   assert.equal(C.undo(), null);
   assert.equal(song.patterns[0].rows.length, 16);
+});
+
+test('the focus is an instrument setting: set, checked and undone like the others; the point moves along its path', () => {
+  C.exec(() => C.setInstrument(1, { focus: [{ t: 0, x: 0.2, y: 0.5 }, { t: 1, x: 0.6, y: 0.3 }] }));
+  const I = instruments[1], f = focusAt(I, 0.5);
+  assert.ok(Math.abs(f.x - 0.4) < 1e-9 && Math.abs(f.y - 0.4) < 1e-9);
+  assert.deepEqual(focusAt(I, 5), { t: 1, x: 0.6, y: 0.3 });
+  assert.throws(() => C.exec(() => C.setInstrument(1, { focus: [{ t: 0, x: 2, y: 0.5 }] })), /focus key 1: x '2' is invalid/);
+  C.undo();
+  assert.deepEqual(focusAt(I, 0.5), { x: 0.5, y: 0.5 });
 });

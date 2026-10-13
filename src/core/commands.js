@@ -95,7 +95,7 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
 // another video for an instrument, every setting kept; times that fall past a shorter video are pulled in
 export function setInstrumentVideo(idx, V) {

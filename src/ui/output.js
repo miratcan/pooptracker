@@ -2,7 +2,7 @@
 // coming out of the speakers, so picture and sound match.
 import { OUT_W, OUT_H, clamp, hex2, noteName } from '../util.js';
 import { song, videos, nch } from '../core/song.js';
-import { frameAt } from '../core/instrument.js';
+import { frameAt, focusAt } from '../core/instrument.js';
 import { ctx, ensureAudio, isMuted, toggleMute } from '../engine/audio.js';
 import { voices, voicesAt, visualFx } from '../engine/voice.js';
 import { $, view } from './common.js';
@@ -14,10 +14,16 @@ const og = out.getContext('2d');
 // channels stack downwards in the 9:16 frame: 1–3 → one column (1, 2, 3 rows), 4–8 → two columns (2, 3, 4 rows)
 export const grid = () => { const n = nch(), cols = n <= 3 ? 1 : 2; return { cols, rows: Math.ceil(n / cols) }; };
 function tileRect(ch) { const { cols, rows } = grid(), w = OUT_W / cols, h = OUT_H / rows; return { x: (ch % cols) * w, y: Math.floor(ch / cols) * h, w, h }; }
-// draw an uncropped frame into a box of any shape, cropping the middle (like CSS object-fit: cover)
-export function drawCover(g, img, x, y, w, h) {
-  const iw = img.width, ih = img.height, k = Math.max(w / iw, h / ih), sw = w / k, sh = h / k;
-  g.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h);
+// draw an uncropped frame into a box of any shape (like CSS object-fit: cover), cropping around the focus point
+// (0–1 across the frame; the middle by default) as far as the frame's edges allow
+export function drawCover(g, img, x, y, w, h, f) {
+  const r = coverRect(img.width, img.height, w / h, f);
+  g.drawImage(img, r.x, r.y, r.w, r.h, x, y, w, h);
+}
+// the part of an iw × ih frame that a box of this aspect (width / height) shows: in frame pixels
+export function coverRect(iw, ih, aspect, f = { x: 0.5, y: 0.5 }) {
+  const w = Math.min(iw, ih * aspect), h = w / aspect;
+  return { x: clamp(f.x * iw - w / 2, 0, iw - w), y: clamp(f.y * ih - h / 2, 0, ih - h), w, h };
 }
 
 export function drawOutput(now) {
@@ -37,7 +43,8 @@ function drawTile(ch, now) {
   vis.forEach(v => {
     const bright = Math.sqrt(clamp(v.gainAt(now), 0, 1));
     og.globalAlpha = 1;
-    drawCover(og, frameAt(v.I, v.posAt(now)), dx, dy, dw, dh);
+    const pos = v.posAt(now);
+    drawCover(og, frameAt(v.I, pos), dx, dy, dw, dh, focusAt(v.I, v.I.start + pos + v.I.avOffset / 1000));
     if (bright < 0.99) { og.globalAlpha = 1 - bright; og.fillStyle = pal.black; og.fillRect(x, y, TW, TH); }
     label = `${v.I.name} ${noteName(v.note)}`;
   });

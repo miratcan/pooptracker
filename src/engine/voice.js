@@ -144,12 +144,14 @@ export class Voice {
     return p[p.length - 1].v;
   }
 }
-// the channel's voices at time `now` (for drawing); finished ones are dropped (and stopped) here
+// the channel's voices at time `now` (for drawing); finished ones are dropped (and stopped) here.
+// `done` comes from the audio clock, which runs ahead of the picture (output latency): a done voice stays
+// until the picture has passed its end too, or its tile goes black for a frame before the next note
 export function voicesAt(ch, now) {
   const list = voices[ch];
   for (let i = list.length - 1; i >= 0; i--) {
     const v = list[i];
-    if ((v.cutT != null && v.cutT < now - 0.05) || (v.done && i < list.length - 1) || list.length > 8) { if (v.cutT == null) v.kill(); list.splice(i, 1); }
+    if ((v.cutT != null && v.cutT < now - 0.05) || (v.done && i < list.length - 1 && v.silentFrom() < now - 0.05) || list.length > 8) { if (v.cutT == null) v.kill(); list.splice(i, 1); }
   }
   return list;
 }

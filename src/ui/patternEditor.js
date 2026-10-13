@@ -278,6 +278,6 @@ for (let o = 0; o < 8; o++) keys[`F${o + 1}`] = () => setOctave(o);
 for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) keys[`Alt+${k}`] = keys[`Shift+Alt+${k}`] = () => extendSel(k);
 // Alt + the top / middle letter row jumps to channel 0–7 / 8–15
 ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK'].forEach((c, ch) => { keys[`Alt+${c}`] = goTrack(ch); });
-export const patternScreen = { name: 'pattern', keys, onKey };
+export const patternScreen = { name: 'pattern', el: $('#app'), keys, onKey, enter: () => pc.focus() };
 new ResizeObserver(() => setupPat()).observe($('#patBox'));
 $('#patBox').addEventListener('scroll', () => { view.patDirty = true; });

@@ -34,6 +34,9 @@ shouldn't get lost and should be shareable: the settings should travel **with th
   tracker: if they were, it would gradually turn into a video editor.
 - Trimming is already in the tracker: the instrument region (start/end) trims the video without changing it. Trimming the
   start in an editor shifts the timeline, and the hit point lands in the wrong place.
+- Cutting a piece out of a long video (2026-10-13) is the workbench's job, and it isn't editing: the piece is copied
+  without re-encoding (`mp4cut.js`): it holds the frames from the keyframe before the selection, and its edit list
+  hides them, so the piece plays exactly the selection. MP4/MOV only, like the metadata.
 
 ## Instrument line: settled fields (Phase 1, 2026-10-12)
 ```
@@ -46,7 +49,13 @@ TURD1;name=Kick 2;video=videos/kick.mp4;start=0.600;end=1.200;hit=0.850;base=D-4
 - `loop` = `none`, `forward` (loop start → end, again) or `pingpong` (start → end → start…; the video plays backward too).
   It was `0`/`1` before 2026-10-13; those are still read (`0` = none, `1` = forward) and never written.
 - `ls` / `le` = loop start / end (seconds), `av` = A/V offset (ms, integer). `video=` exists only in `.poop`, not in metadata.
-- All fields are always written; `ls`/`le` even when loop is off (so they aren't lost when read back).
+- All fields are always written; `ls`/`le` even when loop is off (so they aren't lost when read back). The one
+  exception is `focus`, written only when the instrument has one.
+- `focus` (2026-10-13) = where the picture looks: the point a tile keeps in its middle while cropping the frame to its
+  shape, as `time:x,y` keys joined by `|` (`focus=0.000:0.300,0.450|1.200:0.350,0.440`). x, y are 0–1 across the
+  frame (0,0 top left), time is seconds on the video's timeline, keys in time order; between keys the point moves in a
+  straight line. No `focus`: the middle. A tracked path is stored as keys, never re-tracked when the file is opened:
+  another device or a later tracker version would come up with a different path.
 - **Positions in the video are in seconds, relative to the start of the video:** region start/end, hit point, loop points.
   They point at a place inside the video, and the video doesn't know the tempo → they can't be ticks.
 - **The file format never guesses ([ZEN-EXPLICIT](ZEN.md)):** an ADSR value written without a unit (`a=4`) is an error.

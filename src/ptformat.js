@@ -1,6 +1,8 @@
 // PoopTracker instrument line: `TURD1;name=…;start=…;hit=…;…`
 // One text "language" shared by the video metadata (POC-01) and song.txt in .poop (POC-02).
 // An ES module: the same file runs in the browser and in Node (tests).
+import { u32, fourcc, be32, box, boxes as scan } from './mp4.js';
+
 const VERSION = 'TURD1';
 const NOTES = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-'];
 const noteStr = n => NOTES[n % 12] + Math.floor(n / 12);
@@ -22,6 +24,10 @@ const KEYOFF = 97, FXCH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const FX_ALLOWED = '3489AEFSI', E_ALLOWED = [0x9, 0xC, 0xD];
 // loop modes: none, forward (loop start → end, again), pingpong (start → end → start…)
 const LOOP_MODES = ['none', 'forward', 'pingpong'];
+// the focus path: where the picture looks (the point a tile keeps in its middle), as time:x,y keys joined by '|'.
+// x, y are 0–1 across the frame (0,0 top left); between two keys the point moves in a straight line. No keys: the middle.
+const MAX_FOCUS_KEYS = 1000;
+const focusStr = keys => keys.map(k => `${t3(k.t)}:${k.x.toFixed(3)},${k.y.toFixed(3)}`).join('|');
 
 function format(I, video) {
   const f = [VERSION, 'name=' + esc(I.name)];
@@ -30,6 +36,7 @@ function format(I, video) {
     'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'),
     'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + I.S.toString(16).toUpperCase().padStart(2, '0'), 'r=' + envStr(I.R),
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
+  if (I.focus?.length) f.push('focus=' + focusStr(I.focus));
   return f.join(';');
 }
 
@@ -42,6 +49,12 @@ function env(k, v) {
   const u = m[2].toLowerCase(), n = +m[1];
   return n <= ENV_MAX[u] ? { v: n, u } : bad(k, v, `at most ${ENV_MAX[u]}${u}`);
 }
+const unit = /^(0(\.\d+)?|1(\.0+)?|\.\d+)$/; // 0–1
+const focus = (k, v) => v.split('|').map(s => {
+  const m = /^(\d+(?:\.\d+)?):([\d.]+),([\d.]+)$/.exec(s.trim());
+  return m && unit.test(m[2]) && unit.test(m[3]) ? { t: round3(+m[1]), x: round3(+m[2]), y: round3(+m[3]) }
+    : bad(k, v, `'${s}' must be time:x,y with x and y 0–1, e.g. 1.250:0.300,0.450`);
+});
 const PARSE = {
   name: (k, v) => unesc(v),
   video: (k, v) => unesc(v),
@@ -56,9 +69,10 @@ const PARSE = {
   // loop mode; files written before 2026-10-13 have 0 (off) / 1 (on), read as none / forward
   loop: (k, v) => LOOP_MODES.includes(v) ? v : v === '0' ? 'none' : v === '1' ? 'forward' : bad(k, v, 'none, forward or pingpong'),
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
+  focus,
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol',
-  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset' };
+  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', focus: 'focus' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
 function parse(line) {
@@ -75,7 +89,7 @@ function parse(line) {
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
   const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
-    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0 };
+    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, focus: [] };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
   if (e) throw new Error(`${VERSION} line: ${e}`);
@@ -102,11 +116,23 @@ function checkInstrument(I) {
   if (!isInt(I.S, 0, 64)) return `S '${showHex(I.S)}' is invalid (range 00–40)`;
   if (!LOOP_MODES.includes(I.loop)) return `loop '${I.loop}' is invalid (none, forward or pingpong)`;
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
+  const fe = checkFocus(I.focus); if (fe) return fe;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
   if (I.hit < I.start || I.hit > I.end) return `hit point (${t3(I.hit)}) must be inside the region (${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))
     return `loop (${t3(I.loopStart)}–${t3(I.loopEnd)}) must be inside the region, with loop start before loop end (region ${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && I.loopStart < I.hit) return `loop start (${t3(I.loopStart)}) can't be before the hit point (${t3(I.hit)})`;
+  return null;
+}
+function checkFocus(keys) {
+  if (!Array.isArray(keys)) return 'focus must be a list of { t, x, y } keys';
+  if (keys.length > MAX_FOCUS_KEYS) return `focus has ${keys.length} keys; at most ${MAX_FOCUS_KEYS}`;
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i], at = `focus key ${i + 1}`;
+    if (!k || !isTime(k.t)) return `${at}: time '${k?.t}' is invalid (seconds, 0 or more)`;
+    for (const c of ['x', 'y']) if (typeof k[c] !== 'number' || !(k[c] >= 0 && k[c] <= 1)) return `${at}: ${c} '${k[c]}' is invalid (0–1 across the frame)`;
+    if (i && k.t <= keys[i - 1].t) return `${at}: time ${t3(k.t)} must be after the key before it (${t3(keys[i - 1].t)})`;
+  }
   return null;
 }
 // a pattern cell { n: note, i: instrument, v: volume, f: effect index in FXCH, p: effect parameter }
@@ -358,30 +384,9 @@ async function unzip(b) {
 // QuickTime 'mdta' metadata (ffmpeg: -movflags use_metadata_tags): meta → hdlr 'mdta' + keys + ilst, UTF-8 value.
 // Written without touching the video or audio: only the moov box changes (chunk offsets fixed when it grows).
 const MP4_KEY = 'pooptracker';
-const u32 = (b, o) => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
-const fourcc = (b, o) => String.fromCharCode(b[o], b[o + 1], b[o + 2], b[o + 3]);
 const notMp4 = () => { throw new Error('the file is not MP4/MOV (metadata can only be written to MP4/MOV videos)'); };
-function boxes(b, start, end) {
-  const out = [];
-  for (let o = start; o + 8 <= end;) {
-    let size = u32(b, o), hdr = 8;
-    if (size === 1) { if (o + 16 > end) notMp4(); size = u32(b, o + 8) * 4294967296 + u32(b, o + 12); hdr = 16; }
-    else if (size === 0) size = end - o;
-    if (size < hdr || o + size > end) notMp4();
-    out.push({ type: fourcc(b, o + 4), start: o, size, body: o + hdr, end: o + size });
-    o += size;
-  }
-  return out;
-}
+const boxes = (b, start, end) => scan(b, start, end, notMp4);
 const enc = new TextEncoder(), dec = new TextDecoder();
-// type: 4 letters, or 4 raw bytes (ilst items are named by their key's number)
-function box(type, ...parts) {
-  const len = 8 + parts.reduce((a, p) => a + p.length, 0), out = new Uint8Array(len);
-  new DataView(out.buffer).setUint32(0, len); out.set(typeof type === 'string' ? enc.encode(type) : type, 4);
-  let o = 8; for (const p of parts) { out.set(p, o); o += p.length; }
-  return out;
-}
-const be32 = n => { const a = new Uint8Array(4); new DataView(a.buffer).setUint32(0, n); return a; };
 // the mdta meta box inside moov or moov/udta → { box, entries: [[key, value bytes, data type]] } or null
 function findMeta(b, moov) {
   for (const parent of [moov, ...boxes(b, moov.body, moov.end).filter(x => x.type === 'udta')])
@@ -452,7 +457,7 @@ function mp4WriteTag(b, value) {
   return out;
 }
 
-export const PTFormat = { VERSION, LOOP_MODES, format, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
-  checkInstrument, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
+export const PTFormat = { VERSION, LOOP_MODES, format, focusStr, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
+  checkInstrument, checkFocus, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
   cellField, cellStr, mp4ReadTag, mp4WriteTag, field: (k, v) => PARSE[k](k, String(v).trim()) };
 export default PTFormat;

@@ -6,6 +6,8 @@ import { CmdError, newSong } from '../core/commands.js';
 import { importVideo, replaceVideo, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName } from '../io.js';
 import { $, ed, run, setStatus, showError, escHtml } from './common.js';
 import { curInst } from './instrumentPanel.js';
+import { activeScreen } from './screens.js';
+import { benchScreen, putOnBench } from './bench.js';
 
 export { safeName };
 const progress = text => setStatus(escHtml(text));
@@ -96,5 +98,7 @@ window.addEventListener('drop', async e => {
   // one video dropped on an instrument in the list: that instrument's video is replaced
   const row = e.target.closest && e.target.closest('.inst'), vids = [...e.dataTransfer.files].filter(isVideo);
   if (row && vids.length === 1) return swapVideo(+row.dataset.idx, vids[0]);
+  // with the bench open, a video goes onto the bench
+  if (activeScreen() === benchScreen && vids.length) return putOnBench(vids[0]);
   for (const f of vids) await loadVideoFile(f);
 });
