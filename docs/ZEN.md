@@ -15,7 +15,7 @@ changed on purpose, in its own commit.
 ## Video
 
 * **[ZEN-ONE-VIDEO-ONE-INSTRUMENT]:** In PoopTracker an instrument is a video. Its settings travel inside the video's metadata.
-* **[ZEN-NOT-A-VIDEO-EDITOR]:** PoopTracker doesn't edit video. Audio normalization on load is the only exception; color, contrast and cutting belong to a video editor.
+* **[ZEN-NOT-A-VIDEO-EDITOR]:** PoopTracker doesn't edit video, it takes samples from it: a piece cut out on the workbench becomes an instrument, the way a sampler takes a slice of a recording. Audio normalization on load is the other exception; color, contrast and montage belong to a video editor.
 * **[ZEN-IN-SYNC]:** In PoopTracker, audio and video read the same clock and the same position. They never drift apart.
 
 ## Data
