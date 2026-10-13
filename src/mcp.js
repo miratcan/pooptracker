@@ -7,7 +7,7 @@ import { song, instruments, nch, emptyCell, newPattern, clonePattern } from './c
 import { makeInstrument, detectHit } from './core/instrument.js';
 import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument, newSong, addChannel, deleteChannel,
   deletePattern, setPatternLength, addInstrument, deleteInstrument, moveInstrument } from './core/commands.js';
-import { importVideo, replaceVideo, buildSong, readSong, instrumentVideo } from './io.js';
+import { importVideo, replaceVideo, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
 import { processRow, newChan } from './engine/player.js';
 import { $, setStatus, escHtml } from './ui/common.js';
 
@@ -227,14 +227,18 @@ const MCP_TOOLS = {
     return done(true, `${f.name} → instrument ${hex2(r.idx)} ${r.I.name} (${r.fromMetadata ? "settings from the video's metadata" : `hit point found automatically at ${fmtTime(r.I.hit)} s`})`);
   },
   async replace_video(a) {
-    const i = instArg(a.instrument), f = await fileArg(a.file), cmd = await replaceVideo(i, f, progress);
-    return done(true, `instrument ${hex2(i)}: video → ${f.name}, settings kept${cmd.notes.length ? ` (the new video is shorter: ${cmd.notes.join(', ')})` : ''}`);
+    const i = instArg(a.instrument), f = await fileArg(a.file), { fromMetadata } = await replaceVideo(i, f, progress), I = instruments[i];
+    return done(true, `instrument ${hex2(i)}: video → ${f.name}; name, base note, volume, envelope and loop mode kept; ${fromMetadata ? 'region and hit from the video\'s metadata' : `region = the whole video (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`}`);
   },
   async open_song(a) {
     const f = await fileArg(a.file), r = await readSong(f, progress);
     if (r.errors) fail(`couldn't open ${f.name}, nothing changed:\n${r.errors.join('\n')}`);
     setStatus(`MCP · opened ${escHtml(f.name)}`);
     return `ok: opened ${f.name} (${song.patterns.length} patterns, ${instruments.length - 1} instruments, ${r.nVideos} videos). Opening a song can't be undone.`;
+  },
+  async import_midi(a) {
+    const f = await fileArg(a.file), { report, nInst } = await importMidi(f, progress);
+    return done(true, `imported ${f.name}: ${song.patterns.length} patterns, ${song.channels.length} channels, ${nInst} instruments (each with a REPLACE ME video: use replace_video), BPM ${song.bpm}, ${song.rowsPerBeat} rows per beat${report.length ? `\n${report.join('\n')}` : ''}`);
   },
   async save_song() {
     const blob = await buildSong();

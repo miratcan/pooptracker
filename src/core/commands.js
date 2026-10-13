@@ -8,9 +8,9 @@
 //   how:   undefined (applied) | 'undo' | 'redo' | 'open' (a whole song was loaded; not undoable)
 // The engine and the screens react to these; nothing else needs to tell them what changed.
 import PTFormat from '../ptformat.js';
-import { MAX_CH, hex2, copy, same } from '../util.js';
+import { MAX_CH, hex2, copy, same, round3 } from '../util.js';
 import { song, instruments, videos, nch, emptyCell, isEmptyCell, newPattern } from './song.js';
-import { sliceRegion } from './instrument.js';
+import { sliceRegion, detectHit } from './instrument.js';
 
 export class CmdError extends Error {}
 export const fail = msg => { throw new CmdError(msg); };
@@ -97,21 +97,24 @@ export function setPatternLength(idx, len) {
 
 export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
-// another video for an instrument, every setting kept; times that fall past a shorter video are pulled in
-export function setInstrumentVideo(idx, V) {
+// What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
+// (region, hit, loop points, focus, A/V offset) and mean nothing in another one.
+export const SOUND_KEYS = ['name', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop'];
+// another video for an instrument: the places are found again as when a video is loaded (the region is the whole
+// video, the hit is detected), or come from the new video's own metadata (place: its instrument line)
+export function setInstrumentVideo(idx, V, place = null) {
   const I = instruments[idx]; if (!I) fail(`instrument ${hex2(idx)} doesn't exist`);
-  const oldVideo = I.video, old = pick(I, INST_KEYS), nu = pick(I, INST_KEYS), d = V.dur, notes = [];
-  if (nu.end > d) { nu.end = d; notes.push(`region end pulled in to ${d.toFixed(3)} s`); }
-  if (nu.start >= nu.end) { nu.start = 0; notes.push('region start set to 0'); }
-  if (nu.hit < nu.start || nu.hit > nu.end) { nu.hit = nu.start; notes.push('hit point moved to the region start'); }
-  const ls = nu.loopStart, le = nu.loopEnd;
-  if (nu.loopEnd > nu.end) nu.loopEnd = nu.end;
-  if (nu.loopStart < nu.hit || nu.loopStart >= nu.loopEnd) nu.loopStart = Math.min(nu.hit, nu.loopEnd);
-  if (nu.loop !== 'none' && (ls !== nu.loopStart || le !== nu.loopEnd)) notes.push('loop points pulled into the region');
-  if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) { nu.loop = 'none'; notes.push('loop turned off'); }
+  const oldVideo = I.video, old = pick(I, INST_KEYS);
+  let nu;
+  if (place) nu = { ...pick(place, INST_KEYS), ...pick(I, SOUND_KEYS) };
+  else {
+    const hit = round3(Math.min(detectHit(V.buffer), V.dur));
+    nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, focus: [] };
+  }
+  if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) nu.loop = 'none';
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);
   const set = (vals, video) => { Object.assign(I, copy(vals)); I.video = video; sliceRegion(I); };
-  return { label: `${hex2(idx)} replace video`, scope: 'instrument', inst: I, notes, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
+  return { label: `${hex2(idx)} replace video`, scope: 'instrument', inst: I, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
 }
 // before: values to restore on undo, for edits that were previewed live (slider / waveform drag)
 export function setInstrument(idx, fields, label = 'instrument', before) {
@@ -175,6 +178,18 @@ export function newSong() {
   return { label: 'new song', scope: 'all', resetEditor: true,
     apply: () => { set({ ...fresh, patterns: [] }, [null], []); song.patterns = [newPattern(64)]; },
     revert: () => set(keep, oldInst, oldVideos) };
+}
+
+// a whole song made elsewhere (a MIDI import) replaces this one as one command: Ctrl+Z brings the old one back.
+// S = song fields, insts = ready instruments (in order), vids = their videos.
+export function importSong(S, insts, vids, label) {
+  guarded('newSong');
+  const err = PTFormat.checkSong(S) || S.patterns.flatMap(P => P.rows.flat()).map(c => PTFormat.checkCell(c, insts.length)).find(Boolean);
+  if (err) fail(err);
+  const keep = { title: song.title, bpm: song.bpm, speed: song.speed, rowsPerBeat: song.rowsPerBeat, channels: song.channels, patterns: song.patterns, order: song.order };
+  const oldInst = instruments.slice(), oldVideos = videos.slice();
+  const set = (s, i, v) => { Object.assign(song, s); instruments.length = 0; instruments.push(...i); videos.length = 0; videos.push(...v); };
+  return { label, scope: 'all', resetEditor: true, apply: () => set(S, [null, ...insts], vids), revert: () => set(keep, oldInst, oldVideos) };
 }
 
 // Not commands (no undo): a loaded video joins the list of videos; a whole song replaces the current one.

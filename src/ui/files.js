@@ -3,7 +3,7 @@
 import { hex2 } from '../util.js';
 import { song, instruments } from '../core/song.js';
 import { CmdError, newSong } from '../core/commands.js';
-import { importVideo, replaceVideo, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName } from '../io.js';
+import { importVideo, replaceVideo, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName, importMidi } from '../io.js';
 import { $, ed, run, setStatus, showError, escHtml } from './common.js';
 import { curInst } from './instrumentPanel.js';
 import { activeScreen } from './screens.js';
@@ -24,9 +24,9 @@ export async function loadVideoFile(file) {
 }
 async function swapVideo(idx, file) {
   try {
-    const cmd = await replaceVideo(idx, file, progress);
-    const msg = `instrument ${hex2(idx)} ${instruments[idx].name}: video → ${file.name}, settings kept`;
-    if (cmd.notes.length) showError(`${msg} (the new video is shorter: ${cmd.notes.join(', ')})`); else setStatus(escHtml(msg));
+    const { fromMetadata } = await replaceVideo(idx, file, progress), I = instruments[idx];
+    setStatus(escHtml(`instrument ${hex2(idx)} ${I.name}: video → ${file.name}, sound kept; ` +
+      (fromMetadata ? 'region and hit from the video\'s metadata' : `hit found automatically at ${I.hit.toFixed(3)}s, check it`)));
   } catch (err) {
     if (err instanceof CmdError) return showError(err.message);
     console.error(err); showError(`Couldn't replace the video: ${file.name} (${err.message})`);
@@ -85,7 +85,20 @@ $('#fileSwap').onchange = async e => { const f = e.target.files[0]; e.target.val
 $('#bSave').onclick = () => saveSong();
 $('#bNew').onclick = () => { if (run(() => newSong())) setStatus('Zapped: a new empty song. Ctrl+Z brings the previous one back.'); };
 $('#bOpen').onclick = () => $('#songFile').click();
-$('#songFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await openSong(f); };
+const isMidi = f => /\.(mid|midi)$/i.test(f.name);
+$('#songFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await (isMidi(f) ? openMidi(f) : openSong(f)); };
+// a MIDI file: its notes become a new song; every instrument waits for a video (Repl.)
+export async function openMidi(file) {
+  try {
+    setStatus(`Importing: ${escHtml(file.name)}`);
+    const { report, nInst } = await importMidi(file, progress);
+    setStatus(`Imported ${escHtml(file.name)}: ${nInst} instruments, each with a REPLACE ME video: give them theirs with <b>Repl.</b> (Ctrl+Z brings the previous song back)` +
+      (report.length ? `<br>${report.map(escHtml).join('<br>')}` : ''));
+  } catch (err) {
+    if (!(err instanceof CmdError)) console.error(err);
+    showError(`Couldn't import ${file.name}: ${err.message}`);
+  }
+}
 
 let dragDepth = 0;
 window.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; $('#drop').style.display = 'flex'; });
@@ -95,6 +108,7 @@ const isVideo = f => f.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|mkv)$/i
 window.addEventListener('drop', async e => {
   e.preventDefault(); dragDepth = 0; $('#drop').style.display = 'none';
   for (const f of e.dataTransfer.files) if (/\.poop$/i.test(f.name)) return openSong(f);
+  for (const f of e.dataTransfer.files) if (isMidi(f)) return openMidi(f);
   // one video dropped on an instrument in the list: that instrument's video is replaced
   const row = e.target.closest && e.target.closest('.inst'), vids = [...e.dataTransfer.files].filter(isVideo);
   if (row && vids.length === 1) return swapVideo(+row.dataset.idx, vids[0]);

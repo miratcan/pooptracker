@@ -16,6 +16,13 @@ The first public version.
   only "delete" key and pulling rows up surprised everyone. Shift+Backspace pulls the rows below the cursor up.
 - Enter plays the song from the pattern being edited; tempo, instruments and volumes set earlier carry over.
 - ⌘/Ctrl+S saves the song and ⌘/Ctrl+O loads one (the browser would otherwise save the page itself).
+- MIDI import (.mid, type 0 and 1; Load, drag & drop, MCP import_midi): one instrument per track, one per drum sound;
+  each starts with a silent 1 s REPLACE ME video until Repl. gives it its own. The grid is the coarsest that holds every
+  note; tempo changes become Fxx; what was moved, clamped or dropped is reported. No EDx.
+- Repl. (replace an instrument's video) keeps how it sounds (name, base note, volume, envelope, loop mode) and finds
+  the region and hit again in the new video, as Load does. It used to keep the old video's times.
+- While recording, Rec is the Stop button and nothing else starts playback; a recording always starts at the song's start.
+- With Follow on, the order list follows the song while it plays.
 - Edit mode (off at start, red frame when on): off, the note keys only play; on, they write into the pattern.
 - A note played from the keyboard is released (the envelope's R) when its key goes up.
 - Modules are loaded with `?v=<content hash>` (an import map in index.html, written by `npm run stamp`), so after

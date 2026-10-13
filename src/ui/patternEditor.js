@@ -3,11 +3,11 @@ import { KEYOFF, FX, FXCH, clamp, hex2, noteName } from '../util.js';
 import { song, instruments, nch, emptyCell } from '../core/song.js';
 import { setCells } from '../core/commands.js';
 import { ensureAudio, isMuted, ctx } from '../engine/audio.js';
-import { player, startPlay, previewNote } from '../engine/player.js';
+import { player, previewNote } from '../engine/player.js';
 import { $, ed, view, run, setStatus } from './common.js';
 import { pal, alpha } from './palette.js';
 import { muteChannel } from './output.js';
-import { userStop, playPattern } from './transport.js';
+import { userStop, playPattern, play } from './transport.js';
 import { selectInst } from './instrumentPanel.js';
 import { selectOrd } from './songPanel.js';
 
@@ -249,13 +249,13 @@ const goTrack = ch => () => { if (ch < nch()) { ed.ch = ch; ed.col = 0; ed.sel =
 // Space: stops; when stopped, turns edit mode on/off
 function spaceKey(e) { if (e.repeat) return; if (player.playing) userStop(); else setEditMode(!ed.edit); }
 // Enter: plays the song from the pattern being edited (from the selected order position)
-const playFromHere = () => startPlay('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
+const playFromHere = () => play('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
 // Shift+↑↓: the previous / next instrument that exists
 function instBy(d) { for (let i = ed.inst + d; i > 0 && i < instruments.length; i += d) if (instruments[i]) { selectInst(i); setStatus(`Instrument ${hex2(i)}: ${instruments[i].name}`); return; } }
 function toggleFollow() { ed.follow = !ed.follow; $('#tFollow').checked = ed.follow; setStatus(`Follow ${ed.follow ? 'on' : 'off'}`); }
 const keys = {
   'Space': spaceKey, 'Enter': playFromHere, 'Mod+Enter': playPattern, 'Mod+KeyF': toggleFollow,
-  'Shift+Enter': () => startPlay('pattern', () => ed.pat, 0, ed.row),
+  'Shift+Enter': () => play('pattern', () => ed.pat, 0, ed.row),
   'Shift+ArrowUp': () => instBy(-1), 'Shift+ArrowDown': () => instBy(1),
   'Shift+ArrowLeft': () => selectOrd(ed.ord - 1), 'Shift+ArrowRight': () => selectOrd(ed.ord + 1),
   'Backquote': () => stepBy(1), 'Shift+Backquote': () => stepBy(-1),

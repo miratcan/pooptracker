@@ -6,7 +6,8 @@ import PTFormat from './ptformat.js';
 import { FPS, FRAME_SHORT, MAX_SAMPLE_SEC, hex2, round3 } from './util.js';
 import { song, instruments } from './core/song.js';
 import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio } from './core/instrument.js';
-import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, pick, INST_KEYS } from './core/commands.js';
+import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, importSong, pick, INST_KEYS } from './core/commands.js';
+import { parseMidi, midiToSong } from './midi.js';
 import { ctx } from './engine/audio.js';
 
 const once = (el, ev) => new Promise((res, rej) => { el.addEventListener(ev, res, { once: true }); el.addEventListener('error', () => rej(el.error || new Error('video error')), { once: true }); });
@@ -69,12 +70,34 @@ export async function importVideo(file, progress, region = null) {
   addVideo(V);
   return { idx: instruments.indexOf(I), I, fromMetadata: !!s };
 }
-// another video for an instrument, every setting kept (one command). Returns the command (its notes say what was pulled in).
+// another video for an instrument (one command): it keeps how it sounds; region, hit and loop points are found
+// again in the new video (or read from its metadata, when it was saved by PoopTracker).
+// Returns { cmd, fromMetadata }.
 export async function replaceVideo(idx, file, progress) {
+  let line = null;
+  try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
+  const place = line == null ? null : PTFormat.parse(line);
+  if (place && 'video' in place) throw new Error("the instrument line in the metadata can't have a 'video' field");
   const V = await decodeVideo(file, progress);
-  const cmd = exec(() => setInstrumentVideo(idx, V));
+  if (place && place.end > V.dur) throw new Error(`metadata: region end (${place.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
+  const cmd = exec(() => setInstrumentVideo(idx, V, place));
   addVideo(V);
-  return cmd;
+  return { cmd, fromMetadata: !!place };
+}
+
+// ── MIDI: the notes come in, the sounds don't. Every instrument starts with the same 1 s silent "REPLACE ME" video
+// (a real video, so nothing else needs to know about it); Repl. gives each one its own.
+const PLACEHOLDER = new URL('../media/replace-me.mp4', import.meta.url);
+// a .mid file → a new song (one command, Ctrl+Z brings the old one back). Returns { report: [lines], nInst }.
+export async function importMidi(file, progress) {
+  const { song: S, names, report } = midiToSong(parseMidi(new Uint8Array(await file.arrayBuffer())), file.name.replace(/\.[^.]+$/, ''));
+  progress('Loading the placeholder video…');
+  const res = await fetch(PLACEHOLDER);
+  if (!res.ok) throw new Error(`couldn't load the placeholder video (${res.status})`);
+  const V = await decodeVideo(new File([await res.blob()], 'replace-me.mp4', { type: 'video/mp4' }), progress);
+  const insts = names.map(name => makeInstrument(V, { name, hit: 0, loopStart: 0 }));
+  exec(() => importSong(S, insts, [V], `import ${file.name}`));
+  return { report, nInst: insts.length };
 }
 
 // ── .poop: a self-contained zip: song.txt + patterns/NN.txt + every used video once (the original file, untouched)

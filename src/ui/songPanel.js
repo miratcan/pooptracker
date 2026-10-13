@@ -31,6 +31,12 @@ function renderOrder() {
     el.appendChild(d);
   });
 }
+// the song playing with Follow on: the order list shows the position being heard
+export function followOrd(k) {
+  if (k === ed.ord) return;
+  ed.ord = k; renderOrder();
+  $('#ordList').children[k]?.scrollIntoView({ block: 'nearest' });
+}
 export function selectOrd(k) { if (k < 0 || k >= song.order.length) return; ed.ord = k; gotoPat(song.order[k]); renderOrder(); }
 // fn edits a copy of the order and returns the position to select afterwards (null = no change)
 function orderEdit(fn, label) {

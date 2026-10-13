@@ -13,7 +13,7 @@ import { $, ed, view, setStatus, refreshUI, onRefresh, clampEditor } from './ui/
 import { showScreen, setGlobalKeys, activeScreen } from './ui/screens.js';
 import { drawOutput, sizeOut, fitOut, updateStats } from './ui/output.js';
 import { patternScreen, setupPat, drawPattern, focusPattern } from './ui/patternEditor.js';
-import { refreshSongPanel } from './ui/songPanel.js';
+import { refreshSongPanel, followOrd } from './ui/songPanel.js';
 import { refreshInstrumentPanel } from './ui/instrumentPanel.js';
 import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
@@ -63,7 +63,7 @@ export function frame() {
     while (q.length > 1 && q[1].t <= now) q.shift();
     if (q.length && q[0].t <= now && (!view.vis || view.vis.row !== q[0].row || view.vis.pat !== q[0].pat)) {
       view.vis = q[0];
-      if (ed.follow) { ed.pat = q[0].pat; ed.row = q[0].row; }
+      if (ed.follow) { ed.pat = q[0].pat; ed.row = q[0].row; if (player.mode === 'song') followOrd(q[0].ord); }
       view.patDirty = true;
     }
   }

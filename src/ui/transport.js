@@ -11,15 +11,21 @@ let recorder = null;
 // the channel count can't change, and the song can't be replaced, in the middle of a recording
 setGuard(action => !recorder ? null : action === 'newSong' ? "can't start a new song while recording" : "the channel count can't change while recording");
 
+// while recording, Rec is the Stop button and nothing else starts playback: the take is the song from its start
 export function updateButtons() {
   $('#bSong').classList.toggle('on', player.playing && player.mode === 'song');
   $('#bPat').classList.toggle('on', player.playing && player.mode === 'pattern');
   $('#bRec').classList.toggle('on', !!recorder);
+  $('#bRec').textContent = recorder ? '■ Stop' : '● Rec';
+  for (const id of ['#bSong', '#bPat', '#bStop']) $(id).disabled = !!recorder;
 }
 onPlayer(() => { updateButtons(); if (!player.playing) view.vis = null; view.patDirty = true; });
 
-export const playSong = () => startPlay('song');
-export const playPattern = () => startPlay('pattern', () => ed.pat);
+const unlessRecording = fn => (...a) => recorder ? setStatus('● Recording… Stop (the Rec button) or Space ends it') : fn(...a);
+// every way to start playback from the screens goes through here (startPlay's arguments)
+export const play = unlessRecording(startPlay);
+export const playSong = () => play('song');
+export const playPattern = () => play('pattern', () => ed.pat);
 // Stop / Space: playback stops, and a running recording ends (→ save dialog)
 export function userStop() { stopPlay(); if (recorder && recorder.state === 'recording') recorder.stop(); }
 $('#bSong').onclick = playSong;
@@ -27,7 +33,7 @@ $('#bPat').onclick = playPattern;
 $('#bStop').onclick = () => userStop();
 
 $('#bRec').onclick = () => {
-  if (recorder) { recorder.stop(); return; }
+  if (recorder) { userStop(); return; }
   ensureAudio();
   // MP4 (H.264 + AAC) first: it opens everywhere (QuickTime, phones, Instagram, WhatsApp); WebM where the browser can't
   const mimes = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
@@ -44,7 +50,8 @@ $('#bRec').onclick = () => {
     if (saved) setStatus(`Recording saved: ${escHtml(saved.name)} (${(blob.size / 1048576).toFixed(1)} MB)`);
   };
   recorder.start(250);
-  if (!player.playing) playSong();
-  setStatus('● Recording… Stop, Space or Rec again to finish');
+  if (player.playing) stopPlay();
+  startPlay('song');
+  setStatus('● Recording the song from its start… Stop (the Rec button) or Space ends it');
   updateButtons();
 };
