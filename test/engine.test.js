@@ -2,7 +2,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { ctx, openTestSong, testInstrument, testPattern } from './helpers.js';
-import { FX } from '../src/util.js';
+import { FX, spanCells } from '../src/util.js';
 import { player, startPlay, stopPlay, schedule, previewNote } from '../src/engine/player.js';
 import { voices } from '../src/engine/voice.js';
 import { revBus } from '../src/engine/audio.js';
@@ -84,7 +84,7 @@ test('Fxx changes the tempo from that row on', () => {
 
 test('playing from an order position keeps the tempo and instrument set before it', () => {
   const second = testInstrument({ name: 'second' });
-  openTestSong({ instruments: [clip(), second], patterns: [testPattern(4, { 0: { 0: { f: FX.F, p: 250 } }, 1: { 0: note(2) } }), testPattern(4, { 0: { 0: { n: 48 } } })] });
+  openTestSong({ instruments: [clip(), second], patterns: [testPattern(4, { 0: { 0: { f: FX.F, p: 250 } }, 1: { 0: note(2) }, 2: { 0: note(2) } }), testPattern(4, { 0: { 0: { n: 48 } } })] });
   ctx.currentTime = 0;
   startPlay('song', null, 1);
   assert.equal(player.uiQueue[0].ord, 1);
@@ -145,4 +145,28 @@ test('the instrument\'s volume is the ceiling of the sound: Vol 20 plays volume 
   const picture = ch => +voices[ch][0].gainAt(voices[ch][0].hitT + 0.01).toFixed(3);
   assert.deepEqual([sound(0), sound(1), sound(2)], [0.5, 0.25, 0.5]);
   assert.deepEqual([picture(0), picture(1), picture(2)], [1, 0.5, 1]);
+});
+
+test('Gxy grows the tile until the channel goes silent: later notes keep it, a note after silence is its own size again', () => {
+  const I = clip({ loop: 'forward', loopStart: 1.2, loopEnd: 1.8, R: { v: 100, u: 'ms' } });
+  const G = p => ({ f: FX.G, p });
+  openTestSong({ instruments: [I], patterns: [testPattern(64, {
+    0: { 0: note(1, G(0x22)) }, 4: { 0: note() }, 8: { 0: G(0x00) }, 12: { 0: { n: 97 } }, 20: { 0: note() }, // grown, kept, full screen, silence
+    27: { 0: G(0x12) }, 28: { 0: note() }, // a G before the note (the channel is already silent) applies to it
+  })] });
+  const { list: [a, b, c, d] } = play(4);
+  assert.equal(a.spanAt(a.hitT + 0.001), 0x22);
+  assert.equal(b.spanAt(b.hitT + 0.001), 0x22);
+  assert.equal(b.spanAt(a.hitT + 8 * ROW + 0.001), 0x00);
+  assert.equal(b.spanAt(b.relT + 0.2), null); // released and faded out
+  assert.equal(c.spanAt(c.hitT + 0.001), null);
+  assert.equal(d.spanAt(d.hitT + 0.001), 0x12);
+});
+
+test('Gxy covers cells rightwards and down as far as the grid goes; 0 = the whole width or height', () => {
+  assert.deepEqual(spanCells(0, 0x22, 2, 5), { c0: 0, r0: 0, c1: 2, r1: 2 });
+  assert.deepEqual(spanCells(1, 0x22, 2, 5), { c0: 1, r0: 0, c1: 2, r1: 2 }); // right column: only down
+  assert.deepEqual(spanCells(9, 0x22, 2, 5), { c0: 1, r0: 4, c1: 2, r1: 5 }); // the last tile can't grow
+  assert.deepEqual(spanCells(5, 0x00, 2, 5), { c0: 0, r0: 0, c1: 2, r1: 5 }); // G00: the full screen
+  assert.deepEqual(spanCells(3, 0x02, 2, 5), { c0: 0, r0: 1, c1: 2, r1: 3 }); // the whole width, 2 rows
 });

@@ -39,6 +39,7 @@ export class Voice {
     this.start = start;
     this.segs = [{ t: start, pos, rate }];
     this.pts = []; this.relT = null; this.cutT = null; this.started = false;
+    this.spans = []; // Gxy: { t, p } from time t the tile covers p's cells (until the voice goes silent)
     const src = ctx.createBufferSource();
     // Web Audio only loops forward: pingpong plays a copy whose loop is the loop part followed by itself reversed
     // (a source's buffer can be set only once)
@@ -139,6 +140,12 @@ export class Voice {
     // on the video's timeline: forward wraps around, pingpong turns back at the loop end
     if (loops(I) && pos > ls + L) { const x = (pos - ls) % (I.loop === 'pingpong' ? 2 * L : L); pos = ls + (x <= L ? x : 2 * L - x); }
     return pos;
+  }
+  // the Gxy parameter at time t, or null (its own cell): the last one set, while the voice still sounds
+  spanAt(t) {
+    let p = null;
+    for (const s of this.spans) if (s.t <= t) p = s.p;
+    return p != null && t < this.silentFrom() ? p : null;
   }
   gainAt(t) {
     const p = this.pts;

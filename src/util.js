@@ -19,5 +19,11 @@ export function parseNote(s) {
   if (!m) return -1;
   return { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : 0) + (+m[3]) * 12;
 }
+// Gxy: the cells a channel's tile covers in a cols × rows grid, x columns and y rows from its own cell, rightwards and
+// down as far as the grid goes; 0 = the whole width (x) or height (y), so G00 is the full screen. → { c0, r0, c1, r1 } (c1, r1 exclusive)
+export function spanCells(ch, p, cols, rows) {
+  const c = ch % cols, r = Math.floor(ch / cols), x = p >> 4, y = p & 15;
+  return { c0: x ? c : 0, r0: y ? r : 0, c1: x ? Math.min(cols, c + x) : cols, r1: y ? Math.min(rows, r + y) : rows };
+}
 export const copy = o => JSON.parse(JSON.stringify(o));
 export const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);

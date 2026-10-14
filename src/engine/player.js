@@ -10,7 +10,7 @@ import { Voice, SimVoice, voices, visEv, addVoice, killAllVoices } from './voice
 
 // uiQueue: { t, pat, ord, row } for every row scheduled, so the screen can follow what is heard
 export const player = { playing: false, mode: 'song', ord: 0, row: 0, nextRowTime: 0, bpm: 125, speed: 6, chans: [], uiQueue: [], timer: 0, patternOf: null };
-export const newChan = (_, ch) => ({ voice: null, inst: 0, pitch: 48, target: 48, vol: 64, pan: song.channels[ch].pan, vibPos: 0, vibSpeed: 0, vibDepth: 0, vibOff: 0, m3: 0, mA: 0 });
+export const newChan = (_, ch) => ({ voice: null, inst: 0, pitch: 48, target: 48, vol: 64, pan: song.channels[ch].pan, vibPos: 0, vibSpeed: 0, vibDepth: 0, vibOff: 0, m3: 0, mA: 0, span: null, spanT: -Infinity });
 const maxPreroll = () => Math.min(3, Math.max(0, ...instruments.filter(Boolean).map(hitPos)));
 
 const listeners = [];
@@ -90,6 +90,7 @@ export function processChannelRow(C, ch, cell, t0, td, spd) {
       } else if (cell.n === KEYOFF && C.voice) C.voice.release(t);
       if (f === FX.S && !C.sim) visEv[ch].push({ t, type: 'S', amt: p / 255 });
       if (f === FX.I && !C.sim) visEv[ch].push({ t, type: 'I', amt: p / 255 });
+      if (f === FX.G && !C.sim) { C.span = p; C.spanT = t; C.voice?.spans?.push({ t, p }); }
     }
     if (tick > 0) {
       if (f === 3) { const s = C.m3 / 16; C.pitch = C.pitch < C.target ? Math.min(C.target, C.pitch + s) : Math.max(C.target, C.pitch - s); }
@@ -106,14 +107,19 @@ export function processChannelRow(C, ch, cell, t0, td, spd) {
 function triggerNote(C, ch, note, t, offsetFrac, td) {
   const I = instruments[C.inst]; if (!I) return;
   C.pitch = C.target = note; C.vibPos = 0;
+  // Gxy lasts until the channel goes silent: a note after silence starts at its own size again (unless the G came after it)
+  const quiet = C.sim ? Infinity : C.voice ? C.voice.silentFrom() : -Infinity;
+  if (C.sim || (quiet <= t && C.spanT < quiet)) C.span = null;
   const v = new (C.sim ? SimVoice : Voice)(I, ch, t, rateFor(I, note), { vol: C.vol / 64, pan: C.pan, note, td, startPos: offsetFrac != null ? offsetFrac * I.buffer.duration : null, freeT: C.voice && !C.sim ? C.voice.silentFrom() : null });
   if (C.voice) C.voice.cut(t);
+  if (C.span != null && !C.sim) v.spans.push({ t: -Infinity, p: C.span });
   C.voice = v; if (!C.sim) addVoice(ch, v);
 }
 function retrigger(C, ch, t, td) {
   const old = C.voice; if (!old) return;
   const I = old.I;
   const v = new (C.sim ? SimVoice : Voice)(I, ch, t, rateFor(I, C.pitch), { vol: C.vol / 64, pan: C.pan, note: old.note, td, startPos: hitPos(I) });
+  if (C.span != null && !C.sim) v.spans.push({ t: -Infinity, p: C.span });
   old.cut(t); C.voice = v; if (!C.sim) addVoice(ch, v);
 }
 

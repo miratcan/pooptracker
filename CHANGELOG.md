@@ -7,7 +7,8 @@ Breaking changes are allowed and are always written here ([ZEN-COURAGE](docs/ZEN
 The first public version.
 
 - A tracker (FastTracker 2 style) whose samples are short videos; the output is a 9:16 music video.
-- 1–10 channels (was 1–8); effects 3xx 4xy 8xx 9xx Axy E9x ECx EDx Fxx, plus Sxx (zoom/shake) and Ixx (invert) for video.
+- 1–10 channels (was 1–8); effects 3xx 4xy 8xx 9xx Axy E9x ECx EDx Fxx, plus Sxx (zoom/shake), Ixx (invert) and
+  Gxy (the tile grows over x columns and y rows, over the tiles next to it, until the channel goes silent) for video.
 - Songs are `.poop` files: plain-text song and patterns plus the original videos, in one zip.
 - An instrument can be saved into its own video's metadata (MP4/MOV, key `pooptracker`, format `TURD1`).
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.

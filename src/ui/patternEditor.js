@@ -67,7 +67,7 @@ export function drawPattern() {
       pg.fillStyle = c.n < 0 ? pal.faint : c.n === KEYOFF ? pal.red : pal.text; pg.fillText(noteName(c.n), cx, ty);
       pg.fillStyle = c.i > 0 ? pal.acc2 : pal.faint; pg.fillText(c.i > 0 ? hex2(c.i) : '··', cx + 4 * CW, ty);
       pg.fillStyle = c.v >= 0 ? pal.green : pal.faint; pg.fillText(c.v >= 0 ? hex2(c.v) : '··', cx + 7 * CW, ty);
-      const vfx = c.f === FX.S || c.f === FX.I;
+      const vfx = c.f === FX.S || c.f === FX.I || c.f === FX.G;
       pg.fillStyle = c.f >= 0 ? (vfx ? pal.pink : pal.acc) : pal.faint; pg.fillText(c.f >= 0 ? FXCH[c.f] + hex2(c.p) : '···', cx + 10 * CW, ty);
     }
   }

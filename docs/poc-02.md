@@ -114,7 +114,7 @@ Criteria: (1) there should be **one way to do each thing** (so neither the LLM n
 | `E9x` retrigger | Video stutter effect |
 | `EDx` note delay | The same note on two channels, one delayed by 1 tick → a doubling/flanger-like color; looks like an echo in the video |
 | `Fxx` speed/BPM | Tempo change |
-| `Sxx` zoom/shake, `Ixx` invert | Our video effects |
+| `Sxx` zoom/shake, `Ixx` invert, `Gxy` grow the tile | Our video effects |
 
 **Dropped**
 | Effect | Why |

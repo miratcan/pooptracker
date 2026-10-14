@@ -1,6 +1,6 @@
 // The output: the 9:16 video, one tile per channel. It draws what the engine plays, at the time that is
 // coming out of the speakers, so picture and sound match.
-import { OUT_W, OUT_H, clamp, hex2, noteName } from '../util.js';
+import { OUT_W, OUT_H, clamp, hex2, noteName, spanCells } from '../util.js';
 import { song, videos, nch } from '../core/song.js';
 import { frameAt, focusAt } from '../core/instrument.js';
 import { ctx, ensureAudio, isMuted, toggleMute } from '../engine/audio.js';
@@ -13,7 +13,17 @@ const og = out.getContext('2d');
 
 // channels stack downwards in the 9:16 frame: 1–3 → one column (1, 2, 3 rows), 4–10 → two columns (2–5 rows)
 export const grid = () => { const n = nch(), cols = n <= 3 ? 1 : 2; return { cols, rows: Math.ceil(n / cols) }; };
-function tileRect(ch) { const { cols, rows } = grid(), w = OUT_W / cols, h = OUT_H / rows; return { x: (ch % cols) * w, y: Math.floor(ch / cols) * h, w, h }; }
+// a channel's tile: its own cell, or the cells its Gxy covers (the voice heard now decides; before its hit the one before it)
+function tileRect(ch, now) {
+  const { cols, rows } = grid(), w = OUT_W / cols, h = OUT_H / rows;
+  const vis = voices[ch].filter(v => v.start <= now && (v.cutT == null || now < v.cutT)), v = vis.findLast(v => v.hitT <= now) ?? vis[vis.length - 1];
+  const p = v?.spanAt(now) ?? null;
+  if (p == null) return { x: (ch % cols) * w, y: Math.floor(ch / cols) * h, w, h, span: false };
+  const c = spanCells(ch, p, cols, rows);
+  return { x: c.c0 * w, y: c.r0 * h, w: (c.c1 - c.c0) * w, h: (c.r1 - c.r0) * h, span: true };
+}
+// where each tile was drawn last, in drawing order (the last one is on top): what a click hits
+let drawn = [];
 // draw an uncropped frame into a box of any shape (like CSS object-fit: cover), cropping around the focus point
 // (0–1 across the frame; the middle by default) as far as the frame's edges allow
 export function drawCover(g, img, x, y, w, h, f) {
@@ -28,10 +38,13 @@ export function coverRect(iw, ih, aspect, f = { x: 0.5, y: 0.5 }) {
 
 export function drawOutput(now) {
   og.fillStyle = pal.black; og.fillRect(0, 0, out.width, out.height);
-  for (let ch = 0; ch < nch(); ch++) drawTile(ch, now);
+  // tiles grown by Gxy go over the others (a later channel over an earlier one); the covered ones play on unseen
+  const rects = [];
+  for (let ch = 0; ch < nch(); ch++) { voicesAt(ch, now); rects.push({ ch, ...tileRect(ch, now) }); }
+  drawn = [...rects.filter(r => !r.span), ...rects.filter(r => r.span)];
+  drawn.forEach(r => drawTile(r, now));
 }
-function drawTile(ch, now) {
-  const { x, y, w: TW, h: TH } = tileRect(ch);
+function drawTile({ ch, x, y, w: TW, h: TH }, now) {
   const list = voicesAt(ch, now), { punch, inv } = visualFx(ch, now);
   og.save();
   og.beginPath(); og.rect(x, y, TW, TH); og.clip();
@@ -69,8 +82,11 @@ export function soloChannel(ch) {
   for (let k = 0; k < nch(); k++) if (isMuted(k) !== (alone ? false : k !== ch)) muteChannel(k);
 }
 const tileAt = e => {
-  const r = out.getBoundingClientRect(), { cols, rows } = grid();
-  return Math.floor((e.clientY - r.top) / r.height * rows) * cols + Math.floor((e.clientX - r.left) / r.width * cols);
+  const r = out.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * OUT_W, y = (e.clientY - r.top) / r.height * OUT_H;
+  const hit = drawn.findLast(t => x >= t.x && x < t.x + t.w && y >= t.y && y < t.y + t.h);
+  if (hit) return hit.ch;
+  const { cols, rows } = grid();
+  return Math.floor(y / OUT_H * rows) * cols + Math.floor(x / OUT_W * cols);
 };
 out.addEventListener('click', e => muteChannel(tileAt(e)));
 out.addEventListener('contextmenu', e => { e.preventDefault(); soloChannel(tileAt(e)); });

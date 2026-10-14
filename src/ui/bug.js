@@ -13,6 +13,7 @@ const TIPS = [
   'Ctrl/⌘+Enter loops just this pattern. Great for checking one bar.',
   'Shift+↑↓ picks the instrument, Shift+←→ walks the order list.',
   'Sxx shakes or zooms the video, Ixx inverts its colors.',
+  'G22 makes a channel\'s tile 2×2 until it goes silent. G00 takes the whole screen.',
   'Ctrl/⌘+Z undoes anything. Go wild.',
   'Tab jumps to the next channel, Shift+M mutes it.',
   'Save (under the instruments) keeps an instrument inside its own MP4. Share it!',

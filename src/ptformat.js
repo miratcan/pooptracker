@@ -21,7 +21,7 @@ const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
 const MAX_CHANNELS = 10;
 const KEYOFF = 97, FXCH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // effects kept from FT2 (POC-02); E only as E9x / ECx / EDx
-const FX_ALLOWED = '3489AEFSI', E_ALLOWED = [0x9, 0xC, 0xD];
+const FX_ALLOWED = '3489AEFSIG', E_ALLOWED = [0x9, 0xC, 0xD];
 // loop modes: none, forward (loop start → end, again), pingpong (start → end → start…)
 const LOOP_MODES = ['none', 'forward', 'pingpong'];
 // the focus path: where the picture looks (the point a tile keeps in its middle), as time:x,y keys joined by '|'.
