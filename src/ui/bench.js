@@ -1,12 +1,14 @@
 // The workbench: a kitchen counter for long videos. A video is put on it, a piece is marked (I / O) and cut
-// (Enter); the piece goes into the pot as a new instrument, without re-encoding (../mp4cut.js). The bench itself
+// (Enter); the piece goes into the pot as a new instrument, or becomes the selected instrument's video (Shift+Enter, as
+// Repl. does: it keeps how the instrument sounds), without re-encoding (../mp4cut.js). The bench itself
 // is never saved: what isn't cut into an instrument is thrown away.
 // Only the browser's video player reads the long video: its sound is never decoded whole (an hour would not fit).
 import { MAX_SAMPLE_SEC, hex2, round3 } from '../util.js';
-import { cutMp4, reader } from '../mp4cut.js';
-import { importVideo } from '../io.js';
+import { cutVideo, reader } from '../mp4cut.js';
+import { importVideo, replaceVideo } from '../io.js';
+import { instruments } from '../core/song.js';
 import { CmdError } from '../core/commands.js';
-import { $, setStatus, showError, escHtml } from './common.js';
+import { $, ed, setStatus, showError, escHtml } from './common.js';
 import { pal, alpha } from './palette.js';
 import { coverRect } from './output.js';
 
@@ -31,8 +33,8 @@ export function putOnBench(file) {
   $('#bName').textContent = file.name;
   vid.onloadedmetadata = () => { $('#bName').textContent = `${file.name} · ${fmt(dur())}`; fit(); drawFocus(); };
   vid.onerror = () => showError(`The browser can't play ${file.name}`);
-  if (!/\.(mp4|m4v|mov)$/i.test(file.name)) setStatus(`<span class="err">⚠ ${escHtml(file.name)} can be watched but not cut: only MP4/MOV videos can (yt-dlp: <code>-f mp4</code>)</span>`);
-  else setStatus(`On the bench: ${escHtml(file.name)}. <b>I</b> / <b>O</b> mark a piece, <b>Enter</b> cuts it into a new instrument.`);
+  if (!/\.(mp4|m4v|mov|webm|mkv)$/i.test(file.name)) setStatus(`<span class="err">⚠ ${escHtml(file.name)} can be watched but not cut: only MP4, MOV, WebM and MKV videos can</span>`);
+  else setStatus(`On the bench: ${escHtml(file.name)}. <b>I</b> / <b>O</b> mark a piece, <b>Enter</b> cuts it into a new instrument, <b>Shift+Enter</b> into the selected one.`);
   info();
 }
 function clear() {
@@ -47,7 +49,10 @@ function info() {
   $('#bSel').textContent = s ? `${fmt(s[0])} – ${fmt(s[1])}  (${(s[1] - s[0]).toFixed(3)} s)`
     : bench.in != null ? `${fmt(bench.in)} – …` : bench.out != null ? `… – ${fmt(bench.out)}` : 'no piece marked';
   $('#bSel').textContent += bench.focus ? `  · focus ${bench.focus.x.toFixed(2)}, ${bench.focus.y.toFixed(2)}` : '';
-  $('#bCut').disabled = !s || bench.busy;
+  $('#bCut').disabled = $('#bCutRepl').disabled = !s || bench.busy;
+  const I = instruments[ed.inst];
+  $('#bCutRepl').title = I ? `Cut the marked piece into instrument ${hex2(ed.inst)} ${I.name}: its video is replaced, how it sounds is kept (Shift+Enter)`
+    : 'Select an instrument first: the piece replaces its video (Shift+Enter)';
   $('#bPlaySel').disabled = !s;
 }
 const seek = t => { vid.currentTime = Math.max(0, Math.min(dur(), t)); follow(); draw(); };
@@ -62,21 +67,30 @@ function playSel() {
 vid.ontimeupdate = () => { if (stopAt != null && vid.currentTime >= stopAt) { vid.pause(); stopAt = null; } };
 vid.onpause = () => { stopAt = null; };
 
-async function cut() {
-  const s = sel(), file = bench.file;
+// replace: the piece becomes the selected instrument's video instead of a new instrument
+async function cut(replace = false) {
+  const s = sel(), file = bench.file, idx = ed.inst;
   if (!file) return showError('Put a video on the bench first: Load, or drop it here');
   if (!s) return showError('Mark the piece first: I at its start, O at its end');
   if (s[1] - s[0] > MAX_SAMPLE_SEC) return showError(`The piece is ${(s[1] - s[0]).toFixed(3)} s; an instrument can be at most ${MAX_SAMPLE_SEC} s`);
+  if (replace && !instruments[idx]) return showError('Select the instrument whose video the piece replaces');
   if (bench.busy) return;
   bench.busy = true; info(); vid.pause();
   try {
     setStatus(`Cutting ${fmt(s[0])} – ${fmt(s[1])}…`);
-    const piece = await cutMp4(reader(file), file.size, s[0], s[1]);
+    const piece = await cutVideo(reader(file), file.size, s[0], s[1]);
     const base = file.name.replace(/\.[^.]+$/, ''), at = fmt(s[0]).replace(/\.\d+$/, '');
     const out = new File([piece.bytes], `${base} ${at.replace(/:/g, '.')}.mp4`, { type: 'video/mp4' });
-    const { idx, I } = await importVideo(out, t => setStatus(escHtml(t)), { start: piece.start, end: piece.end, name: `${base.slice(0, 15 - at.length)} ${at}`,
-      focus: bench.focus ? [{ t: 0, ...bench.focus }] : [] });
-    setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(idx)} ${escHtml(I.name)} (${piece.bytes.length < 1048576 ? Math.ceil(piece.bytes.length / 1024) + ' KB' : (piece.bytes.length / 1048576).toFixed(1) + ' MB'}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)`);
+    const region = { start: piece.start, end: piece.end, focus: bench.focus ? [{ t: 0, ...bench.focus }] : [] }, progress = t => setStatus(escHtml(t));
+    const size = piece.bytes.length < 1048576 ? Math.ceil(piece.bytes.length / 1024) + ' KB' : (piece.bytes.length / 1048576).toFixed(1) + ' MB';
+    if (replace) {
+      await replaceVideo(idx, out, progress, region);
+      const I = instruments[idx];
+      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(idx)} ${escHtml(I.name)}: its video is replaced, how it sounds is kept (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)`);
+    } else {
+      const { idx: n, I } = await importVideo(out, progress, { ...region, name: `${base.slice(0, 15 - at.length)} ${at}` });
+      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(n)} ${escHtml(I.name)} (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)`);
+    }
   } catch (err) {
     if (!(err instanceof CmdError)) console.error(err);
     showError(`Couldn't cut: ${err.message}`);
@@ -205,7 +219,8 @@ new ResizeObserver(draw).observe(tl);
 $('#bBenchLoad').onclick = () => $('#bFile').click();
 $('#bFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) putOnBench(f); };
 $('#bClear').onclick = clear;
-$('#bCut').onclick = cut;
+$('#bCut').onclick = () => cut();
+$('#bCutRepl').onclick = () => cut(true);
 $('#bPlaySel').onclick = playSel;
 
 export const benchScreen = {
@@ -217,7 +232,7 @@ export const benchScreen = {
     Comma: () => { vid.pause(); seek(vid.currentTime - FRAME); }, Period: () => { vid.pause(); seek(vid.currentTime + FRAME); },
     Home: () => seek(0), End: () => seek(dur()),
     KeyI: () => mark('in'), KeyO: () => mark('out'),
-    Enter: cut, NumpadEnter: cut,
+    Enter: () => cut(), NumpadEnter: () => cut(), 'Shift+Enter': () => cut(true), 'Shift+NumpadEnter': () => cut(true),
     Escape: () => { bench.in = bench.out = null; info(); draw(); },
     Backspace: () => setFocus(null), Delete: () => setFocus(null),
     Equal: () => zoom(0.5), Minus: () => zoom(2), Digit0: fit, NumpadAdd: () => zoom(0.5), NumpadSubtract: () => zoom(2),
@@ -225,7 +240,7 @@ export const benchScreen = {
   enter() {
     $('#bScreenPat').classList.remove('cur'); $('#bScreenBench').classList.add('cur');
     raf = requestAnimationFrame(loop); draw(); drawFocus(); info();
-    if (!bench.file) setStatus('The bench: put a long video on it (Load, or drop it here), mark a piece with <b>I</b> / <b>O</b>, <b>Enter</b> cuts it into a new instrument. <b>⌘/Ctrl+B</b> goes back.');
+    if (!bench.file) setStatus('The bench: put a long video on it (Load, or drop it here), mark a piece with <b>I</b> / <b>O</b>, <b>Enter</b> cuts it into a new instrument, <b>Shift+Enter</b> into the selected one (replacing its video). <b>⌘/Ctrl+B</b> goes back.');
   },
   leave() {
     $('#bScreenBench').classList.remove('cur'); $('#bScreenPat').classList.add('cur');

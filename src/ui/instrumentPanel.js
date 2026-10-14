@@ -24,7 +24,7 @@ function refreshInstList() {
 }
 export function selectInst(idx) {
   ed.inst = idx; const I = curInst(); if (!I) return;
-  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol);
+  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iVideo').textContent = `video: ${I.video.name} (${I.video.dur.toFixed(3)} s)`;
@@ -42,6 +42,10 @@ $('#iBase').onchange = e => {
 $('#iVol').onchange = e => {
   const t = e.target.value.trim();
   if (!/^[0-9a-f]{1,2}$/i.test(t)) { showError(`volume '${t}' is invalid (hex 00–40)`); refreshUI(); } else instCmd({ vol: parseInt(t, 16) }, 'volume');
+};
+$('#iRev').onchange = e => {
+  const t = e.target.value.trim();
+  if (!/^[0-9a-f]{1,2}$/i.test(t)) { showError(`reverb '${t}' is invalid (hex 00–40)`); refreshUI(); } else instCmd({ reverb: parseInt(t, 16) }, 'reverb');
 };
 $('#iS').onchange = e => {
   const t = e.target.value.trim();

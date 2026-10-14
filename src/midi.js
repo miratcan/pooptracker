@@ -6,7 +6,7 @@
 //     (played, not drawn), 4, and the notes that moved are counted. No EDx: a note sits on a row.
 //   · MIDI tempo → BPM (speed × rowsPerBeat = 24, so the BPM is the MIDI tempo); tempo changes → Fxx
 //   · velocity → volume column (127 = empty, the instrument's own volume); note-off → === (key-off)
-//   · a channel plays one note at a time: notes that overlap go to other channels, at most 8; the rest are dropped.
+//   · a channel plays one note at a time: notes that overlap go to other channels, at most 10; the rest are dropped.
 //     Each instrument keeps to its own channels when they fit (a channel is a tile on screen)
 // Nothing is done silently: everything that was moved, clamped or dropped is in the returned report.
 import PTFormat from './ptformat.js';
@@ -100,7 +100,7 @@ export function midiToSong(midi, title = '') {
   if (names.length > 255) throw new Error(`the MIDI file has ${names.length} tracks and drum sounds; at most 255 instruments`);
 
   // notes → channels. A channel is a tile on screen, so each instrument gets channels of its own (as many as it
-  // plays at once) when they all fit in 8; otherwise the channels are shared and a note takes any free one
+  // plays at once) when they all fit in 10; otherwise the channels are shared and a note takes any free one
   // (the one its instrument used last, first). A channel is free once its note has ended.
   const notes = parts.flatMap((p, k) => p.notes.map(n => ({ r: row(n.tick), off: Math.max(row(n.tick) + 1, row(n.end)), key: p.drum ? 60 : n.key, vel: n.vel, inst: k + 1, drum: p.drum })))
     .sort((a, b) => a.r - b.r || a.inst - b.inst);

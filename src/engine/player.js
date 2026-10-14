@@ -81,7 +81,7 @@ export function processChannelRow(C, ch, cell, t0, td, spd) {
     if (f !== 4) C.vibOff = 0;
     if (tick === delay) {
       // volume first, so the pre-roll part already uses the right volume
-      if (cell.i > 0) { C.inst = cell.i; const I = instruments[C.inst]; if (I) C.vol = I.vol; }
+      if (cell.i > 0) { C.inst = cell.i; if (instruments[C.inst]) C.vol = 64; } // full, under the instrument's own volume
       if (cell.v >= 0) C.vol = Math.min(64, cell.v);
       if (f === 8) C.pan = p;
       if (hasNote) {
@@ -123,7 +123,7 @@ export function previewNote(I, ch, note, fromStart = false) {
   ensureAudio();
   if (!I) return;
   const now = ctx.currentTime + 0.01;
-  const v = new Voice(I, ch, now, rateFor(I, note), { vol: I.vol / 64, pan: 128, note, startPos: fromStart ? 0 : hitPos(I) });
+  const v = new Voice(I, ch, now, rateFor(I, note), { vol: 1, pan: 128, note, startPos: fromStart ? 0 : hitPos(I) });
   v.advance(now + 30);
   if (prevVoice[ch]) prevVoice[ch].cut(now);
   prevVoice[ch] = v; addVoice(ch, v);
@@ -136,7 +136,7 @@ export function syncTest(I, ch) {
   const gap = Math.max(0.7, hitPos(I) + 0.55);
   let T = ctx.currentTime + 0.15 + hitPos(I), prev = prevVoice[ch];
   for (let k = 0; k < 4; k++, T += gap) {
-    const v = new Voice(I, ch, T, 1, { vol: I.vol / 64, pan: 128, note: I.baseNote });
+    const v = new Voice(I, ch, T, 1, { vol: 1, pan: 128, note: I.baseNote });
     v.advance(T + gap);
     if (prev) prev.cut(T);
     addVoice(ch, v); prev = v;

@@ -54,7 +54,7 @@ test('a chord spreads over channels; drums are one instrument per sound, at C-4,
   valid(S.song);
 });
 
-test('each instrument keeps to its own channels when they fit in 8', () => {
+test('each instrument keeps to its own channels when they fit in 10', () => {
   const S = midiToSong(parseMidi(smf([
     [name('Drums'), on(0, 36, 100, 9), off(6, 36, 9), on(18, 42, 100, 9), off(6, 42, 9), on(18, 38, 100, 9), off(6, 38, 9), on(18, 42, 100, 9), off(6, 42, 9)],
     [name('Bass'), on(0, 36, 100, 1), off(60, 36, 1), on(36, 38, 100, 1), off(60, 38, 1)],
@@ -74,10 +74,10 @@ test('the grid holds every note: triplets get 3 rows per beat; notes off every g
   assert.match(played.report.join('\n'), /2 notes moved to the nearest row/);
 });
 
-test('more than 8 notes at once: the rest are dropped and counted; a tempo change is an Fxx; repeated patterns are stored once', () => {
-  const chord = [...Array(10)].map((_, k) => on(0, 50 + k)), S = midiToSong(parseMidi(smf([[...chord, off(96, 50)]])));
-  assert.equal(S.song.channels.length, 8);
-  assert.match(S.report.join('\n'), /2 notes dropped: more than 8 at once/);
+test('more than 10 notes at once: the rest are dropped and counted; a tempo change is an Fxx; repeated patterns are stored once', () => {
+  const chord = [...Array(12)].map((_, k) => on(0, 50 + k)), S = midiToSong(parseMidi(smf([[...chord, off(96, 50)]])));
+  assert.equal(S.song.channels.length, 10);
+  assert.match(S.report.join('\n'), /2 notes dropped: more than 10 at once/);
   const bar = [on(0, 36, 100, 9), off(24, 36, 9), [24 * 63, 0xB0, 0, 0]]; // one kick, then 64 rows of nothing
   const T = midiToSong(parseMidi(smf([[tempo(0, 120), tempo(1536, 140)], [...bar, ...bar, ...bar]])));
   assert.deepEqual(T.song.order, [0, 1, 0]); // the tempo change at row 40 makes the second pattern differ

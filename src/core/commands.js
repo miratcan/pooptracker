@@ -95,11 +95,11 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
 // What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
 // (region, hit, loop points, focus, A/V offset) and mean nothing in another one.
-export const SOUND_KEYS = ['name', 'baseNote', 'vol', 'A', 'D', 'S', 'R', 'loop'];
+export const SOUND_KEYS = ['name', 'baseNote', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
 // another video for an instrument: the places are found again as when a video is loaded (the region is the whole
 // video, the hit is detected), or come from the new video's own metadata (place: its instrument line)
 export function setInstrumentVideo(idx, V, place = null) {

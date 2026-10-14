@@ -18,7 +18,7 @@ const unesc = s => s.replace(/%3B/gi, ';').replace(/%3D/gi, '=').replace(/%25/g,
 const envStr = e => e.v + (e.u === 'ms' ? 'ms' : 't');
 const ENV_MAX = { t: 999, ms: 30000 };
 const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
-const MAX_CHANNELS = 8;
+const MAX_CHANNELS = 10;
 const KEYOFF = 97, FXCH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // effects kept from FT2 (POC-02); E only as E9x / ECx / EDx
 const FX_ALLOWED = '3489AEFSI', E_ALLOWED = [0x9, 0xC, 0xD];
@@ -33,7 +33,7 @@ function format(I, video) {
   const f = [VERSION, 'name=' + esc(I.name)];
   if (video) f.push('video=' + esc(video));
   f.push('start=' + t3(I.start), 'end=' + t3(I.end), 'hit=' + t3(I.hit), 'base=' + noteStr(I.baseNote),
-    'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'),
+    'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'), 'rev=' + I.reverb.toString(16).toUpperCase().padStart(2, '0'),
     'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + I.S.toString(16).toUpperCase().padStart(2, '0'), 'r=' + envStr(I.R),
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
   if (I.focus?.length) f.push('focus=' + focusStr(I.focus));
@@ -61,6 +61,8 @@ const PARSE = {
   start: time, end: time, hit: time, ls: time, le: time,
   base: (k, v) => { const n = noteNum(v); return n >= 0 ? n : bad(k, v, 'C-0…B-7'); },
   vol: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
+  // how much of the sound goes to the reverb, hex like vol (00 = dry)
+  rev: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
   a: env, d: env, r: env,
   // sustain level, hex like vol (00–40), always two digits. Files written before 2026-10-13 have it as 0–1 ('1', '0.4'):
   // one digit or a dot, so it can never be mistaken for the hex form; it is read as what it meant (1 → 40).
@@ -71,7 +73,7 @@ const PARSE = {
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
   focus,
 };
-const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol',
+const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol', rev: 'reverb',
   a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', focus: 'focus' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
@@ -88,7 +90,7 @@ function parse(line) {
     kv[k] = PARSE[k](k, v);
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
-  const I = { vol: 64, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
+  const I = { vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
     loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, focus: [] };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
@@ -108,6 +110,7 @@ function checkInstrument(I) {
     if (!isTime(I[k])) return `${label} '${I[k]}' is invalid (seconds, 0 or more)`;
   if (!isInt(I.baseNote, 0, 95)) return `base note is invalid (C-0…B-7)`;
   if (!isInt(I.vol, 0, 64)) return `volume '${showHex(I.vol)}' is invalid (range 00–40)`;
+  if (!isInt(I.reverb, 0, 64)) return `reverb '${showHex(I.reverb)}' is invalid (range 00–40)`;
   for (const k of ['A', 'D', 'R']) {
     const e = I[k];
     if (!e || !(e.u in ENV_MAX)) return `${k} unit must be 't' or 'ms'`;

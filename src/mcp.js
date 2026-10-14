@@ -66,7 +66,7 @@ const MCP_TOOLS = {
       'patterns:', ...song.patterns.map((P, k) => `  ${hex2(k)}: ${P.rows.length} rows, ${P.rows.reduce((a, r) => a + r.filter(c => !same(c, emptyCell())).length, 0)} filled cells`)].join('\n');
   },
   list_instruments() {
-    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}`).join('\n') || 'no instruments';
+    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}`).join('\n') || 'no instruments';
   },
   view_rows(a) {
     const pi = patArg(a.pattern), [r0, r1] = rowRange(a, pi), P = song.patterns[pi];
@@ -164,11 +164,11 @@ const MCP_TOOLS = {
     return done(cmd, Object.entries(f).map(([k, v]) => `${k}=${v}`).join(', '));
   },
   set_instrument(a) {
-    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le',
+    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', reverb: 'rev', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le',
       region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus' };
     for (const [k, key] of Object.entries(map)) if (k in a) {
       if (k === 'loop' && !PTFormat.LOOP_MODES.includes(a.loop)) fail(`loop must be none, forward or pingpong (got '${a.loop}')`);
-      try { f[{ name: 'name', base: 'baseNote', vol: 'vol', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
+      try { f[{ name: 'name', base: 'baseNote', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
       catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); } // drop the parser's line prefix, whatever its wording
     }
     if (!Object.keys(f).length) fail(`nothing to change (${Object.keys(map).join(', ')})`);
@@ -220,15 +220,13 @@ const MCP_TOOLS = {
   },
   // files: mcp/server.mjs reads and writes them; here they arrive / leave as { name, data (base64) }
   async load_video(a) {
-    let focus = [];
-    if (a.focus) try { focus = PTFormat.field('focus', a.focus); } catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); }
-    const err = PTFormat.checkFocus(focus); if (err) fail(err);
-    const f = await fileArg(a.file), r = await importVideo(f, progress, { ...a.region, focus });
+    const focus = focusArg(a), f = await fileArg(a.file), r = await importVideo(f, progress, { ...a.region, focus });
     return done(true, `${f.name} → instrument ${hex2(r.idx)} ${r.I.name} (${r.fromMetadata ? "settings from the video's metadata" : `hit point found automatically at ${fmtTime(r.I.hit)} s`})`);
   },
   async replace_video(a) {
-    const i = instArg(a.instrument), f = await fileArg(a.file), { fromMetadata } = await replaceVideo(i, f, progress), I = instruments[i];
-    return done(true, `instrument ${hex2(i)}: video → ${f.name}; name, base note, volume, envelope and loop mode kept; ${fromMetadata ? 'region and hit from the video\'s metadata' : `region = the whole video (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`}`);
+    const i = instArg(a.instrument), focus = focusArg(a), f = await fileArg(a.file);
+    const { fromMetadata } = await replaceVideo(i, f, progress, a.region ? { ...a.region, focus } : null), I = instruments[i];
+    return done(true, `instrument ${hex2(i)}: video → ${f.name}; name, base note, volume, reverb, envelope and loop mode kept; ${fromMetadata ? 'region and hit from the video\'s metadata' : `region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`}`);
   },
   async open_song(a) {
     const f = await fileArg(a.file), r = await readSong(f, progress);
@@ -250,6 +248,13 @@ const MCP_TOOLS = {
   },
 };
 const progress = text => setStatus(`MCP · ${escHtml(text)}`);
+// the focus a video arrives with (load_video, replace_video with a piece): none = the middle
+function focusArg(a) {
+  let focus = [];
+  if (a.focus) try { focus = PTFormat.field('focus', a.focus); } catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); }
+  const err = PTFormat.checkFocus(focus); if (err) fail(err);
+  return focus;
+}
 async function fileArg(f) {
   if (!f || typeof f.name !== 'string' || typeof f.data !== 'string') fail('a file is missing (mcp/server.mjs should have read it from the path)');
   return new File([await (await fetch(`data:application/octet-stream;base64,${f.data}`)).arrayBuffer()], f.name);

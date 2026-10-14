@@ -18,9 +18,12 @@ export async function decodeVideo(file, progress = () => {}) {
   const video = document.createElement('video');
   video.muted = true; video.playsInline = true; video.preload = 'auto'; video.src = url;
   await once(video, 'loadedmetadata');
+  // the duration as the file states it: once Chrome has decoded some of a VP9/AV1 piece it counts the frames its edit
+  // list hides too, and the duration grows (to the keyframe before the piece)
+  const stated = video.duration;
   if (video.readyState < 2) await once(video, 'loadeddata');
-  if (!isFinite(video.duration)) throw new Error("couldn't read the video's duration");
-  const dur = Math.min(video.duration, MAX_SAMPLE_SEC);
+  if (!isFinite(stated)) throw new Error("couldn't read the video's duration");
+  const dur = Math.min(stated, MAX_SAMPLE_SEC);
   // audio track → AudioBuffer
   let buffer;
   try {
@@ -61,7 +64,7 @@ export async function importVideo(file, progress, region = null) {
   if (s && 'video' in s) throw new Error("the instrument line in the metadata can't have a 'video' field");
   const V = await decodeVideo(file, progress);
   if (s && s.end > V.dur) throw new Error(`metadata: region end (${s.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
-  if (region?.end != null && region.end > V.dur + 0.001) throw new Error(`the piece is ${region.end.toFixed(3)} s; an instrument can be at most ${MAX_SAMPLE_SEC} s`);
+  if (region?.end != null && region.end - (region.start ?? 0) > MAX_SAMPLE_SEC + 0.001) throw new Error(`the piece is ${(region.end - (region.start ?? 0)).toFixed(3)} s; an instrument can be at most ${MAX_SAMPLE_SEC} s`);
   const name = region?.name ?? file.name.replace(/\.[^.]+$/, '').slice(0, 16);
   const span = region?.end != null ? { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) } : {};
   const hit = s ? 0 : round3(Math.min((span.start ?? 0) + detectHit(makeInstrument(V, span).buffer), V.dur));
@@ -71,18 +74,25 @@ export async function importVideo(file, progress, region = null) {
   return { idx: instruments.indexOf(I), I, fromMetadata: !!s };
 }
 // another video for an instrument (one command): it keeps how it sounds; region, hit and loop points are found
-// again in the new video (or read from its metadata, when it was saved by PoopTracker).
+// again in the new video (or read from its metadata, when it was saved by PoopTracker). A piece cut on the workbench
+// comes with its region ({ start, end, focus }: the selection inside the piece), and its hit is looked for there.
 // Returns { cmd, fromMetadata }.
-export async function replaceVideo(idx, file, progress) {
+export async function replaceVideo(idx, file, progress, region = null) {
   let line = null;
-  try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
-  const place = line == null ? null : PTFormat.parse(line);
+  if (!region) try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
+  let place = line == null ? null : PTFormat.parse(line);
   if (place && 'video' in place) throw new Error("the instrument line in the metadata can't have a 'video' field");
   const V = await decodeVideo(file, progress);
   if (place && place.end > V.dur) throw new Error(`metadata: region end (${place.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
+  if (region) {
+    const span = { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) };
+    const hit = round3(Math.min(span.start + detectHit(makeInstrument(V, span).buffer), V.dur));
+    // a whole instrument line, as metadata would give: the sound fields are the instrument's own (they are kept anyway)
+    place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, focus: region.focus ?? [] };
+  }
   const cmd = exec(() => setInstrumentVideo(idx, V, place));
   addVideo(V);
-  return { cmd, fromMetadata: !!place };
+  return { cmd, fromMetadata: !!line };
 }
 
 // ── MIDI: the notes come in, the sounds don't. Every instrument starts with the same 1 s silent "REPLACE ME" video

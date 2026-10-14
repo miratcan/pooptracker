@@ -11,7 +11,7 @@ import { pal, alpha } from './palette.js';
 export const out = $('#out');
 const og = out.getContext('2d');
 
-// channels stack downwards in the 9:16 frame: 1–3 → one column (1, 2, 3 rows), 4–8 → two columns (2, 3, 4 rows)
+// channels stack downwards in the 9:16 frame: 1–3 → one column (1, 2, 3 rows), 4–10 → two columns (2–5 rows)
 export const grid = () => { const n = nch(), cols = n <= 3 ? 1 : 2; return { cols, rows: Math.ceil(n / cols) }; };
 function tileRect(ch) { const { cols, rows } = grid(), w = OUT_W / cols, h = OUT_H / rows; return { x: (ch % cols) * w, y: Math.floor(ch / cols) * h, w, h }; }
 // draw an uncropped frame into a box of any shape (like CSS object-fit: cover), cropping around the focus point
@@ -60,13 +60,20 @@ function drawTile(ch, now) {
   og.restore();
 }
 
-// clicking a tile mutes its channel
+// clicking a tile mutes its channel; right-clicking solos it (as FT2's scopes): only it is heard, and right-clicking
+// the channel that is already heard alone brings every channel back
 export function muteChannel(ch) { if (ch < 0 || ch >= nch()) return; ensureAudio(); toggleMute(ch); view.patDirty = true; }
-out.addEventListener('click', e => {
-  const r = out.getBoundingClientRect();
-  const { cols, rows } = grid();
-  muteChannel(Math.floor((e.clientY - r.top) / r.height * rows) * cols + Math.floor((e.clientX - r.left) / r.width * cols));
-});
+export function soloChannel(ch) {
+  if (ch < 0 || ch >= nch()) return;
+  const alone = [...Array(nch()).keys()].every(k => isMuted(k) === (k !== ch));
+  for (let k = 0; k < nch(); k++) if (isMuted(k) !== (alone ? false : k !== ch)) muteChannel(k);
+}
+const tileAt = e => {
+  const r = out.getBoundingClientRect(), { cols, rows } = grid();
+  return Math.floor((e.clientY - r.top) / r.height * rows) * cols + Math.floor((e.clientX - r.left) / r.width * cols);
+};
+out.addEventListener('click', e => muteChannel(tileAt(e)));
+out.addEventListener('contextmenu', e => { e.preventDefault(); soloChannel(tileAt(e)); });
 
 // the 9:16 output takes the full height of its column; the column is as wide as that makes it
 export function fitOut() { const h = $('#outBox').clientHeight, w = Math.floor(h * out.width / out.height); out.style.height = h + 'px'; out.style.width = w + 'px'; $('#outCard').style.width = w + 2 + 'px'; /* + the card's 1px borders */ }

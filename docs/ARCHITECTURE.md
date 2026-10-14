@@ -10,7 +10,8 @@ PoopTracker is plain JavaScript modules loaded by the browser: no build step, no
 src/
   ptformat.js     the file formats: TURD1 instrument lines, .poop songs, MP4 metadata   (no DOM, no audio)
   mp4.js          MP4/MOV boxes: reading and writing them                            (no DOM, no audio)
-  mp4cut.js       cuts a piece out of an MP4/MOV without re-encoding (the workbench)  (no DOM, no audio)
+  mp4cut.js       cuts a piece out of an MP4/MOV or WebM/MKV without re-encoding (the workbench); the piece is an MP4  (no DOM, no audio)
+  webm.js         reads a WebM/MKV's packets and describes them as an MP4 moov, for mp4cut  (no DOM, no audio)
   midi.js         .mid files → a song (notes, tempo, one instrument per track)       (no DOM, no audio)
   util.js         constants and small helpers                                        (no DOM, no audio)
   core/           the song and the commands that change it                           (no DOM, no audio)
@@ -18,7 +19,7 @@ src/
     commands.js     the ONLY writer of that data; undo / redo; change events
     instrument.js   videos and instruments: regions, hit point, pitch, ADSR, normalize, hit detection
   engine/         plays the song on an AudioContext                                  (no DOM)
-    audio.js        the audio graph (a bus per channel), mute, the audio clock
+    audio.js        the audio graph (a bus and a reverb send per channel, one hall reverb), mute, the audio clock
     voice.js        one playing note: audio and video read the same position [ZEN-IN-SYNC]
     player.js       rows → voices, ahead of time; effects; key preview, sync test
   io.js           files ⇄ song: decode videos, import / replace, read / build .poop, save to video
@@ -33,7 +34,7 @@ mcp/server.mjs    the MCP server (Node, stdio ⇄ WebSocket to the tab); reads a
 test/             node --test: format, commands, engine (on a fake AudioContext), cutting (fixtures/av.mp4), MIDI
 ```
 
-Dependencies only point down: `ui` → `io`, `engine`, `core` → `midi` → `ptformat`, `mp4cut` → `mp4`, `util`. `core` and `engine` never import
+Dependencies only point down: `ui` → `io`, `engine`, `core` → `midi` → `ptformat`, `mp4cut` → `webm` → `mp4`, `util`. `core` and `engine` never import
 `ui`, so they run in Node; that is how the tests play songs without a browser.
 
 ## The rules

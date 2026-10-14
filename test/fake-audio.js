@@ -34,6 +34,7 @@ export class FakeAudioContext {
   createGain() { const n = new Node(); n.gain = new Param(1); return n; }
   createStereoPanner() { const n = new Node(); n.pan = new Param(0); return n; }
   createDynamicsCompressor() { const n = new Node(); for (const p of ['threshold', 'knee', 'ratio', 'attack', 'release']) n[p] = new Param(); return n; }
+  createConvolver() { const n = new Node(); n.buffer = null; n.normalize = true; return n; }
   createOscillator() { const n = new Node(); n.frequency = new Param(440); n.start = () => {}; n.stop = () => {}; return n; }
   createBuffer(numberOfChannels, length, sampleRate) { return new FakeAudioBuffer({ numberOfChannels, length, sampleRate }); }
   createBufferSource() {

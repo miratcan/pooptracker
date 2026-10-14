@@ -3,18 +3,23 @@
 //   ffmpeg -f lavfi -i testsrc2=size=96x54:rate=30 -f lavfi -i sine=frequency=440:sample_rate=48000 -t 6 \
 //     -c:v libx264 -g 30 -bf 2 -pix_fmt yuv420p -c:a aac -b:a 32k av.mp4
 // bigscale.mp4: 7 s, 64x36 15 fps, a keyframe every 10 s, -movie_timescale 771888000.
+// The same 6 s as WebM/MKV (the piece is an MP4 all the same):
+//   vp9.webm  -c:v libvpx-vp9 -g 30 -b:v 60k -c:a libopus -b:a 24k
+//   av1.webm  size 96x64, -c:v libsvtav1 -g 30 -b:v 60k -c:a libopus -b:a 24k
+//   av.mkv    ffmpeg -i av.mp4 -c copy av.mkv (H.264 with B-frames, AAC)
+//   vp8.webm  1 s of 32x18 at 10 fps, -c:v libvpx (VP8 has no place in MP4)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cutMp4, reader } from '../src/mp4cut.js';
+import { cutVideo, reader } from '../src/mp4cut.js';
 import { boxes, box, u32, fourcc, be32 } from '../src/mp4.js';
 import PTFormat from '../src/ptformat.js';
 
 const SRC = new Uint8Array(readFileSync(new URL('./fixtures/av.mp4', import.meta.url)));
-const cut = (t0, t1, b = SRC) => cutMp4(reader(b), b.length, t0, t1);
+const cut = (t0, t1, b = SRC) => cutVideo(reader(b), b.length, t0, t1);
 const bad = () => { throw new Error('bad box'); };
 const find = (b, x, ...path) => path.reduce((p, t) => boxes(b, p.body, p.end, bad).find(k => k.type === t), x);
 // per track: [handler, sample count, first sample is a keyframe]
@@ -47,7 +52,7 @@ test('a movie that counts time very finely still gets a piece as long as the sel
 
 test('only the needed bytes of the source are read', async () => {
   let n = 0; const read = reader(SRC);
-  await cutMp4((o, len) => { n += len; return read(o, len); }, SRC.length, 2.4, 2.6);
+  await cutVideo((o, len) => { n += len; return read(o, len); }, SRC.length, 2.4, 2.6);
   assert.ok(n < SRC.length / 2, `${n} of ${SRC.length} bytes read`);
 });
 
@@ -60,8 +65,8 @@ test('a piece is an ordinary MP4: it can be cut again and carry an instrument ta
 
 test('what can\'t be cut says why', async () => {
   await assert.rejects(cut(1, 1), /the piece is empty/);
-  const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0, 0, 0, 0, 0]);
-  await assert.rejects(cut(0, 1, webm), /not MP4\/MOV/);
+  await assert.rejects(cut(0, 1, new Uint8Array([0, 0, 0, 8, 0x41, 0x56, 0x49, 0x20, 0, 0, 0, 0])), /not MP4\/MOV, WebM or MKV/);
+  await assert.rejects(cut(0, 1, new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0, 0, 0, 0, 0])), /WebM\/MKV file is damaged/);
   const frag = new Uint8Array([...box('ftyp', new TextEncoder().encode('isom'), be32(0)), ...box('moov'), ...box('moof'), ...box('mdat')]);
   await assert.rejects(cut(0, 1, frag), /fragmented MP4/);
 });
@@ -75,4 +80,39 @@ test('ffmpeg decodes the piece and its frames are the source\'s frames', { skip:
   assert.equal(execFileSync('ffmpeg', ['-v', 'error', '-i', out, '-f', 'null', '-'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), '');
   const frame = (f, t) => execFileSync('ffmpeg', ['-v', 'error', '-ss', String(t), '-i', f, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']);
   for (const t of [2.417, 2.95, 3.25]) assert.ok(frame(src, t).equals(frame(out, t - 2.4)), `frame at ${t}`);
+});
+
+const fixture = name => new Uint8Array(readFileSync(new URL(`./fixtures/${name}`, import.meta.url)));
+for (const name of ['vp9.webm', 'av1.webm', 'av.mkv']) {
+  test(`a piece of ${name} is an MP4 cut the same way: from the keyframe before, exactly the selection`, async () => {
+    const r = await cut(2.4, 3.3, fixture(name));
+    assert.ok(r.start === 0 && Math.abs(r.end - 0.9) < 1e-6, `${r.start} ${r.end}`);
+    const [v, a] = tracks(r.bytes);
+    assert.deepEqual([v[0], v[2], a[0]], ['vide', true, 'soun']);
+    assert.ok(v[1] >= 27 && v[1] <= 40, `${v[1]} frames`); // 0.9 s and the frames from the keyframe before it
+    const line = 'TURD1;name=x;start=0;end=0.9;hit=0.2;base=C-4';
+    assert.equal(PTFormat.mp4ReadTag(PTFormat.mp4WriteTag(r.bytes, line)), line);
+  });
+  test(`ffmpeg decodes the piece of ${name} and its frames are the source's frames`, { skip: !ffmpeg && 'ffmpeg is not installed' }, async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'webmcut-')), src = join(dir, name), out = join(dir, 'cut.mp4'), S = fixture(name);
+    const r = await cut(2.4, 3.3, S);
+    writeFileSync(src, S); writeFileSync(out, r.bytes);
+    assert.equal(execFileSync('ffmpeg', ['-v', 'error', '-i', out, '-f', 'null', '-'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), '');
+    const frame = (f, t) => execFileSync('ffmpeg', ['-v', 'error', '-ss', String(t), '-i', f, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']);
+    for (const t of [2.417, 2.95, 3.25]) assert.ok(frame(src, t).equals(frame(out, t - 2.4)), `frame at ${t}`);
+  });
+}
+test('a codec MP4 has no place for is refused by name', async () => {
+  await assert.rejects(cut(0.2, 0.6, fixture('vp8.webm')), /the picture is VP8, which can't go into an MP4 piece/);
+});
+test('an Opus piece says where its sound starts twice, the same: in the edit list (ffmpeg) and the pre-skip (Chrome)', async () => {
+  const r = await cut(2.41, 3.3, fixture('vp9.webm')), b = r.bytes;
+  const moov = boxes(b, 0, b.length, bad).find(x => x.type === 'moov');
+  const t = boxes(b, moov.body, moov.end, bad).filter(x => x.type === 'trak').find(x => fourcc(b, find(b, x, 'mdia', 'hdlr').body + 8) === 'soun');
+  const mdhd = find(b, t, 'mdia', 'mdhd'), scale = u32(b, mdhd.body + 12);
+  const elst = find(b, t, 'edts', 'elst'), mediaTime = u32(b, elst.body + 8 + 8) * 4294967296 + u32(b, elst.body + 8 + 12); // version 1: duration, then media time
+  const entry = boxes(b, find(b, t, 'mdia', 'minf', 'stbl', 'stsd').body + 8, find(b, t, 'mdia', 'minf', 'stbl', 'stsd').end, bad)[0];
+  const dops = boxes(b, entry.body + 28, entry.end, bad).find(x => x.type === 'dOps'), preSkip = (b[dops.body + 2] << 8) | b[dops.body + 3];
+  assert.ok(Math.abs(preSkip / 48000 - mediaTime / scale) < 1 / 1000, `pre-skip ${preSkip / 48} ms, edit list ${mediaTime / scale * 1000} ms`);
+  assert.ok(preSkip / 48 > 6.5, `${preSkip / 48} ms: the file's own pre-skip (312 samples) and the warm-up packet`);
 });

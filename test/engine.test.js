@@ -5,6 +5,7 @@ import { ctx, openTestSong, testInstrument, testPattern } from './helpers.js';
 import { FX } from '../src/util.js';
 import { player, startPlay, stopPlay, schedule, previewNote } from '../src/engine/player.js';
 import { voices } from '../src/engine/voice.js';
+import { revBus } from '../src/engine/audio.js';
 
 const ROW = 2.5 / 125 * 6; // 125 BPM, speed 6
 // plays the song until `secs` of audio time are scheduled; returns the voices of a channel
@@ -123,4 +124,25 @@ test('muted or not, a channel plays on its own bus', () => {
   assert.equal(voices[0].length, 1);
   assert.equal(voices[1].length, 1);
   assert.notEqual(voices[0][0].pn.outputs[0], voices[1][0].pn.outputs[0]);
+});
+
+test('reverb: a voice sends its share to its channel\'s reverb bus; a dry instrument sends nothing', () => {
+  openTestSong({ channels: 2, instruments: [clip({ reverb: 32 }), clip()], patterns: [testPattern(16, { 0: { 0: note(1), 1: note(2) } }, 2)] });
+  play(0.3);
+  const wet = voices[0][0], dry = voices[1][0];
+  assert.equal(wet.rv.gain.value, 0.5);
+  assert.equal(wet.rv.outputs[0], revBus[0]);
+  assert.ok(wet.pn.outputs.includes(wet.rv));
+  assert.equal(dry.rv, undefined);
+  assert.equal(dry.pn.outputs.length, 1);
+});
+
+test('the instrument\'s volume is the ceiling of the sound: Vol 20 plays volume 40 at 20 and 20 at 10; the picture follows the volume', () => {
+  openTestSong({ channels: 3, instruments: [clip({ vol: 0x20 })], patterns: [testPattern(16, { 0: { 0: note(1, { v: 0x40 }), 1: note(1, { v: 0x20 }), 2: note(1) } }, 3)] });
+  play(1.5);
+  // the sound (the gain node) is scaled by Vol; the picture (gainAt) follows the volume alone
+  const sound = ch => { const ev = voices[ch][0].g.gain.events.filter(e => e[2] <= voices[ch][0].hitT + 0.01); return +ev.at(-1)[1].toFixed(3); };
+  const picture = ch => +voices[ch][0].gainAt(voices[ch][0].hitT + 0.01).toFixed(3);
+  assert.deepEqual([sound(0), sound(1), sound(2)], [0.5, 0.25, 0.5]);
+  assert.deepEqual([picture(0), picture(1), picture(2)], [1, 0.5, 1]);
 });

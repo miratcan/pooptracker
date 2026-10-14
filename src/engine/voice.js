@@ -3,7 +3,7 @@
 import { MAX_CH, lerp } from '../util.js';
 import { song } from '../core/song.js';
 import { hitPos, tickDur, envSec, loops } from '../core/instrument.js';
-import { ctx, chanBus } from './audio.js';
+import { ctx, chanBus, revBus } from './audio.js';
 
 // the region up to the loop end, then the loop part reversed (made once per region and loop points)
 const ppCache = new WeakMap();
@@ -50,9 +50,11 @@ export class Voice {
     this.g = ctx.createGain(); this.g.gain.value = 0;
     this.pn = ctx.createStereoPanner(); this.pn.pan.value = (o.pan - 128) / 128;
     src.connect(this.g); this.g.connect(this.pn); this.pn.connect(chanBus[ch]);
+    // the reverb hears the voice after its envelope and pan, so it follows the note
+    if (I.reverb) { this.rv = ctx.createGain(); this.rv.gain.value = I.reverb / 64; this.pn.connect(this.rv); this.rv.connect(revBus[ch]); }
     this.src = src;
     if (pos < I.buffer.duration) { src.start(start, pos); this.started = true; }
-    src.onended = () => { this.done = true; try { src.disconnect(); this.g.disconnect(); this.pn.disconnect(); } catch (e) {} };
+    src.onended = () => { this.done = true; try { src.disconnect(); this.g.disconnect(); this.pn.disconnect(); this.rv?.disconnect(); } catch (e) {} };
     const h = Math.max(hitT, start);
     this.pt(start, this.env(start) * this.vol);
     this.advance(h);
@@ -66,9 +68,12 @@ export class Voice {
     }
     return this.envRaw(t - this.start);
   }
+  // v: envelope × channel volume, which the picture follows too (gainAt). The sound alone is scaled by the instrument's
+  // volume, its ceiling (Vol 20: volume 40 sounds at 20, 20 at 10); the picture is full when the volume is
   pt(t, v) {
-    if (this.pts.length) { const last = this.pts[this.pts.length - 1]; if (t < last.t) t = last.t; this.g.gain.linearRampToValueAtTime(v, t); }
-    else this.g.gain.setValueAtTime(v, t);
+    const a = v * this.I.vol / 64;
+    if (this.pts.length) { const last = this.pts[this.pts.length - 1]; if (t < last.t) t = last.t; this.g.gain.linearRampToValueAtTime(a, t); }
+    else this.g.gain.setValueAtTime(a, t);
     this.pts.push({ t, v });
   }
   // add exact envelope breakpoints between the last automation point and t
@@ -125,7 +130,7 @@ export class Voice {
     if (!loops(I)) { const s = this.segs[this.segs.length - 1]; t = Math.min(t, s.t + Math.max(0, I.buffer.duration - s.pos) / s.rate); }
     return t;
   }
-  kill() { try { this.started && this.src.stop(); } catch (e) {} try { this.src.disconnect(); this.g.disconnect(); this.pn.disconnect(); } catch (e) {} this.cutT = 0; }
+  kill() { try { this.started && this.src.stop(); } catch (e) {} try { this.src.disconnect(); this.g.disconnect(); this.pn.disconnect(); this.rv?.disconnect(); } catch (e) {} this.cutT = 0; }
   posAt(t) {
     let s = this.segs[0];
     for (let i = this.segs.length - 1; i >= 0; i--) if (this.segs[i].t <= t) { s = this.segs[i]; break; }

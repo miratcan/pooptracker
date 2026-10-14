@@ -5,10 +5,12 @@
 // A video can only be decoded from a keyframe, so the piece holds the frames from the last keyframe before the selection;
 // its edit list hides them: the piece plays from the selection's start and is exactly as long as the selection.
 // The source is read in pieces (read(offset, length) → Uint8Array): an hour-long video is never loaded whole.
+// A WebM/MKV is read by webm.js, which describes it the way an MP4 is described here; the piece is an MP4 either way.
 import { u32, u64, fourcc, be32, box, boxes as scan } from './mp4.js';
+import { indexWebm } from './webm.js';
 
 const fail = msg => { throw new Error(msg); };
-const notMp4 = () => fail('the video is not MP4/MOV (only MP4/MOV videos can be cut)');
+const notMp4 = () => fail('the video is not MP4/MOV, WebM or MKV (only those can be cut)');
 const boxes = (b, x) => scan(b, x.body, x.end, notMp4);
 const kid = (b, x, type) => boxes(b, x).find(k => k.type === type);
 const need = (b, x, type) => kid(b, x, type) ?? notMp4();
@@ -112,7 +114,8 @@ function trackBox(b, P, movieScale, chunks) {
   // 64-bit edits (version 1): some movies count time in hundreds of millions per second, and seconds of that overflow 32 bits
   const hi = n => Math.floor(n / 4294967296), edit = (d, m) => [hi(d), d >>> 0, ...(m < 0 ? [0xFFFFFFFF, 0xFFFFFFFF] : [hi(m), m >>> 0]), 0x10000];
   const edits = [...(P.delay ? [edit(Math.round(P.delay * movieScale), -1)] : []), edit(segment, P.mediaTime)];
-  const stbl = [b.slice(t.stsd.start, t.stsd.end),
+  // a track may write its codec settings for the piece (Opus: what to skip at its start)
+  const stbl = [t.stsdFor ? t.stsdFor(P) : b.slice(t.stsd.start, t.stsd.end),
     table('stts', 0, runs(P.n, i => P.dur[i]), 2),
     ...(kid(b, t.stbl, 'ctts') ? [table('ctts', t.cttsVersion, runs(P.n, i => P.cto[i]), 2)] : []),
     ...(t.sync ? [table('stss', 0, [...Array(P.n).keys()].filter(i => t.sync[P.from + i]).map(i => [i + 1]), 1)] : []),
@@ -126,17 +129,26 @@ function trackBox(b, P, movieScale, chunks) {
       box('minf', ...boxes(b, minf).map(k => k.type === 'stbl' ? box('stbl', ...stbl) : b.slice(k.start, k.end)))));
 }
 
-// cut [t0, t1] (seconds) out of an MP4/MOV → { bytes, start, end }: the new file, and where the selection is inside it
-// (start is 0; end is the selection's length, shorter when the video ends first)
-export async function cutMp4(read, size, t0, t1) {
+// an MP4/MOV as the cutter needs it: its moov (b), the mvhd in it, the movie's time scale, the tracks' sample tables, its ftyp
+async function indexMp4(read, size) {
   const top = await topBoxes(read, size);
   if (top.some(x => x.type === 'moof')) fail('the video is a fragmented MP4 (as streamed), which can\'t be cut yet');
   const moovBox = top.find(x => x.type === 'moov') ?? notMp4(), ftypBox = top.find(x => x.type === 'ftyp');
   const b = await read(moovBox.start, moovBox.size), moov = { body: moovBox.body - moovBox.start, end: moovBox.size, start: 0 };
   const mvhd = need(b, moov, 'mvhd'), movieScale = u32(b, mvhd.body + (b[mvhd.body] ? 20 : 12));
   const tracks = boxes(b, moov).filter(x => x.type === 'trak').map(x => readTrack(b, x, movieScale));
-  const vid = tracks.find(t => t.kind === 'vide' && t.size.length) ?? fail('the video has no picture'), aud = tracks.find(t => t.kind === 'soun' && t.size.length);
+  return { b, mvhd, movieScale, tracks, ftyp: ftypBox ? await read(ftypBox.start, ftypBox.size) : new Uint8Array(0) };
+}
+const isMatroska = async read => u32(await read(0, 4), 0) === 0x1A45DFA3;
+
+// cut [t0, t1] (seconds) out of an MP4/MOV or a WebM/MKV → { bytes, start, end }: the new MP4, and where the selection is
+// inside it (start is 0; end is the selection's length, shorter when the video ends first)
+export async function cutVideo(read, size, t0, t1) {
   if (!(t1 > t0)) fail('the piece is empty: its end must be after its start');
+  return cutIndex(await isMatroska(read) ? await indexWebm(read, size, t0, t1) : await indexMp4(read, size), read, t0, t1);
+}
+async function cutIndex({ b, mvhd, movieScale, tracks, ftyp }, read, t0, t1) {
+  const vid = tracks.find(t => t.kind === 'vide' && t.size.length) ?? fail('the video has no picture'), aud = tracks.find(t => t.kind === 'soun' && t.size.length);
 
   // picture: from the last keyframe at or before t0 to the last frame shown before t1
   const nv = vid.size.length; let s = 0;
@@ -149,9 +161,11 @@ export async function cutMp4(read, size, t0, t1) {
   const parts = [pick(vid, s, e, t0, end)];
   // sound: from t0, one frame earlier (a decoder needs it to warm up; the edit list hides it)
   if (aud) {
-    const na = aud.size.length; let a0 = 0, a1 = 0;
-    for (let i = 0; i < na; i++) { if (aud.pts(i) <= t0 + 1e-9) a0 = i; if (aud.pts(i) < end - 1e-9) a1 = i; }
-    parts.push(pick(aud, Math.max(0, a0 - 1), Math.max(a0, a1), t0, end));
+    // lead: how much earlier than its timestamps a track's sound comes out of the decoder (Opus: its pre-skip); the
+    // edit list starts and ends that much later
+    const na = aud.size.length, lead = aud.lead ?? 0; let a0 = 0, a1 = 0;
+    for (let i = 0; i < na; i++) { if (aud.pts(i) <= t0 + 1e-9) a0 = i; if (aud.pts(i) < end + lead - 1e-9) a1 = i; }
+    parts.push(pick(aud, Math.max(0, a0 - 1), Math.max(a0, a1), t0 + lead, end + lead));
   }
 
   // the new file: ftyp, moov, then one mdat where the tracks take turns, half a second at a time
@@ -161,7 +175,6 @@ export async function cutMp4(read, size, t0, t1) {
       c.n++; c.bytes += P.t.size[i];
     } return out; });
   const order = chunks.flatMap((cs, p) => cs.map(c => ({ c, p }))).sort((x, y) => x.c.time - y.c.time || x.p - y.p);
-  const ftyp = ftypBox ? await read(ftypBox.start, ftypBox.size) : new Uint8Array(0);
   const moovOf = () => box('moov', withDuration(b, mvhd, 16, 24, Math.max(...parts.map(P => Math.round((P.delay + P.shown) * movieScale)))),
     ...parts.map((P, p) => trackBox(b, P, movieScale, chunks[p])));
   const dataLen = order.reduce((a, { c }) => a + c.bytes, 0), head = ftyp.length + moovOf().length + 8;

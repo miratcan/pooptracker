@@ -173,7 +173,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
         <button id="pNew" title="Duplicate: a new pattern as a copy of the current one">Dup.</button>
         <button id="pDel" title="Delete the pattern (if the order doesn't use it)">Del.</button>
         <label>Length <input id="pLen" type="number" min="1" max="256" style="width:52px"></label>
-        <button id="cAdd" title="Add a channel at the end (up to 8)" style="margin-left:auto">+ Chn.</button>
+        <button id="cAdd" title="Add a channel at the end (up to 10)" style="margin-left:auto">+ Chn.</button>
         <button id="cDel" title="Delete the channel under the cursor (if empty)">− Chn.</button>
       </div>
       <div id="patBox"><canvas id="pat" tabindex="0" aria-label="Pattern editor"></canvas></div>
@@ -188,13 +188,14 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   </div>
   <div id="bView">
     <video id="bVideo" playsinline hidden title="Click: the focus, the point the instrument's tiles keep in view · Backspace: back to the middle"></video><canvas id="bFocus"></canvas>
-    <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument.<br><span class="dim">MP4/MOV only. From YouTube: <code>yt-dlp -f mp4 &lt;url&gt;</code></span></div>
+    <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument, <kbd>Shift</kbd>+<kbd>Enter</kbd> into the selected one.<br><span class="dim">MP4, MOV, WebM or MKV (from YouTube: <code>yt-dlp &lt;url&gt;</code>).</span></div>
   </div>
   <canvas id="bTime" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
   <div class="row" id="bBar">
     <span id="bSel" class="dim"></span>
     <button id="bPlaySel" title="Play the marked piece (Shift+Space)">▶ Piece</button>
     <button id="bCut" title="Cut the marked piece into a new instrument, without re-encoding (Enter)">Cut → Inst.</button>
+    <button id="bCutRepl">Cut → Repl.</button>
   </div>
 </section>
 
@@ -218,7 +219,8 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <fieldset class="grp"><legend>Sample</legend>
       <label>Name <input id="iName" maxlength="16" style="width:130px"></label>
       <label title="Base note: at this note the clip plays at its original speed">Base <input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
-      <label title="Volume in hex, 00–40, like the pattern's volume column">Vol <input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol <input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev <input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms <input id="iAV" type="number" step="1" style="width:52px"></label>
     </fieldset>
     <fieldset class="grp"><legend>Region</legend>
@@ -245,7 +247,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 </div>
 </div>
   <section class="card" id="outCard">
-    <h2>Output · click a channel tile = mute</h2>
+    <h2>Output · click a channel tile = mute · right-click = solo</h2>
     <div id="outBox"><canvas id="out" width="540" height="960"></canvas></div>
     <div id="stats"></div>
   </section>
@@ -259,14 +261,14 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <h2>Shortcuts</h2>
   <p><b>Keyboard (FastTracker 2 layout, physical keys):</b> <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd>… lower octave, <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd>… upper octave · <kbd>F1</kbd>–<kbd>F8</kbd> octave ·
   <kbd>1</kbd> / <kbd>CapsLock</kbd> key-off.</p>
-  <p><b>Play:</b> <kbd>Enter</kbd> song from this pattern · <kbd>⌘/Ctrl</kbd>+<kbd>Enter</kbd> loop this pattern · <kbd>Shift</kbd>+<kbd>Enter</kbd> loop it from the cursor row · <kbd>Space</kbd> stop; when stopped, edit mode on/off (off: the keys only play; red frame = on) · <kbd>⌘/Ctrl</kbd>+<kbd>F</kbd> follow on/off ·
-  <kbd>Shift</kbd>+<kbd>M</kbd> mute channel · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> invert mutes · <kbd>Shift</kbd>+<kbd>U</kbd> unmute all.</p>
+  <p><b>Play:</b> <kbd>Enter</kbd> song from the start · <kbd>Shift</kbd>+<kbd>Enter</kbd> song from this pattern · <kbd>⌘/Ctrl</kbd>+<kbd>Enter</kbd> loop this pattern · <kbd>Space</kbd> stop; when stopped, edit mode on/off (off: the keys only play; red frame = on) · <kbd>⌘/Ctrl</kbd>+<kbd>F</kbd> follow on/off ·
+  <kbd>Shift</kbd>+<kbd>M</kbd> mute channel · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> invert mutes · <kbd>Shift</kbd>+<kbd>U</kbd> unmute all · click a channel's header or tile: mute, right-click: solo (again: all back).</p>
   <p><b>Move:</b> <kbd>↑↓←→</kbd> <kbd>PgUp</kbd>/<kbd>PgDn</kbd> <kbd>Home</kbd>/<kbd>End</kbd> · <kbd>F9</kbd>–<kbd>F12</kbd> row 0, ¼, ½, ¾ · <kbd>Tab</kbd>/<kbd>Shift</kbd>+<kbd>Tab</kbd> channel · <kbd>Shift</kbd>+<kbd>↑↓</kbd> instrument · <kbd>Shift</kbd>+<kbd>←→</kbd> order position · <kbd>Alt</kbd>+<kbd>Q</kbd>…<kbd>I</kbd> channel 0–7 ·
   <kbd>`</kbd> / <kbd>Shift</kbd>+<kbd>`</kbd> edit step up/down · <kbd>⌘/Ctrl</kbd>+<kbd>←→</kbd> pattern number in the order · <kbd>⌘/Ctrl</kbd>+<kbd>F9</kbd>/<kbd>F10</kbd> delete/insert order position.</p>
   <p><b>Edit</b> (edit mode on): <kbd>Del</kbd> / <kbd>Backspace</kbd> clear field · <kbd>Shift</kbd>+<kbd>Del</kbd> cell · <kbd>⌘/Ctrl</kbd>+<kbd>Del</kbd> volume and effect · <kbd>Alt</kbd>+<kbd>Del</kbd> effect ·
   <kbd>Ins</kbd> / <kbd>Alt</kbd>+<kbd>Backspace</kbd> insert space in the channel · <kbd>Shift</kbd>+<kbd>Ins</kbd> / <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>Backspace</kbd> insert a row in all channels ·
   <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
-  <p><b>Blocks:</b> <kbd>Alt</kbd>+arrow keys (or <kbd>Shift</kbd>+<kbd>PgUp</kbd>/<kbd>PgDn</kbd>/<kbd>Home</kbd>/<kbd>End</kbd>) or drag with the mouse = select · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> or <kbd>Alt</kbd>+<kbd>F4</kbd> / <kbd>F3</kbd> / <kbd>F5</kbd> copy / cut / paste ·
+  <p><b>Blocks:</b> <kbd>Alt</kbd>+arrow keys (or <kbd>Shift</kbd>+<kbd>PgUp</kbd>/<kbd>PgDn</kbd>/<kbd>Home</kbd>/<kbd>End</kbd>) or drag with the mouse = select · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> or <kbd>Alt</kbd>+<kbd>F4</kbd> / <kbd>F3</kbd> / <kbd>F5</kbd> copy / cut / paste (at the cursor; edit mode on or off) ·
   <kbd>Shift</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the channel · <kbd>⌘/Ctrl</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the pattern · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
   <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>⌘/Ctrl</kbd>+<kbd>S</kbd> save the song · <kbd>⌘/Ctrl</kbd>+<kbd>O</kbd> load a song.</p>
   <p class="dim">On a Mac the F keys need <kbd>fn</kbd> (unless "Use F1, F2… as standard function keys" is on).</p>
@@ -276,7 +278,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <p><b>What you see:</b> volume × envelope = brightness · pitch = video speed (C-5 twice as fast, C-3 half-speed slow motion) · vibrato makes the video wobble too.</p>
   <p><b>Adding videos:</b> drop a video on the page → new instrument · drop a <code>.poop</code> → open the song.</p>
   <p><b>Bench</b> (<kbd>⌘/Ctrl</kbd>+<kbd>B</kbd>, a long video in, pieces out as instruments): <kbd>Space</kbd> play/pause · <kbd>←→</kbd> 1 s · <kbd>Shift</kbd>+<kbd>←→</kbd> 10 s · <kbd>,</kbd> <kbd>.</kbd> a frame ·
-  <kbd>Home</kbd>/<kbd>End</kbd> · timeline zoom: wheel or pinch, <kbd>=</kbd> / <kbd>-</kbd>, <kbd>0</kbd> all; sideways scroll or <kbd>Shift</kbd>+wheel moves along · <kbd>I</kbd> / <kbd>O</kbd> piece start / end (or drag on the timeline) · <kbd>Shift</kbd>+<kbd>Space</kbd> play the piece · <kbd>Enter</kbd> cut it → new instrument (not re-encoded; MP4/MOV) · <kbd>Esc</kbd> unmark · click the picture: the focus, the point the instrument's tiles keep in view (the frame shows what a one-channel tile sees) · <kbd>Backspace</kbd> focus back to the middle.
+  <kbd>Home</kbd>/<kbd>End</kbd> · timeline zoom: wheel or pinch, <kbd>=</kbd> / <kbd>-</kbd>, <kbd>0</kbd> all; sideways scroll or <kbd>Shift</kbd>+wheel moves along · <kbd>I</kbd> / <kbd>O</kbd> piece start / end (or drag on the timeline) · <kbd>Shift</kbd>+<kbd>Space</kbd> play the piece · <kbd>Enter</kbd> cut it → new instrument (not re-encoded; MP4, MOV, WebM, MKV) · <kbd>Shift</kbd>+<kbd>Enter</kbd> cut it → the selected instrument's video (Repl.: how it sounds is kept) · <kbd>Esc</kbd> unmark · click the picture: the focus, the point the instrument's tiles keep in view (the frame shows what a one-channel tile sees) · <kbd>Backspace</kbd> focus back to the middle.
   The bench is never saved: what isn't cut is thrown away.</p>
 </dialog>
 <div id="drop">Drop a video → new instrument (on the bench: onto the bench) · drop a .poop → open the song · drop a .mid → import its notes</div>
@@ -284,32 +286,33 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=3c6ce33448",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=2b4314c6bb",
+    "./src/core/commands.js": "./src/core/commands.js?v=640e90eb6e",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=25befc1b83",
     "./src/core/song.js": "./src/core/song.js?v=f2d261d757",
     "./src/demo.js": "./src/demo.js?v=7118276168",
-    "./src/engine/audio.js": "./src/engine/audio.js?v=76963e43f3",
-    "./src/engine/player.js": "./src/engine/player.js?v=8bcef76988",
-    "./src/engine/voice.js": "./src/engine/voice.js?v=32817cff4a",
-    "./src/io.js": "./src/io.js?v=4c47810174",
+    "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
+    "./src/engine/player.js": "./src/engine/player.js?v=55cd925bce",
+    "./src/engine/voice.js": "./src/engine/voice.js?v=37786e70e6",
+    "./src/io.js": "./src/io.js?v=c1690022cd",
     "./src/main.js": "./src/main.js?v=1d32e97870",
-    "./src/mcp.js": "./src/mcp.js?v=6e415e6b8a",
-    "./src/midi.js": "./src/midi.js?v=158880e657",
+    "./src/mcp.js": "./src/mcp.js?v=4cfe49e5f5",
+    "./src/midi.js": "./src/midi.js?v=64f4b7dc45",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
-    "./src/mp4cut.js": "./src/mp4cut.js?v=a8afa9b6ff",
-    "./src/ptformat.js": "./src/ptformat.js?v=8619b4daf4",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=1b603ee9e7",
-    "./src/ui/bug.js": "./src/ui/bug.js?v=59c77fa4f5",
+    "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
+    "./src/ptformat.js": "./src/ptformat.js?v=6536709bf1",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=26658bd72c",
+    "./src/ui/bug.js": "./src/ui/bug.js?v=63d6df712a",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=9352818319",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=00cc19e287",
-    "./src/ui/output.js": "./src/ui/output.js?v=d987a3a195",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=6cd8b0c038",
+    "./src/ui/output.js": "./src/ui/output.js?v=a366d6c66c",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
-    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=d5bb6d5836",
+    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=943f2bf998",
     "./src/ui/screens.js": "./src/ui/screens.js?v=9a4a196256",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
     "./src/ui/transport.js": "./src/ui/transport.js?v=4ce62d313d",
-    "./src/util.js": "./src/util.js?v=b90bcc0c6d"
+    "./src/util.js": "./src/util.js?v=b90bcc0c6d",
+    "./src/webm.js": "./src/webm.js?v=ea9d076299"
   }
 }
 </script>

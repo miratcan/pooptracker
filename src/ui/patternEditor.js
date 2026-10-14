@@ -6,7 +6,7 @@ import { ensureAudio, isMuted, ctx } from '../engine/audio.js';
 import { player, previewNote } from '../engine/player.js';
 import { $, ed, view, run, setStatus } from './common.js';
 import { pal, alpha } from './palette.js';
-import { muteChannel } from './output.js';
+import { muteChannel, soloChannel } from './output.js';
 import { userStop, playPattern, play } from './transport.js';
 import { selectInst } from './instrumentPanel.js';
 import { selectOrd } from './songPanel.js';
@@ -97,11 +97,13 @@ function patCellAt(e) {
   return { mx, my, ch: Math.floor((mx - PAT.x0 + PAT.CW * 0.6) / PAT.chW), row: top + Math.floor((my - PAT.HDR) / PAT.RH), N, top };
 }
 let patDrag = null;
+// a channel header: click mutes, right-click solos (no browser menu there)
+pc.addEventListener('contextmenu', e => { if (patCellAt(e).my < PAT.HDR) e.preventDefault(); });
 pc.addEventListener('mousedown', e => {
   pc.focus();
   const { mx, my, ch, row, N, top } = patCellAt(e);
   if (ch < 0 || ch >= nch()) return;
-  if (my < PAT.HDR) { muteChannel(ch); return; }
+  if (my < PAT.HDR) { (e.button === 2 ? soloChannel : muteChannel)(ch); return; }
   if (row < 0 || row >= N) return;
   const c = Math.floor((mx - PAT.x0 - ch * PAT.chW) / PAT.CW);
   ed.ch = ch; ed.row = row; ed.sel = null;
@@ -135,15 +137,18 @@ export function setEditMode(on) {
   ed.edit = on; $('#patBox').classList.toggle('editing', on); view.patDirty = true;
   setStatus(on ? 'Edit mode <b>on</b>: notes are written into the pattern (Space: off)' : 'Edit mode <b>off</b>: notes only play (Space: on)');
 }
-function cutSel() { if (!ed.edit) return editOff(); copySel(); run(() => setCells(clearChanges(selRect()), 'cut')); }
+// cut and paste work with edit mode off too: they are commands (⌘X, ⌘V, Alt+F3…), not keys pressed by accident while
+// playing the note keys, which is what edit mode guards against
+function cutSel() { copySel(); run(() => setCells(clearChanges(selRect()), 'cut')); }
 function deleteSel() { run(() => setCells(clearChanges(selRect()), 'delete selection')); }
 function paste() {
-  if (!ed.edit) return editOff();
   if (!clip) return setStatus('Clipboard is empty: copy or cut a block first');
   const N = song.patterns[ed.pat].rows.length, changes = [];
   clip.forEach((row, dr) => row.forEach((c, dc) => { const r = ed.row + dr, ch = ed.ch + dc; if (r < N && ch < nch()) changes.push({ pat: ed.pat, row: r, ch, ...c }); }));
-  if (run(() => setCells(changes, 'paste')))
+  if (run(() => setCells(changes, 'paste'))) {
     ed.sel = { pat: ed.pat, r0: ed.row, c0: ed.ch, r1: Math.min(N - 1, ed.row + clip.length - 1), c1: Math.min(nch() - 1, ed.ch + clip[0].length - 1) };
+    setStatus(`Pasted: ${ed.sel.r1 - ed.sel.r0 + 1} rows × ${ed.sel.c1 - ed.sel.c0 + 1} channels at row ${hex2(ed.row)}, channel ${ed.ch + 1}`);
+  }
 }
 
 const NOTE_KEYS = {
@@ -248,14 +253,14 @@ function jumpRow(q) { ed.row = Math.floor(song.patterns[ed.pat].rows.length * q 
 const goTrack = ch => () => { if (ch < nch()) { ed.ch = ch; ed.col = 0; ed.sel = null; } };
 // Space: stops; when stopped, turns edit mode on/off
 function spaceKey(e) { if (e.repeat) return; if (player.playing) userStop(); else setEditMode(!ed.edit); }
-// Enter: plays the song from the pattern being edited (from the selected order position)
+// Enter: plays the song from its start; Shift+Enter: from the pattern being edited (from the selected order position)
+const playFromStart = () => play('song', null, 0);
 const playFromHere = () => play('song', null, song.order[ed.ord] === ed.pat ? ed.ord : Math.max(0, song.order.indexOf(ed.pat)));
 // Shift+↑↓: the previous / next instrument that exists
 function instBy(d) { for (let i = ed.inst + d; i > 0 && i < instruments.length; i += d) if (instruments[i]) { selectInst(i); setStatus(`Instrument ${hex2(i)}: ${instruments[i].name}`); return; } }
 function toggleFollow() { ed.follow = !ed.follow; $('#tFollow').checked = ed.follow; setStatus(`Follow ${ed.follow ? 'on' : 'off'}`); }
 const keys = {
-  'Space': spaceKey, 'Enter': playFromHere, 'Mod+Enter': playPattern, 'Mod+KeyF': toggleFollow,
-  'Shift+Enter': () => play('pattern', () => ed.pat, 0, ed.row),
+  'Space': spaceKey, 'Enter': playFromStart, 'Shift+Enter': playFromHere, 'Mod+Enter': playPattern, 'Mod+KeyF': toggleFollow,
   'Shift+ArrowUp': () => instBy(-1), 'Shift+ArrowDown': () => instBy(1),
   'Shift+ArrowLeft': () => selectOrd(ed.ord - 1), 'Shift+ArrowRight': () => selectOrd(ed.ord + 1),
   'Backquote': () => stepBy(1), 'Shift+Backquote': () => stepBy(-1),

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import PTFormat from '../src/ptformat.js';
 
-const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;a=3t;d=0t;s=1A;r=250ms;loop=forward;ls=0.900;le=1.100;av=20';
+const LINE = 'TURD1;name=Kick 2;start=0.600;end=1.200;hit=0.850;base=D-4;vol=40;rev=1C;a=3t;d=0t;s=1A;r=250ms;loop=forward;ls=0.900;le=1.100;av=20';
 
 test('an instrument line round-trips', () => {
   const I = PTFormat.parse(LINE);
@@ -16,6 +16,7 @@ test('an instrument line round-trips', () => {
 test('a missing optional field gets its default', () => {
   const I = PTFormat.parse('TURD1;name=x;start=0;end=1;hit=0.2;base=C-4');
   assert.equal(I.vol, 64);
+  assert.equal(I.reverb, 0); // files from before the reverb play dry
   assert.equal(I.loop, 'none');
 });
 
@@ -65,10 +66,10 @@ test('a song round-trips through a .poop zip', async () => {
 
 test('song errors say file:line', async () => {
   const zip = await PTFormat.unzip(new Uint8Array(await new Blob(songZip({ ...SONG, channels: SONG.channels }, [{ I: PTFormat.parse(LINE), video: 'videos/a.mp4' }])).arrayBuffer()));
-  const txt = new TextDecoder().decode(zip.get('song.txt')).replace('channels=2', 'channels=9');
+  const txt = new TextDecoder().decode(zip.get('song.txt')).replace('channels=2', 'channels=11');
   zip.set('song.txt', new TextEncoder().encode(txt));
   const { errors } = PTFormat.parseSong(zip);
-  assert.match(errors[0], /^song\.txt:\d+ +channels=9 is invalid \(1–8\)/);
+  assert.match(errors[0], /^song\.txt:\d+ +channels=11 is invalid \(1–10\)/);
 });
 
 // a minimal MP4 (ftyp + moov + mdat): the tag goes into moov/udta/meta, chunk offsets move with it
