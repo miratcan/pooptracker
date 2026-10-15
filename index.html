@@ -112,6 +112,8 @@ dialog h2{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacin
 dialog p{margin:0 0 8px;color:var(--dim)}
 dialog b{color:var(--text);font-weight:600}
 dialog .close{float:right}
+.btnLink{display:inline-block;padding:3px 9px;border:1px solid var(--acc);color:var(--acc);text-decoration:none}
+.btnLink:hover{background:var(--accDim)}
 .inst{display:flex;gap:8px;align-items:center;padding:3px;border:1px solid transparent;cursor:pointer}
 .inst:hover{background:var(--panel2)}
 .inst.sel{border-color:var(--acc);background:var(--accDim)}
@@ -253,7 +255,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   </section>
 </div>
 
-<footer id="statusBar"><span id="status" role="status"></span><a id="bKeys" class="footLink" href="#keys" title="Keyboard shortcuts and effects">Keys</a><span id="mcpState" class="dim">MCP ○</span><a id="ghLink" class="footLink" href="https://github.com/miratcan/pooptracker" target="_blank" rel="noopener">GitHub ↗</a></footer>
+<footer id="statusBar"><span id="status" role="status"></span><a id="manLink" class="footLink" href="https://github.com/miratcan/pooptracker/blob/main/docs/MANUAL.md" target="_blank" rel="noopener" title="The manual: every part of the screen, with pictures">Manual ↗</a><a id="bKeys" class="footLink" href="#keys" title="Keyboard shortcuts and effects">Keys</a><span id="mcpState" class="dim">MCP ○</span><a id="ghLink" class="footLink" href="https://github.com/miratcan/pooptracker" target="_blank" rel="noopener">GitHub ↗</a></footer>
 </div>
 
 <dialog id="keys">
@@ -281,6 +283,12 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <kbd>Home</kbd>/<kbd>End</kbd> · timeline zoom: wheel or pinch, <kbd>=</kbd> / <kbd>-</kbd>, <kbd>0</kbd> all; sideways scroll or <kbd>Shift</kbd>+wheel moves along · <kbd>I</kbd> / <kbd>O</kbd> piece start / end (or drag on the timeline) · <kbd>Shift</kbd>+<kbd>Space</kbd> play the piece · <kbd>Enter</kbd> cut it → new instrument (not re-encoded; MP4, MOV, WebM, MKV) · <kbd>Shift</kbd>+<kbd>Enter</kbd> cut it → the selected instrument's video (Repl.: how it sounds is kept) · <kbd>Esc</kbd> unmark · click the picture: the focus, the point the instrument's tiles keep in view (the frame shows what a one-channel tile sees) · <kbd>Backspace</kbd> focus back to the middle.
   The bench is never saved: what isn't cut is thrown away.</p>
 </dialog>
+<dialog id="welcome">
+  <form method="dialog"><button class="close" aria-label="Close">✕</button></form>
+  <h2>Welcome to PoopTracker</h2>
+  <p>Would you like to read the manual? It walks through every part of the screen, with pictures. It is always under <b>Manual</b> at the bottom right.</p>
+  <form method="dialog" class="row"><a id="wRead" class="btnLink" href="https://github.com/miratcan/pooptracker/blob/main/docs/MANUAL.md" target="_blank" rel="noopener">Read the manual ↗</a><button>No thanks</button></form>
+</dialog>
 <div id="drop">Drop a video → new instrument (on the bench: onto the bench) · drop a .poop → open the song · drop a .mid → import its notes</div>
 
 <script type="importmap">
@@ -294,7 +302,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
     "./src/io.js": "./src/io.js?v=c1690022cd",
-    "./src/main.js": "./src/main.js?v=1d32e97870",
+    "./src/main.js": "./src/main.js?v=d519e5c523",
     "./src/mcp.js": "./src/mcp.js?v=4cfe49e5f5",
     "./src/midi.js": "./src/midi.js?v=64f4b7dc45",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
@@ -308,14 +316,15 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/ui/output.js": "./src/ui/output.js?v=870ed87ec8",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=cdb31f0348",
-    "./src/ui/screens.js": "./src/ui/screens.js?v=9a4a196256",
+    "./src/ui/screens.js": "./src/ui/screens.js?v=e248a497ff",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
     "./src/ui/transport.js": "./src/ui/transport.js?v=4ce62d313d",
+    "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
     "./src/util.js": "./src/util.js?v=bffb1cb8ec",
     "./src/webm.js": "./src/webm.js?v=ea9d076299"
   }
 }
 </script>
-<script type="module" src="src/main.js?v=1d32e97870"></script>
+<script type="module" src="src/main.js?v=d519e5c523"></script>
 </body>
 </html>

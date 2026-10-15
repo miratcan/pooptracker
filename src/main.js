@@ -19,6 +19,7 @@ import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
 import './ui/files.js';
 import './ui/bug.js';
+import { askManual } from './ui/welcome.js';
 import { startMcp } from './mcp.js';
 import { loadDemo } from './demo.js';
 
@@ -86,6 +87,7 @@ async function boot() {
   startMcp();
   setStatus('Ready: <b>Enter</b> plays, <b>Space</b> stops / turns on edit mode, the note keys jam. Drag and drop to load your own video.');
   focusPattern();
+  askManual();
 }
 // for tests and the browser console: the layers, as they are
 window.pooptracker = { song, instruments, videos, player, engine, commands, frame, get ctx() { return ctx; } };
