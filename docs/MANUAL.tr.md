@@ -33,11 +33,8 @@ Arayüz İngilizce olduğu için düğme ve alan adları burada da ekranda gör�
 <a id="hizli-baslangic"></a>
 ## Hızlı başlangıç
 
-1. Proje klasörünü bir sunucuyla aç ve Chrome'da gir:
-   ```
-   python3 -m http.server 8765
-   ```
-   Sonra http://localhost:8765/ adresine git. Online sürüm: https://miratcan.github.io/pooptracker/
+1. Chrome'da https://miratcan.github.io/pooptracker/ adresini aç. Kurulacak bir şey yok. (Kendi bilgisayarında
+   çalıştırmak yalnızca [MCP](#mcp) için gerekli.)
 2. Hazır bir demo ritim (Kick, Snare, HiHat) yüklü gelir. Çalmak için **Enter**, durdurmak için **Space**.
 3. Kısa bir videoyu (birkaç saniyelik, içinde net bir ses olan) sayfanın herhangi bir yerine bırak. Yeni bir
    enstrüman olur.
@@ -423,7 +420,14 @@ kaydetmek.
 | 4 | **MCP ●** | Bir yapay zekâ bağlıyken dolu, değilken boş (○) |
 | 5 | **GitHub** | Proje sayfası |
 
-Claude Code'u bağlamak için:
+MCP için tracker'ın online sürümü değil, kendi bilgisayarında çalışan hali gerekir. Depoyu klonla, klasörünü bir
+sunucuyla aç ve Chrome'da http://localhost:8765/ adresine git:
+
+```
+python3 -m http.server 8765
+```
+
+Sonra Claude Code'u bağla:
 
 ```
 claude mcp add pooptracker -- node /path/to/pooptracker/mcp/server.mjs

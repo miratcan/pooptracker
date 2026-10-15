@@ -30,11 +30,8 @@ If you only want to start making noise, read [Quick start](#quick-start) and kee
 
 ## Quick start
 
-1. Serve the project folder and open it in Chrome:
-   ```
-   python3 -m http.server 8765
-   ```
-   then go to http://localhost:8765/. The online version is at https://miratcan.github.io/pooptracker/.
+1. Open https://miratcan.github.io/pooptracker/ in Chrome. There is nothing to install. (Running it on your own
+   computer is only needed for [MCP](#mcp).)
 2. A demo beat (Kick, Snare, HiHat) is already loaded. Press **Enter** to play it and **Space** to stop.
 3. Drop a short video (a few seconds, with a clear sound in it) anywhere on the page. It becomes a new instrument.
 4. Click the pattern, press **Space** to turn on edit mode (the pattern gets a red frame), and play notes on the
@@ -404,7 +401,14 @@ notes, change instruments, load videos, cut pieces, import MIDI, and save.
 | 4 | **MCP ●** | Filled when an AI is connected, hollow (○) when not |
 | 5 | **GitHub** | The project page |
 
-To connect Claude Code:
+MCP needs the tracker running on your own computer, not the online version. Clone the repository, serve its folder
+and open http://localhost:8765/ in Chrome:
+
+```
+python3 -m http.server 8765
+```
+
+Then connect Claude Code:
 
 ```
 claude mcp add pooptracker -- node /path/to/pooptracker/mcp/server.mjs
