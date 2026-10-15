@@ -1,5 +1,7 @@
 # The PoopTracker Manual
 
+*[Türkçe](MANUAL.tr.md)*
+
 PoopTracker is a tracker in the style of FastTracker 2. The difference is that its samples are videos: every note
 plays a clip, and the song comes out as a 9:16 music video. This manual walks through the screen piece by piece.
 If you only want to start making noise, read [Quick start](#quick-start) and keep **Keys** (bottom right) open.
@@ -56,7 +58,7 @@ PoopTracker has two screens, **Pattern** and **Bench**, and they share one windo
 | 4 | [Instruments](#instruments) | Your instruments (videos) |
 | 5 | [Instrument settings](#instrument-settings) | How the selected instrument plays: region, hit, loop, envelope… |
 | 6 | [Output](#the-output) | The music video, one tile per channel |
-| 7 | Status bar | Messages, errors, the **Keys** list, the MCP light |
+| 7 | Status bar | Messages, errors, the **Manual** and **Keys** links, the MCP light |
 
 On the Bench screen, the order list and the pattern editor are replaced by the [workbench](#the-workbench).
 Instruments and the output stay visible.
@@ -397,9 +399,10 @@ notes, change instruments, load videos, cut pieces, import MIDI, and save.
 | # | Part | What it is |
 |---|------|------------|
 | 1 | Status | What just happened, or what went wrong |
-| 2 | **Keys** | All shortcuts and effects, in one dialog |
-| 3 | **MCP ●** | Filled when an AI is connected, hollow (○) when not |
-| 4 | **GitHub** | The project page |
+| 2 | **Manual** | This manual, on GitHub |
+| 3 | **Keys** | All shortcuts and effects, in one dialog |
+| 4 | **MCP ●** | Filled when an AI is connected, hollow (○) when not |
+| 5 | **GitHub** | The project page |
 
 To connect Claude Code:
 

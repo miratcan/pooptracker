@@ -17,7 +17,7 @@ python3 -m http.server 8765
 Open http://localhost:8765/, press Space to hear the demo beat, then drop a short video on the page to make your
 own instrument. **Keys** in the header lists the shortcuts.
 
-The [manual](docs/MANUAL.md) walks through every part of the screen, with pictures.
+The [manual](docs/MANUAL.md) ([Türkçe](docs/MANUAL.tr.md)) walks through every part of the screen, with pictures.
 
 ## Help wanted
 
