@@ -53,7 +53,7 @@ export async function decodeVideo(file, progress = () => {}) {
 }
 
 // a video → a new instrument (one command). A video saved by PoopTracker carries its instrument in its
-// metadata (POC-01); otherwise the hit is detected. A piece cut on the workbench comes with its region
+// metadata; otherwise the hit is detected. A piece cut on the workbench comes with its region
 // ({ start, end, name }: the selection inside the piece) and its hit is looked for there. region.focus (also without a
 // piece) is where the picture looks.
 // Returns { idx, I, fromMetadata }.

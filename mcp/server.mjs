@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PoopTracker MCP server (POC-02 / B). No dependencies.
+// PoopTracker MCP server. No dependencies.
 //   LLM client ⇄ (MCP over stdio) ⇄ this server ⇄ (WebSocket, localhost:8767) ⇄ open tracker tab
 // The tools run inside the tracker tab, through its command layer: same validation as the keyboard,
 // changes appear immediately, and Ctrl+Z in the tracker undoes them.

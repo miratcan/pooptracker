@@ -1,5 +1,5 @@
 // PoopTracker instrument line: `TURD1;name=…;start=…;hit=…;…`
-// One text "language" shared by the video metadata (POC-01) and song.txt in .poop (POC-02).
+// One text "language" shared by the video metadata and song.txt in .poop.
 // An ES module: the same file runs in the browser and in Node (tests).
 import { u32, fourcc, be32, box, boxes as scan } from './mp4.js';
 
@@ -20,7 +20,7 @@ const ENV_MAX = { t: 999, ms: 30000 };
 const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
 const MAX_CHANNELS = 10;
 const KEYOFF = 97, FXCH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-// effects kept from FT2 (POC-02); E only as E9x / ECx / EDx
+// effects kept from FT2; E only as E9x / ECx / EDx
 const FX_ALLOWED = '3489AEFSIG', E_ALLOWED = [0x9, 0xC, 0xD];
 // loop modes: none, forward (loop start → end, again), pingpong (start → end → start…)
 const LOOP_MODES = ['none', 'forward', 'pingpong'];
@@ -173,7 +173,7 @@ function checkChannel(c) {
 }
 const checkRows = n => isInt(n, 1, 256) ? null : `pattern length '${n}' is invalid (1–256 rows)`;
 
-// ───── song text (song.txt + patterns/NN.txt, POC-02): the formatter always writes the standard form,
+// ───── song text (song.txt + patterns/NN.txt): the formatter always writes the standard form,
 // the reader is tolerant of spacing / case but never guesses a meaning; every error says file:line.
 const SONG_MAGIC = 'POOPTRACKER SONG 1';
 // one field of a pattern cell as text (note 'C-4' / '===' / '...', instrument '01' / '..', volume '30' / '..',
@@ -383,7 +383,7 @@ async function unzip(b) {
   return out;
 }
 
-// ───── the instrument inside its own video file (POC-01): an MP4/MOV metadata key, like iPhone's location tag.
+// ───── the instrument inside its own video file: an MP4/MOV metadata key, like iPhone's location tag.
 // QuickTime 'mdta' metadata (ffmpeg: -movflags use_metadata_tags): meta → hdlr 'mdta' + keys + ilst, UTF-8 value.
 // Written without touching the video or audio: only the moov box changes (chunk offsets fixed when it grows).
 const MP4_KEY = 'pooptracker';
