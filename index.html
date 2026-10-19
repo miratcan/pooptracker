@@ -89,7 +89,7 @@ label{color:var(--dim);display:inline-flex;align-items:center;gap:3px} /* the ga
 .ordBtns button{flex:1;padding:2px 0}
 .err{color:var(--red)}
 .card{background:var(--panel);border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);padding:8px}
-.card h2{font:8px dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
+.card h2{font:8px/1.5 dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
 #pat{display:block;cursor:text}
 #outCard{flex:none;display:flex;flex-direction:column;min-height:0;margin-left:-1px;padding:8px 0 0} /* the video touches the card's edges; the title and stats keep their margin */
 #outCard h2,#outCard #stats{padding:0 8px}
@@ -119,7 +119,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #pat{outline:none} /* the pattern has the focus nearly always (it gets it on start); its cursor shows where you are */
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);max-width:860px;line-height:1.7;padding:14px 18px}
 dialog::backdrop{background:color-mix(in srgb,var(--black) 60%,transparent)}
-dialog h2{font:8px dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
+dialog h2{font:8px/1.5 dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
 dialog p{margin:0 0 8px;color:var(--dim)}
 dialog b{color:var(--text);font-weight:600}
 dialog .close{float:right}
@@ -305,8 +305,8 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=3cac1f37df",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=122244c3a9",
+    "./src/core/commands.js": "./src/core/commands.js?v=bac3a05fe4",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=f3eb80ca17",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
@@ -317,16 +317,16 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/mcp.js": "./src/mcp.js?v=85300162b9",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
-    "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
+    "./src/mp4cut.js": "./src/mp4cut.js?v=c808e5a55a",
     "./src/ptformat.js": "./src/ptformat.js?v=17fdd75844",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=61ab504193",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=e642ca3107",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=763cc187e6",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=62c010bc74",
-    "./src/ui/output.js": "./src/ui/output.js?v=54a17a1609",
+    "./src/ui/output.js": "./src/ui/output.js?v=ab138009a8",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
-    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=5b46b30a85",
+    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=18bf427176",
     "./src/ui/screens.js": "./src/ui/screens.js?v=e248a497ff",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",

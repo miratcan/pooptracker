@@ -124,3 +124,14 @@ test('the bench: putting a video on it, trimming and clearing it are undoable, a
   assert.equal(C.putOnBench(b), null); // the same video again is no change
   assert.ok(changes.every(c => c.scope === 'bench'));
 });
+
+test('at most MAX_HEAVY commands that keep a video alive stay in the history; it is cut off before the oldest', () => {
+  C.exec(() => C.setSong({ bpm: 100 }, 'BPM')); // a light one, before them all
+  const files = Array.from({ length: C.MAX_HEAVY + 5 }, (_, i) => new Blob([String(i)]));
+  for (const f of files) C.exec(() => C.putOnBench(f));
+  assert.equal(C.hist.undo.filter(c => c.heavy).length, C.MAX_HEAVY);
+  assert.equal(C.hist.undo.length, C.MAX_HEAVY); // the BPM change went with the oldest
+  while (C.undo());
+  assert.equal(bench.file, files[4]); // back as far as the history goes: before the 6th video was put on
+  assert.equal(song.bpm, 100);
+});

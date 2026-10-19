@@ -31,7 +31,8 @@ src/
   demo.js         the demo instruments and beat shown at startup
 media/replace-me.mp4  the 1 s silent video every MIDI-imported instrument starts with
 mcp/server.mjs    the MCP server (Node, stdio ⇄ WebSocket to the tab); reads and writes files for MCP
-test/             node --test: format, commands, engine (on a fake AudioContext), cutting (fixtures/av.mp4), MIDI
+test/             node --test: format, commands, engine (on a fake AudioContext), cutting (fixtures/av.mp4), MIDI;
+                  ui.test.js: the app in a headless Chrome, driven over CDP by browser.js (skipped without Chrome)
 ```
 
 Dependencies only point down: `ui` → `io`, `engine`, `core` → `midi` → `ptformat`, `mp4cut` → `webm` → `mp4`, `util`. `core` and `engine` never import

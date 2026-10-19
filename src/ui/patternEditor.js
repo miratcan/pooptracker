@@ -284,5 +284,8 @@ for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) keys[`Alt+$
 // Alt + the top / middle letter row jumps to channel 0–7 / 8–15
 ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK'].forEach((c, ch) => { keys[`Alt+${c}`] = goTrack(ch); });
 export const patternScreen = { name: 'pattern', el: $('#app'), keys, onKey, enter: () => pc.focus() };
-new ResizeObserver(() => setupPat()).observe($('#patBox'));
+// on the next frame, as output.js does: the canvas's new size can bring or take away the box's scroll bar
+new ResizeObserver(() => requestAnimationFrame(setupPat)).observe($('#patBox'));
+// the characters are measured in the DOS font; until it has arrived the fallback (wider) one is measured instead
+document.fonts.addEventListener('loadingdone', () => setupPat());
 $('#patBox').addEventListener('scroll', () => { view.patDirty = true; });

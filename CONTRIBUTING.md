@@ -22,9 +22,19 @@ Another port: `POOPTRACKER_MCP_PORT=8799 node mcp/server.mjs` and open the track
 ## Test it
 
 ```
-npm test            # node --test: the file format, the commands, the engine (no browser, no dependencies)
+npm test            # node --test: the file format, the commands, the engine, and the app in a headless Chrome
 npm run stamp       # after changing anything in src/: puts the new module hashes into index.html
 ```
+
+`test/ui.test.js` drives the app in a headless Chrome over the Chrome DevTools Protocol (`test/browser.js`, no
+package): what only shows on the page, like keys that stay down, the workbench's timeline and loop, Load / New / Trim /
+Tune / Fit. It finds Chrome where it is usually installed, or at `CHROME=<path>`; without one those tests are skipped.
+A behaviour you check by hand in the browser belongs there.
+
+The manual's pictures (`docs/manual/*.png`) are made by `npm run shots` (`tools/shots.mjs`): it brings the app to
+each state, draws the numbers the manual's tables use over the elements they name, and takes the picture. Run it after
+changing the screen; a new control gets its number there and in both manuals' tables. `--song my.poop --video
+long.mp4` makes them with your own material instead of the demo song.
 
 The import map in `index.html` adds `?v=<hash>` to every module, so a browser never mixes a new module with an old
 one from its cache. It is written by `tools/stamp.mjs`, not by hand; a test fails while it is out of date.

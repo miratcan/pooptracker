@@ -147,8 +147,22 @@ export async function cutVideo(read, size, t0, t1) {
   if (!(t1 > t0)) fail('the piece is empty: its end must be after its start');
   return cutIndex(await isMatroska(read) ? await indexWebm(read, size, t0, t1) : await indexMp4(read, size), read, t0, t1);
 }
-async function cutIndex({ b, mvhd, movieScale, tracks, ftyp }, read, t0, t1) {
-  const vid = tracks.find(t => t.kind === 'vide' && t.size.length) ?? fail('the video has no picture'), aud = tracks.find(t => t.kind === 'soun' && t.size.length);
+// only the sound of pieces of one video, as audio-only MP4s a browser can decode (the workbench's waveform and loop):
+// none of the picture is read. An MP4/MOV is indexed once, here; a WebM/MKV per piece (its index is made around the
+// piece, and its clusters hold picture and sound together). Returns cut(t0, t1) → { bytes, start, end } as cutVideo.
+export async function soundCutter(read, size) {
+  if (await isMatroska(read)) return async (t0, t1) => cutIndex(await indexWebm(read, size, t0, t1), read, t0, t1, true);
+  const index = await indexMp4(read, size);
+  return (t0, t1) => cutIndex(index, read, t0, t1, true);
+}
+async function cutIndex({ b, mvhd, movieScale, tracks, ftyp }, read, t0, t1, soundOnly = false) {
+  if (!(t1 > t0)) fail('the piece is empty: its end must be after its start');
+  const aud = tracks.find(t => t.kind === 'soun' && t.size.length);
+  if (soundOnly) {
+    if (!aud) fail('the video has no sound');
+    return cutParts([pickSound(aud, t0, t1)], { b, mvhd, movieScale, ftyp }, read, t0, t1);
+  }
+  const vid = tracks.find(t => t.kind === 'vide' && t.size.length) ?? fail('the video has no picture');
 
   // picture: from the last keyframe at or before t0 to the last frame shown before t1
   const nv = vid.size.length; let s = 0;
@@ -159,16 +173,20 @@ async function cutIndex({ b, mvhd, movieScale, tracks, ftyp }, read, t0, t1) {
   for (let i = s; i <= e; i++) end = Math.max(end, vid.pts(i) + vid.dur[i] / vid.scale);
   end = Math.min(end, t1);
   const parts = [pick(vid, s, e, t0, end)];
-  // sound: from t0, one frame earlier (a decoder needs it to warm up; the edit list hides it)
-  if (aud) {
-    // lead: how much earlier than its timestamps a track's sound comes out of the decoder (Opus: its pre-skip); the
-    // edit list starts and ends that much later
-    const na = aud.size.length, lead = aud.lead ?? 0; let a0 = 0, a1 = 0;
-    for (let i = 0; i < na; i++) { if (aud.pts(i) <= t0 + 1e-9) a0 = i; if (aud.pts(i) < end + lead - 1e-9) a1 = i; }
-    parts.push(pick(aud, Math.max(0, a0 - 1), Math.max(a0, a1), t0 + lead, end + lead));
-  }
-
-  // the new file: ftyp, moov, then one mdat where the tracks take turns, half a second at a time
+  if (aud) parts.push(pickSound(aud, t0, end));
+  return cutParts(parts, { b, mvhd, movieScale, ftyp }, read, t0, end);
+}
+// sound: from t0, one frame earlier (a decoder needs it to warm up; the edit list hides it), to end.
+// lead: how much earlier than its timestamps a track's sound comes out of the decoder (Opus: its pre-skip); the edit
+// list starts and ends that much later
+function pickSound(aud, t0, end) {
+  const na = aud.size.length, lead = aud.lead ?? 0; let a0 = 0, a1 = 0;
+  for (let i = 0; i < na; i++) { if (aud.pts(i) <= t0 + 1e-9) a0 = i; if (aud.pts(i) < end + lead - 1e-9) a1 = i; }
+  return pick(aud, Math.max(0, a0 - 1), Math.max(a0, a1), t0 + lead, end + lead);
+}
+// the new file from the picked parts: ftyp, moov, then one mdat where the tracks take turns
+async function cutParts(parts, { b, mvhd, movieScale, ftyp }, read, t0, end) {
+  // half a second of each track at a time
   const chunks = parts.map(P => { const out = []; let c = null;
     for (let i = P.from; i <= P.to; i++) {
       if (!c || P.t.dts[i] - c.dts >= CHUNK * P.t.scale) out.push(c = { dts: P.t.dts[i], time: P.t.dts[i] / P.t.scale, first: i, n: 0, bytes: 0 });

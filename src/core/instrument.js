@@ -3,14 +3,17 @@
 // (start, end, hit, loop points) are seconds on the video's timeline, rounded to ms.
 import { FPS, clamp } from '../util.js';
 
-// file = the original video file, kept as is for saving (demo videos have none)
+// file = the original video file, kept as is for saving (demo videos have none). dur: the readable end, in ms. Sound
+// resampled to the AudioContext's rate can come out one sample short (2.5 s at 44.1 kHz: 110249 samples), and rounding
+// down would make that a whole ms less: up to one sample short still counts as the full length.
 export function makeVideo(name, frames, buffer, file = null) {
-  return { name, file, frames, fps: FPS, buffer, peaks: computePeaks(buffer, 1200), dur: Math.floor(buffer.duration * 1000) / 1000 };
+  const dur = Math.floor((buffer.length + 1) / buffer.sampleRate * 1000 + 1e-6) / 1000;
+  return { name, file, frames, fps: FPS, buffer, peaks: computePeaks(buffer, 1200), dur };
 }
 // A video's readable end comes from its decoded sound, whose length depends on the sample rate the browser decodes at
-// (the output device's): a song saved at 48 kHz can find its videos 1 ms shorter at 44.1 kHz. An instrument that
-// reaches at most READ_SLACK past the end is fitted to it (its region end, and the points past it, move back);
-// further past, it doesn't fit: null.
+// (the output device's). makeVideo allows for the one sample resampling loses; files saved before it did can still be
+// 1 ms past. An instrument that reaches at most READ_SLACK past the end is fitted to it (its region end, and the
+// points past it, move back); further past, it doesn't fit: null.
 export const READ_SLACK = 0.002;
 export function fitToVideo(s, dur) {
   if (s.end > dur + READ_SLACK) return null;

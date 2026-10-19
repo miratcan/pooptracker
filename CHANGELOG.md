@@ -34,6 +34,18 @@ The first public version.
 - Under the instrument list, **Load** now gives the selected instrument a video (what Repl. did; Repl. is gone) and
   the new **New** adds an empty instrument (with the REPLACE ME video) to load into: Load never adds one by surprise.
   A video saved with Save brings all its settings, its loop mode too (it used to keep the instrument's).
+- The manual's pictures are made by `npm run shots` from the app itself, numbers included, and show the current
+  screen; the instrument and workbench tables are numbered again (New / Load, Trim).
+- Section headings that wrap onto two lines no longer overlap.
+- Undo keeps at most 20 steps that hold a video (replacing, trimming, the bench, a new song); past that the oldest go.
+- Resizing the window no longer sets off "ResizeObserver loop" errors (the output and the pattern resize a frame later).
+- The workbench's waveform and loop read only the sound (mp4cut soundCutter): a 5-minute 720p video, 2.7 MB read
+  instead of 155 MB.
+- Browser tests: `npm test` also drives the app in a headless Chrome (test/browser.js speaks the Chrome DevTools
+  Protocol itself, no package); skipped without Chrome.
+- A video's readable end no longer depends on the sample rate it was decoded at (resampling could leave it one sample,
+  so 1 ms, short): a trimmed 2.5 s region stays 2.5 s.
+- The pattern is measured again once the DOS font has loaded (it was only by luck that the layout changed then).
 - Fit (next to Tune), for loops: repitches the clip so that at C-4 its region lasts a whole number of rows at the
   current tempo (like Renoise's beat sync in repitch mode); sets Base and Fine. MCP `fit_instrument` (rows optional).
 - Tune (next to Base) finds an instrument's pitch and sets Base and the new Fine to it; Fine is FT2's finetune (1/128

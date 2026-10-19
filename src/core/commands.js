@@ -26,12 +26,17 @@ export const setGuard = fn => { guard = fn; };
 const guarded = action => { const msg = guard(action); if (msg) fail(msg); };
 
 export const hist = { undo: [], redo: [] };
+// A heavy command (heavy: true) keeps a video or a file alive for its undo: decoded frames, a trimmed piece. At most
+// MAX_HEAVY of them are kept; past that the history is cut off at the oldest, with everything before it (a command
+// can't be taken out of the middle: the ones after it were made on what it left).
+export const MAX_UNDO = 1000, MAX_HEAVY = 20;
 // applies a command and records it for undo; throws CmdError if invalid. Returns the command (null = no change).
 export function exec(factory) {
   const cmd = factory();
   if (!cmd) return null;
   cmd.apply(); hist.undo.push(cmd); hist.redo.length = 0;
-  if (hist.undo.length > 1000) hist.undo.shift();
+  if (hist.undo.length > MAX_UNDO) hist.undo.shift();
+  if (cmd.heavy && hist.undo.filter(c => c.heavy).length > MAX_HEAVY) hist.undo.splice(0, hist.undo.findIndex(c => c.heavy) + 1);
   emit(cmd);
   return cmd;
 }
@@ -115,7 +120,7 @@ export function setInstrumentVideo(idx, V, place = null, label = 'replace video'
   if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) nu.loop = 'none';
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);
   const set = (vals, video) => { Object.assign(I, copy(vals)); I.video = video; sliceRegion(I); };
-  return { label: `${hex2(idx)} ${label}`, scope: 'instrument', inst: I, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
+  return { label: `${hex2(idx)} ${label}`, scope: 'instrument', inst: I, heavy: true, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
 }
 // before: values to restore on undo, for edits that were previewed live (slider / waveform drag)
 export function setInstrument(idx, fields, label = 'instrument', before) {
@@ -138,7 +143,7 @@ export function deleteInstrument(idx) {
   const used = [];
   song.patterns.forEach((P, pi) => P.rows.forEach((r, ri) => r.forEach((c, ch) => { if (c.i === idx) used.push(`pattern ${hex2(pi)} row ${hex2(ri)} channel ${ch + 1}`); })));
   if (used.length) fail(`instrument ${hex2(idx)} is in use: ${used.slice(0, 3).join(', ')}${used.length > 3 ? ` and ${used.length - 3} more` : ''}`);
-  return { label: `delete instrument ${hex2(idx)}`, scope: 'instruments', inst: I,
+  return { label: `delete instrument ${hex2(idx)}`, scope: 'instruments', inst: I, heavy: true,
     apply: () => { instruments.splice(idx, 1); remapInst(i => i > idx ? i - 1 : i); },
     revert: () => { instruments.splice(idx, 0, I); remapInst(i => i >= idx ? i + 1 : i); } };
 }
@@ -176,7 +181,7 @@ export function newSong() {
   const oldInst = instruments.slice(), oldVideos = videos.slice();
   const set = (S, insts, vids) => { Object.assign(song, S); instruments.length = 0; instruments.push(...insts); videos.length = 0; videos.push(...vids); };
   const fresh = { title: '', bpm: 125, speed: 6, rowsPerBeat: 4, channels: Array.from({ length: 4 }, () => ({ name: '', pan: 0x80 })), order: [0] };
-  return { label: 'new song', scope: 'all', resetEditor: true,
+  return { label: 'new song', scope: 'all', resetEditor: true, heavy: true,
     apply: () => { set({ ...fresh, patterns: [] }, [null], []); song.patterns = [newPattern(64)]; },
     revert: () => set(keep, oldInst, oldVideos) };
 }
@@ -190,7 +195,7 @@ export function importSong(S, insts, vids, label) {
   const keep = { title: song.title, bpm: song.bpm, speed: song.speed, rowsPerBeat: song.rowsPerBeat, channels: song.channels, patterns: song.patterns, order: song.order };
   const oldInst = instruments.slice(), oldVideos = videos.slice();
   const set = (s, i, v) => { Object.assign(song, s); instruments.length = 0; instruments.push(...i); videos.length = 0; videos.push(...v); };
-  return { label, scope: 'all', resetEditor: true, apply: () => set(S, [null, ...insts], vids), revert: () => set(keep, oldInst, oldVideos) };
+  return { label, scope: 'all', resetEditor: true, heavy: true, apply: () => set(S, [null, ...insts], vids), revert: () => set(keep, oldInst, oldVideos) };
 }
 
 // the workbench's video: put on it, trimmed or thrown off as a command, so Ctrl+Z brings the one before back with its
@@ -198,7 +203,7 @@ export function importSong(S, insts, vids, label) {
 function benchVideo(file, marks, label) {
   if (file === bench.file) return null;
   const old = { ...bench }, nu = { file, in: null, out: null, focus: null, ...marks };
-  return { label, scope: 'bench', apply: () => Object.assign(bench, nu), revert: () => Object.assign(bench, old) };
+  return { label, scope: 'bench', heavy: true, apply: () => Object.assign(bench, nu), revert: () => Object.assign(bench, old) };
 }
 export const putOnBench = file => benchVideo(file, {}, 'video on the bench');
 // the piece (len seconds, cut out of the video on the bench) takes its place, marked whole and keeping the focus

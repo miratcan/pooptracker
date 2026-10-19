@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cutVideo, reader } from '../src/mp4cut.js';
+import { cutVideo, soundCutter, reader } from '../src/mp4cut.js';
 import { boxes, box, u32, fourcc, be32 } from '../src/mp4.js';
 import PTFormat from '../src/ptformat.js';
 
@@ -115,4 +115,20 @@ test('an Opus piece says where its sound starts twice, the same: in the edit lis
   const dops = boxes(b, entry.body + 28, entry.end, bad).find(x => x.type === 'dOps'), preSkip = (b[dops.body + 2] << 8) | b[dops.body + 3];
   assert.ok(Math.abs(preSkip / 48000 - mediaTime / scale) < 1 / 1000, `pre-skip ${preSkip / 48} ms, edit list ${mediaTime / scale * 1000} ms`);
   assert.ok(preSkip / 48 > 6.5, `${preSkip / 48} ms: the file's own pre-skip (312 samples) and the warm-up packet`);
+});
+
+test('soundCutter: only the sound of a piece, without reading the picture; the MP4 is indexed once', async () => {
+  let bytes = 0, reads = 0; const read = reader(SRC), counted = (o, len) => { bytes += len; reads++; return read(o, len); };
+  const cutSound = await soundCutter(counted, SRC.length), indexing = bytes;
+  const r = await cutSound(1, 5);
+  assert.deepEqual(tracks(r.bytes), [['soun', 190, true]]); // 4 s of 48 kHz AAC: 187.5 frames of 1024, the ones at both ends whole, + 1 warm-up
+  assert.ok(Math.abs(r.end - 4) < 1e-6);
+  const piece = bytes - indexing;
+  assert.ok(piece < r.bytes.length, `${piece} bytes read for a ${r.bytes.length}-byte piece`); // the sound packets, nothing else
+  const before = bytes; await cutSound(2, 3);
+  assert.ok(bytes - before < piece / 2, 'the second piece reads only its own sound, not the index again');
+  for (const f of ['vp9.webm', 'av.mkv']) { // a WebM/MKV is indexed per piece, all the same
+    const B = new Uint8Array(readFileSync(new URL(`./fixtures/${f}`, import.meta.url)));
+    assert.deepEqual((await (await soundCutter(reader(B), B.length))(1, 2)).bytes.length > 0, true, f);
+  }
 });

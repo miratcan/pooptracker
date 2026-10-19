@@ -241,9 +241,10 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | # | Kontrol | Ne yapar |
 |---|---------|----------|
 | 1 | Enstrüman listesi | Seçmek için bir enstrümana tıkla (ya da Shift+↑↓). Nota tuşları seçili olanı çalar. Buradaki bir enstrümanın üstüne video bırakırsan videosu değişir. |
-| 2 | **New**, **Load** | **New** listenin sonuna boş bir enstrüman ekler. **Load** **seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. **Save** ile kaydedilmiş bir video ise kendi ayarlarının hepsini getirir. Hiç enstrüman yoksa Load yeni bir tane yapar. |
-| 3 | **Save** | Videoyu, bu enstrümanın ayarları metadata'sında olacak şekilde kaydeder. Yeniden encode edilmez. Sadece MP4/MOV. |
-| 4 | **Dup.** | Aynı videodan, aynı ayarlarla yeni bir enstrüman. Aynı klipten başka bir bölge almak için kullan. |
+| 2 | **New** | Listenin sonuna, video yüklenecek boş bir enstrüman ekler |
+| 3 | **Load** | **Seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. **Save** ile kaydedilmiş bir video ise kendi ayarlarının hepsini getirir. Hiç enstrüman yoksa Load yeni bir tane yapar. |
+| 4 | **Save** | Videoyu, bu enstrümanın ayarları metadata'sında olacak şekilde kaydeder. Yeniden encode edilmez. Sadece MP4/MOV. |
+| 5 | **Dup.** | Aynı videodan, aynı ayarlarla yeni bir enstrüman. Aynı klipten başka bir bölge almak için kullan. |
 | 6 | **↑ ↓ Del.** | Enstrümanı listede yukarı ya da aşağı taşır / siler (sadece hiçbir pattern kullanmıyorsa) |
 | 7 | **▶ From hit** | Enstrümanı vuruş noktasından çalar |
 | 8 | **▶ From start** | Bölgesinin başından çalar |
@@ -338,15 +339,15 @@ MP4, MOV, WebM ve MKV keser. YouTube'dan bir video için: `yt-dlp <url>`.
 |---|---------|----------|
 | 1 | **Load** | Tezgâha bir video koyar. Tezgâh açıkken videoyu sayfaya bırakmak da olur. |
 | 2 | Ad | Dosya ve uzunluğu |
-| 3 | **Clear** | Videoyu tezgâhtan kaldırır (Ctrl+Z geri koyar) |
-|  | **Trim** | Tezgâhta yalnızca işaretli parçayı bırakır, gerisini atar (Ctrl+Z geri getirir); parça işaretli kalır, hemen kesilebilir. Parça 8 sn'den uzun olabilir. |
-| 4 | Görüntü | Keseceğin enstrümanın **odağını** belirlemek için tıkla. Backspace ortaya döndürür. |
-| 5 | İşaretli parça | Turuncu şerit. **I** başını, **O** sonunu işaretler, ya da zaman çizelgesinde sürükleyebilirsin. Bir ucu taşımak için tutamağını sürükle. |
-| 6 | Zaman çizelgesi | Tıklayınca o noktaya gider. Fare tekerleği ya da iki parmakla yakınlaşır (`=` / `-`, `0` hepsini gösterir). Shift+tekerlek ya da yatay kaydırma boyunca gezer. |
-| 7 | Parça | İşaretli parçanın başı, sonu ve uzunluğu (en fazla 8 sn) |
-| 8 | **▶ Piece**, **■ Stop**, **Loop** | Parçayı bir kez çalar (Shift+Space); çalarken **▶ Piece** basılı kalır, **■ Stop** durdurur. **Loop** basılıyken durdurana kadar tekrar tekrar çalar; bu sırada uçlarını sürükleyip loop'u bulabilirsin. |
-| 9 | **Cut → Inst.** | Parçayı **yeni** bir enstrümana keser (Enter) |
-| 10 | **Cut → Repl.** | Parçayı **seçili** enstrümanın videosu yapar, sesini korur (Shift+Enter) |
+| 3 | **Trim** | Tezgâhta yalnızca işaretli parçayı bırakır, gerisini atar (Ctrl+Z geri getirir); parça işaretli kalır, hemen kesilebilir. Parça 8 sn'den uzun olabilir. |
+| 4 | **Clear** | Videoyu tezgâhtan kaldırır (Ctrl+Z geri koyar) |
+| 5 | Görüntü | Keseceğin enstrümanın **odağını** belirlemek için tıkla. Backspace ortaya döndürür. |
+| 6 | İşaretli parça | Turuncu şerit. **I** başını, **O** sonunu işaretler, ya da zaman çizelgesinde sürükleyebilirsin. Bir ucu taşımak için tutamağını sürükle. |
+| 7 | Zaman çizelgesi | Tıklayınca o noktaya gider. Fare tekerleği ya da iki parmakla yakınlaşır (`=` / `-`, `0` hepsini gösterir). Shift+tekerlek ya da yatay kaydırma boyunca gezer. |
+| 8 | Parça | İşaretli parçanın başı, sonu ve uzunluğu (en fazla 8 sn) |
+| 9 | **▶ Piece**, **■ Stop**, **Loop** | Parçayı bir kez çalar (Shift+Space); çalarken **▶ Piece** basılı kalır, **■ Stop** durdurur. **Loop** basılıyken durdurana kadar tekrar tekrar çalar; bu sırada uçlarını sürükleyip loop'u bulabilirsin. |
+| 10 | **Cut → Inst.** | Parçayı **yeni** bir enstrümana keser (Enter) |
+| 11 | **Cut → Repl.** | Parçayı **seçili** enstrümanın videosu yapar, sesini korur (Shift+Enter) |
 
 Kesimden sonra parça enstrüman listesindedir ve vuruşu bulunmuştur. Dalga formunda kontrol et:
 

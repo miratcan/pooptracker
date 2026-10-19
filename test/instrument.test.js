@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FakeAudioBuffer } from './fake-audio.js';
-import { detectPitch, tuneFor, rateFor, fitToVideo, fitFor } from '../src/core/instrument.js';
+import { detectPitch, tuneFor, rateFor, fitToVideo, fitFor, makeVideo } from '../src/core/instrument.js';
 
 const SR = 48000;
 // seconds of a signal: f(t) → sample
@@ -59,4 +59,11 @@ test('fitFor: a loop is repitched to last a whole number of rows at C-4', () => 
   assert.equal(fitFor(1.85, 125, 6, 8).rows, 8);                   // or as many rows as asked
   assert.equal(fitFor(1.92, 125, 6).baseNote, 48);                 // already 16 rows: C-4, nothing changes
   assert.equal(fitFor(1.92, 125, 6).fine, 0);
+});
+
+test('a video\'s readable end doesn\'t depend on the sample rate it was decoded at', () => {
+  // 2.5 s of sound: exact at 48 kHz, one sample short once resampled to 44.1 kHz (as Chrome does)
+  for (const [length, sampleRate] of [[120000, 48000], [110250, 44100], [110249, 44100]])
+    assert.equal(makeVideo('v', [], new FakeAudioBuffer({ length, sampleRate })).dur, 2.5, `${length} at ${sampleRate}`);
+  assert.equal(makeVideo('v', [], new FakeAudioBuffer({ length: 110200, sampleRate: 44100 })).dur, 2.498); // really shorter
 });

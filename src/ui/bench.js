@@ -6,7 +6,7 @@
 // Only the browser's video player plays the long video: its sound is never decoded whole (an hour would not fit). For
 // the timeline's waveform it is decoded a minute at a time, in the background, and only each minute's peaks are kept.
 import { MAX_SAMPLE_SEC, hex2, round3 } from '../util.js';
-import { cutVideo, reader } from '../mp4cut.js';
+import { cutVideo, soundCutter, reader } from '../mp4cut.js';
 import { importVideo, replaceVideo } from '../io.js';
 import { instruments, bench } from '../core/song.js';
 import { CmdError, exec, onChange, putOnBench as putCmd, trimBench, clearBench } from '../core/commands.js';
@@ -23,6 +23,9 @@ let busy = false; // cutting or trimming
 const PPS = 100, WINDOW = 60;
 const peaks = { min: null, max: null, top: 0, job: 0 };
 const peaksOf = new WeakMap(); // file → its finished peaks: an undone trim brings its waveform back at once
+// file → a promise of its sound cutter (mp4cut soundCutter): the waveform and the loop read only the sound, indexed once
+const cutters = new WeakMap();
+const soundOf = file => { if (!cutters.has(file)) cutters.set(file, soundCutter(reader(file), file.size)); return cutters.get(file); };
 const STEP = 1, BIG = 10, FRAME = 1 / 30;
 
 // 754.25 → '12:34.250', 3754.25 → '1:02:34.250'
@@ -58,8 +61,8 @@ function show() {
 }
 onChange(({ scope }) => { if (scope === 'bench') show(); });
 
-// a minute is cut out as it would be for an instrument (so MP4, MOV, WebM and MKV all work), its sound decoded and
-// thrown away once its peaks are written; a video that can't be cut shows no waveform. A new video stops the reading.
+// a minute of sound at a time is cut out (only the sound: MP4, MOV, WebM and MKV all work), decoded and thrown away once
+// its peaks are written; a video that can't be cut shows no waveform. A new video stops the reading.
 async function readPeaks(file, D) {
   const job = ++peaks.job;
   if (peaksOf.has(file)) { Object.assign(peaks, peaksOf.get(file)); draw(); return; }
@@ -67,7 +70,7 @@ async function readPeaks(file, D) {
   peaks.min = new Float32Array(n).fill(NaN); peaks.max = new Float32Array(n).fill(NaN); peaks.top = 0;
   for (let t0 = 0; t0 < D; t0 += WINDOW) {
     let buf;
-    try { buf = await ctx.decodeAudioData((await cutVideo(reader(file), file.size, t0, Math.min(D, t0 + WINDOW))).bytes.buffer); }
+    try { buf = await ctx.decodeAudioData((await (await soundOf(file))(t0, Math.min(D, t0 + WINDOW))).bytes.buffer); }
     catch (err) { if (t0 === 0) { console.warn('no waveform:', err.message); return; } continue; }
     if (job !== peaks.job) return;
     const chans = [...Array(buf.numberOfChannels).keys()].map(c => buf.getChannelData(c)), per = buf.sampleRate / PPS;
@@ -122,10 +125,11 @@ async function startLoop() {
   ensureAudio(); vid.muted = true;
   const job = ++loopJob, from = Math.max(0, s[0] - LOOP_ROOM), to = Math.min(dur(), s[1] + LOOP_ROOM);
   let buf;
-  try { buf = await ctx.decodeAudioData((await cutVideo(reader(file), file.size, from, to)).bytes.buffer); }
+  try { buf = await ctx.decodeAudioData((await (await soundOf(file))(from, to)).bytes.buffer); }
   catch (err) { console.warn('loop: plays the plain way:', err.message); vid.muted = false; stopAt = s[1]; vid.currentTime = s[0]; vid.play(); return; }
   if (job !== loopJob || bench.file !== file) return;
   const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  // straight out, as the <video> plays the bench without Loop: the file's own level, not the song's master and limiter
   src.loopStart = s[0] - from; src.loopEnd = s[1] - from; src.connect(ctx.destination);
   src.start(ctx.currentTime, s[0] - from);
   lp = { src, from, to, pos: s[0], last: ctx.currentTime, ending: false };

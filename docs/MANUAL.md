@@ -230,9 +230,10 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 | # | Control | What it does |
 |---|---------|--------------|
 | 1 | Instrument list | Click an instrument to select it (or use Shift+↑↓). The selected one is what the note keys play. Drop a video on an instrument here to replace its video. |
-| 2 | **New**, **Load** | **New** adds an empty instrument at the end of the list. **Load** gives the **selected** instrument a video and keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); the region and hit are found again in the new video. A video saved with **Save** brings all its own settings instead. With no instrument, Load makes a new one. |
-| 3 | **Save** | Saves the video with this instrument's settings in its metadata. It isn't re-encoded. MP4/MOV only. |
-| 4 | **Dup.** | A new instrument from the same video with the same settings. Use it to take another region of the same clip. |
+| 2 | **New** | Adds an empty instrument at the end of the list, to load a video into |
+| 3 | **Load** | Gives the **selected** instrument a video and keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); the region and hit are found again in the new video. A video saved with **Save** brings all its own settings instead. With no instrument, Load makes a new one. |
+| 4 | **Save** | Saves the video with this instrument's settings in its metadata. It isn't re-encoded. MP4/MOV only. |
+| 5 | **Dup.** | A new instrument from the same video with the same settings. Use it to take another region of the same clip. |
 | 6 | **↑ ↓ Del.** | Move the instrument up or down in the list / delete it (only if no pattern uses it) |
 | 7 | **▶ From hit** | Plays the instrument from its hit point |
 | 8 | **▶ From start** | Plays it from the start of its region |
@@ -325,15 +326,15 @@ It cuts MP4, MOV, WebM and MKV. A video from YouTube: `yt-dlp <url>`.
 |---|---------|--------------|
 | 1 | **Load** | Puts a video on the bench. You can also drop it on the page while the bench is open. |
 | 2 | Name | The file and its length |
-| 3 | **Clear** | Takes the video off the bench (Ctrl+Z puts it back) |
-|  | **Trim** | Keeps only the marked piece on the bench and throws the rest away (Ctrl+Z brings it back); it stays marked, ready to cut. The piece can be longer than 8 s. |
-| 4 | Picture | Click it to set the **focus** of the instrument you are about to cut. Backspace resets it to the middle. |
-| 5 | Marked piece | The orange band. **I** marks its start and **O** its end, or you can drag on the timeline. Drag a handle to move that end. |
-| 6 | Timeline | Click it to go to that point. Zoom with the wheel or a pinch (`=` / `-`, `0` shows everything). Shift+wheel or sideways scrolling moves along it. |
-| 7 | Piece | Start, end and length of the marked piece (at most 8 s) |
-| 8 | **▶ Piece**, **■ Stop**, **Loop** | Plays the piece once (Shift+Space); **▶ Piece** stays down while it plays, **■ Stop** stops it. With **Loop** down, it plays again and again until you pause; drag its ends meanwhile to find the loop. |
-| 9 | **Cut → Inst.** | Cuts the piece into a **new** instrument (Enter) |
-| 10 | **Cut → Repl.** | Cuts the piece into the **selected** instrument's video, keeping how it sounds (Shift+Enter) |
+| 3 | **Trim** | Keeps only the marked piece on the bench and throws the rest away (Ctrl+Z brings it back); it stays marked, ready to cut. The piece can be longer than 8 s. |
+| 4 | **Clear** | Takes the video off the bench (Ctrl+Z puts it back) |
+| 5 | Picture | Click it to set the **focus** of the instrument you are about to cut. Backspace resets it to the middle. |
+| 6 | Marked piece | The orange band. **I** marks its start and **O** its end, or you can drag on the timeline. Drag a handle to move that end. |
+| 7 | Timeline | Click it to go to that point. Zoom with the wheel or a pinch (`=` / `-`, `0` shows everything). Shift+wheel or sideways scrolling moves along it. |
+| 8 | Piece | Start, end and length of the marked piece (at most 8 s) |
+| 9 | **▶ Piece**, **■ Stop**, **Loop** | Plays the piece once (Shift+Space); **▶ Piece** stays down while it plays, **■ Stop** stops it. With **Loop** down, it plays again and again until you pause; drag its ends meanwhile to find the loop. |
+| 10 | **Cut → Inst.** | Cuts the piece into a **new** instrument (Enter) |
+| 11 | **Cut → Repl.** | Cuts the piece into the **selected** instrument's video, keeping how it sounds (Shift+Enter) |
 
 After the cut, the piece is in the instrument list and its hit has been found. Check it in the waveform:
 

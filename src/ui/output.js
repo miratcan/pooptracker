@@ -94,7 +94,9 @@ out.addEventListener('contextmenu', e => { e.preventDefault(); soloChannel(tileA
 // the 9:16 output takes the full height of its column; the column is as wide as that makes it
 export function fitOut() { const h = $('#outBox').clientHeight, w = Math.floor(h * out.width / out.height); out.style.height = h + 'px'; out.style.width = w + 'px'; $('#outCard').style.width = w + 2 + 'px'; /* + the card's 1px borders */ }
 export function sizeOut() { if (out.width !== OUT_W || out.height !== OUT_H) { out.width = OUT_W; out.height = OUT_H; fitOut(); } }
-new ResizeObserver(fitOut).observe($('#outBox'));
+// on the next frame: fitOut changes the card's width, which can resize the box being observed in the same turn
+// ("ResizeObserver loop completed with undelivered notifications"); a frame later it is a new turn
+new ResizeObserver(() => requestAnimationFrame(fitOut)).observe($('#outBox'));
 
 export function updateStats(fps) {
   const nv = voices.reduce((a, l) => a + l.length, 0);
