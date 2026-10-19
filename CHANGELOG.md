@@ -27,10 +27,15 @@ The first public version.
   made in code (no files). FT2 has no reverb; this deviates from [ZEN-FT2] on purpose. Recordings include it.
 - The workbench also cuts WebM and MKV (AV1, VP9, H.264, HEVC pictures; Opus, AAC sound), still without re-encoding:
   the packets are copied into an MP4 piece. VP8 and Vorbis have no place in MP4 and are refused by name.
+- On the workbench, ▶ Piece stays down while the piece plays and the new ■ Stop lets it up, as in the transport.
+- On the workbench, Loop (a key that stays down) makes ▶ Piece play the piece again and again, without a gap (its
+  sound is looped by the audio clock, the picture follows); its ends can be dragged meanwhile.
 - On the workbench, Trim keeps only the marked piece on the bench and throws the rest away (not re-encoded).
 - Under the instrument list, **Load** now gives the selected instrument a video (what Repl. did; Repl. is gone) and
   the new **New** adds an empty instrument (with the REPLACE ME video) to load into: Load never adds one by surprise.
   A video saved with Save brings all its settings, its loop mode too (it used to keep the instrument's).
+- Fit (next to Tune), for loops: repitches the clip so that at C-4 its region lasts a whole number of rows at the
+  current tempo (like Renoise's beat sync in repitch mode); sets Base and Fine. MCP `fit_instrument` (rows optional).
 - Tune (next to Base) finds an instrument's pitch and sets Base and the new Fine to it; Fine is FT2's finetune (1/128
   semitone, -128–127), saved as `fine=` only when it isn't 0, so older files open as before. MCP `tune_instrument`, and
   `set_instrument fine`.

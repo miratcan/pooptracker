@@ -4,7 +4,7 @@
 import PTFormat from './ptformat.js';
 import { FX, KEYOFF, hex2, noteName, same, round3 } from './util.js';
 import { song, instruments, nch, emptyCell, newPattern, clonePattern } from './core/song.js';
-import { makeInstrument, detectHit, detectPitch, tuneFor, hitPos } from './core/instrument.js';
+import { makeInstrument, detectHit, detectPitch, tuneFor, fitFor, hitPos } from './core/instrument.js';
 import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument, newSong, addChannel, deleteChannel,
   deletePattern, setPatternLength, addInstrument, deleteInstrument, moveInstrument } from './core/commands.js';
 import { importVideo, replaceVideo, trimInstrument, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
@@ -222,6 +222,14 @@ const MCP_TOOLS = {
     if (!t) fail(`instrument ${hex2(i)}: no clear pitch after the hit (a noisy sound like a snare or a hi-hat has none); nothing changed`);
     const cmd = exec(() => setInstrument(i, t, 'MCP: tune'));
     return done(cmd, `instrument ${hex2(i)}: ${hz.toFixed(1)} Hz → base note ${noteName(t.baseNote)}, fine ${t.fine}`);
+  },
+  fit_instrument(a) {
+    const i = instArg(a.instrument), I = instruments[i];
+    if (a.rows != null && !(Number.isInteger(a.rows) && a.rows >= 1 && a.rows <= 256)) fail(`rows must be an integer 1–256, got: ${JSON.stringify(a.rows)}`);
+    const f = fitFor(I.end - I.start, song.bpm, song.speed, a.rows ?? undefined);
+    if (!f) fail(`instrument ${hex2(i)} can't be made to fit ${a.rows ?? ''} rows: it would play outside C-0…B-7; nothing changed`);
+    const cmd = exec(() => setInstrument(i, { baseNote: f.baseNote, fine: f.fine }, 'MCP: fit'));
+    return done(cmd, `instrument ${hex2(i)}: at C-4 its region lasts ${f.rows} rows (BPM ${song.bpm}, speed ${song.speed}): base note ${noteName(f.baseNote)}, fine ${f.fine}`);
   },
   detect_hit(a) {
     const i = instArg(a.instrument), I = instruments[i], hit = round3(I.start + detectHit(I.buffer));

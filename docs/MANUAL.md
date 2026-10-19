@@ -258,6 +258,10 @@ Levels are hex, like in the pattern (`00`–`40`). Times are decimal seconds.
 - **Tune:** finds the pitch of the clip after its hit and sets **Base** and **Fine** to it, so the notes you write
   sound as written. The clip itself is not changed, and a bend in it stays: the instrument gets one pitch. A noisy sound
   (a snare, a hi-hat) has no clear pitch, and then nothing changes; a kick or a tom has one.
+- **Fit:** for loops. Speeds the clip up or slows it down so that, played at `C-4`, its region lasts a whole number of
+  rows at the current BPM and speed (the power of two nearest to its length now: 8, 16, 32…). Played every that many
+  rows, it repeats seamlessly. Picture and sound change speed together, so the pitch moves with them (repitch). It sets
+  **Base** and **Fine**; press it again after changing the tempo.
 - **Fine:** finetune, as in FT2: 1/128 of a semitone, −128 to 127. The clip's own pitch is Base plus Fine.
 - **Vol:** `00`–`40`, the loudest this instrument gets. The pattern's volume column plays under it: with Vol `20`,
   volume `40` sounds at `20` and volume `20` sounds at `10`.
@@ -327,7 +331,7 @@ It cuts MP4, MOV, WebM and MKV. A video from YouTube: `yt-dlp <url>`.
 | 5 | Marked piece | The orange band. **I** marks its start and **O** its end, or you can drag on the timeline. Drag a handle to move that end. |
 | 6 | Timeline | Click it to go to that point. Zoom with the wheel or a pinch (`=` / `-`, `0` shows everything). Shift+wheel or sideways scrolling moves along it. |
 | 7 | Piece | Start, end and length of the marked piece (at most 8 s) |
-| 8 | **▶ Piece** | Plays the piece once (Shift+Space) |
+| 8 | **▶ Piece**, **■ Stop**, **Loop** | Plays the piece once (Shift+Space); **▶ Piece** stays down while it plays, **■ Stop** stops it. With **Loop** down, it plays again and again until you pause; drag its ends meanwhile to find the loop. |
 | 9 | **Cut → Inst.** | Cuts the piece into a **new** instrument (Enter) |
 | 10 | **Cut → Repl.** | Cuts the piece into the **selected** instrument's video, keeping how it sounds (Shift+Enter) |
 

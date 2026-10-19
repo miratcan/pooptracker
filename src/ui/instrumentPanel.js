@@ -2,7 +2,7 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, loops } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, fitFor, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
 import { previewNote, syncTest } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI, setStatus } from './common.js';
@@ -48,6 +48,14 @@ $('#bTune').onclick = () => {
   if (!t) return showError(`${hex2(ed.inst)} ${I.name}: no clear pitch after the hit (a noisy sound like a snare or a hi-hat has none)`);
   instCmd(t, 'tune');
   setStatus(`${hex2(ed.inst)} ${I.name}: ${hz.toFixed(1)} Hz → Base ${noteName(t.baseNote)}, Fine ${t.fine > 0 ? '+' : ''}${t.fine}`);
+};
+// Fit: repitched so that, at C-4, its region lasts a whole number of rows (at this tempo)
+$('#bFit').onclick = () => {
+  const I = curInst(); if (!I) return;
+  const f = fitFor(I.end - I.start, song.bpm, song.speed);
+  if (!f) return showError(`${hex2(ed.inst)} ${I.name}: it can't be made to fit (it would play outside C-0…B-7)`);
+  instCmd({ baseNote: f.baseNote, fine: f.fine }, 'fit');
+  setStatus(`${hex2(ed.inst)} ${I.name}: at C-4 its region now lasts ${f.rows} rows (BPM ${song.bpm}, speed ${song.speed}) → Base ${noteName(f.baseNote)}, Fine ${f.fine > 0 ? '+' : ''}${f.fine}`);
 };
 // volume is hex, as everywhere in the tracker (00–40)
 $('#iVol').onchange = e => {

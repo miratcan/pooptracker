@@ -206,7 +206,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <canvas id="bTime" class="well" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
   <div class="row" id="bBar">
     <span id="bSel" class="dim"></span>
-    <button id="bPlaySel" title="Play the marked piece (Shift+Space)">▶ Piece</button>
+    <button id="bPlaySel" title="Play the marked piece (Shift+Space); it stays down while the piece plays">▶ Piece</button><button id="bStopSel" title="Stop (Space pauses too)">■ Stop</button><button id="bLoopSel" aria-pressed="false" title="Down: ▶ Piece plays the piece again and again (until it is paused); its ends can be dragged meanwhile">Loop</button>
     <button id="bCut" title="Cut the marked piece into a new instrument, without re-encoding (Enter)">Cut → Inst.</button>
     <button id="bCutRepl">Cut → Repl.</button>
   </div>
@@ -229,7 +229,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <fieldset><legend>Sample</legend>
       <label>Name<input id="iName" maxlength="16" style="width:130px"></label>
       <label title="Base note: at this note the clip plays at its original speed">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
-      <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Tune</button>
+      <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Tune</button><button id="bFit" title="Repitch the clip so that, played at C-4, its region lasts a whole number of rows (the power of two nearest to its length now) at this BPM and speed: picture and sound speed up or slow down together. Press again after changing the tempo.">Fit</button>
       <label title="Finetune, as in FT2: 1/128 of a semitone (-128–127). The clip's own pitch is Base plus this.">Fine<input id="iFine" type="number" min="-128" max="127" step="1" style="width:52px"></label>
       <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol<input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev<input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
@@ -306,7 +306,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 {
   "imports": {
     "./src/core/commands.js": "./src/core/commands.js?v=3cac1f37df",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=2504b5e939",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=122244c3a9",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
@@ -314,16 +314,16 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
     "./src/io.js": "./src/io.js?v=a6b29e1950",
     "./src/main.js": "./src/main.js?v=cd5d341c18",
-    "./src/mcp.js": "./src/mcp.js?v=6c03215d4a",
+    "./src/mcp.js": "./src/mcp.js?v=85300162b9",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
     "./src/ptformat.js": "./src/ptformat.js?v=17fdd75844",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=94a7f63412",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=61ab504193",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=763cc187e6",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=99ff0b3cc7",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=62c010bc74",
     "./src/ui/output.js": "./src/ui/output.js?v=54a17a1609",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=5b46b30a85",

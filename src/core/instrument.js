@@ -109,6 +109,18 @@ export function tuneFor(hz) {
   return baseNote >= 0 && baseNote <= 95 ? { baseNote, fine: Math.round((n - baseNote) * 128) } : null;
 }
 
+// Fit (repitch, like Renoise's beat sync): the base note and finetune that make `len` seconds of the clip (its whole
+// region) last exactly `rows` rows when played at C-4, at this bpm and speed. The whole region, not hit → end: played
+// again every `rows` rows, each note's pre-roll starts before its row, so the region from start to end is one turn. Picture and sound speed up or slow
+// down together; the pitch moves with them. rows omitted: the power of two nearest to how long it lasts now, so the
+// speed changes least. Returns { baseNote, fine, rows }, or null when that would leave C-0…B-7.
+export function fitFor(len, bpm, speed, rows) {
+  const rowSec = speed * tickDur(bpm);
+  rows ??= 2 ** Math.max(0, Math.round(Math.log2(len / rowSec)));
+  const n = 48 - 12 * Math.log2(len / (rows * rowSec)), baseNote = Math.round(n);
+  return baseNote >= 0 && baseNote <= 95 ? { baseNote, fine: Math.round((n - baseNote) * 128), rows } : null;
+}
+
 export function detectHit(buf) {
   const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.floor(sr * 0.01);
   const e = [];

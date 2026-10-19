@@ -13,6 +13,7 @@ import { CmdError, exec, onChange, putOnBench as putCmd, trimBench, clearBench }
 import { $, ed, setStatus, showError, escHtml } from './common.js';
 import { pal, alpha } from './palette.js';
 import { coverRect } from './output.js';
+import { ctx, ensureAudio } from '../engine/audio.js';
 
 const vid = $('#bVideo'), tl = $('#bTime'), g = tl.getContext('2d'), fc = $('#bFocus'), fg = fc.getContext('2d');
 // bench.focus: the point (0–1 across the frame) the new instrument's tiles keep in view; null = the middle
@@ -95,16 +96,66 @@ function info() {
 const seek = t => { vid.currentTime = Math.max(0, Math.min(dur(), t)); follow(); draw(); };
 const mark = (which, t = vid.currentTime) => { bench[which] = t; info(); draw(); };
 const toggle = () => { if (!bench.file) return; vid.paused ? vid.play() : vid.pause(); };
-// plays the marked piece once
-let stopAt = null;
+// plays the marked piece once, or again and again while Loop is down
+let stopAt = null, looping = false;
+// ▶ Piece stays down while the piece plays, like the transport's keys; Stop (or its end, or a pause) lets it up
+const pieceKey = down => $('#bPlaySel').classList.toggle('down', down);
 function playSel() {
   const s = sel(); if (!s) return;
+  pieceKey(true);
+  if (looping) return startLoop();
   stopAt = s[1]; vid.currentTime = s[0]; vid.play();
 }
 // checked on every frame (loop below): timeupdate alone comes only every ~250 ms and overshoots the end by that much
 const stopAtEnd = () => { if (stopAt != null && vid.currentTime >= stopAt) { vid.pause(); stopAt = null; } };
+
+// ── Loop: the <video> can't loop without a gap (every jump back is a seek, and a seek stalls), so the piece's sound,
+// with LOOP_ROOM seconds around it, is decoded and looped by the audio clock, sample-exact; the muted picture follows
+// it. Its ends can be dragged meanwhile: inside the decoded room the loop takes them at once, outside it is decoded
+// again. A piece longer than LOOP_MAX is looped the plain way (a seek, with its gap).
+const LOOP_ROOM = 2, LOOP_MAX = 60;
+let lp = null, loopJob = 0; // lp: { src, from, to (the decoded part of the video), pos (where we are in it), last, ending }
+async function startLoop() {
+  const s = sel(), file = bench.file; if (!s || !file) return;
+  stopLoop(); // (not vid.pause(): its pause event would come while decoding and cancel this; a pause by hand does)
+  if (s[1] - s[0] > LOOP_MAX) { stopAt = s[1]; vid.currentTime = s[0]; vid.play(); return; }
+  ensureAudio(); vid.muted = true;
+  const job = ++loopJob, from = Math.max(0, s[0] - LOOP_ROOM), to = Math.min(dur(), s[1] + LOOP_ROOM);
+  let buf;
+  try { buf = await ctx.decodeAudioData((await cutVideo(reader(file), file.size, from, to)).bytes.buffer); }
+  catch (err) { console.warn('loop: plays the plain way:', err.message); vid.muted = false; stopAt = s[1]; vid.currentTime = s[0]; vid.play(); return; }
+  if (job !== loopJob || bench.file !== file) return;
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  src.loopStart = s[0] - from; src.loopEnd = s[1] - from; src.connect(ctx.destination);
+  src.start(ctx.currentTime, s[0] - from);
+  lp = { src, from, to, pos: s[0], last: ctx.currentTime, ending: false };
+  vid.muted = true; vid.currentTime = s[0]; vid.play();
+}
+function stopLoop() {
+  loopJob++; vid.muted = false;
+  if (!lp) return;
+  try { lp.src.stop(); } catch {}
+  lp.src.disconnect(); lp = null;
+}
+// every frame: follow the ends, keep the picture on the sound's clock, and stop after the last turn (Loop let go)
+function loopTick() {
+  if (!lp) return;
+  const s = sel(); if (!s) { vid.pause(); return; }
+  if (!lp.ending) {
+    if (s[0] < lp.from || s[1] > lp.to) return startLoop(); // dragged out of the decoded room
+    lp.src.loopStart = s[0] - lp.from; lp.src.loopEnd = s[1] - lp.from;
+  }
+  const now = ctx.currentTime; lp.pos += now - lp.last; lp.last = now;
+  if (lp.pos >= s[1]) { if (lp.ending) { vid.pause(); return; } lp.pos = s[0] + (lp.pos - s[1]) % (s[1] - s[0]); }
+  if (Math.abs(vid.currentTime - lp.pos) > 0.08) vid.currentTime = lp.pos;
+}
+$('#bLoopSel').onclick = () => {
+  looping = !looping; $('#bLoopSel').classList.toggle('down', looping); $('#bLoopSel').setAttribute('aria-pressed', looping);
+  const s = sel();
+  if (!looping && lp && s) { lp.ending = true; lp.src.loop = false; lp.src.stop(ctx.currentTime + Math.max(0, s[1] - lp.pos)); } // this turn is the last
+}
 vid.ontimeupdate = stopAtEnd;
-vid.onpause = () => { stopAt = null; };
+vid.onpause = () => { stopAt = null; stopLoop(); pieceKey(false); };
 
 // trim: the marked piece (of any length) becomes the video on the bench, the rest is thrown away; cut the same way as
 // an instrument, without re-encoding, and kept in memory only (the bench is never saved; Ctrl+Z brings the whole
@@ -290,7 +341,7 @@ vid.onclick = e => {
 new ResizeObserver(drawFocus).observe(fc);
 
 let raf = 0;
-const loop = () => { raf = requestAnimationFrame(loop); if (!vid.paused) { stopAtEnd(); follow(); draw(); } };
+const loop = () => { raf = requestAnimationFrame(loop); if (!vid.paused) { stopAtEnd(); loopTick(); follow(); draw(); } };
 new ResizeObserver(draw).observe(tl);
 
 $('#bBenchLoad').onclick = () => $('#bFile').click();
@@ -299,6 +350,7 @@ $('#bClear').onclick = clear;
 $('#bCut').onclick = () => cut();
 $('#bCutRepl').onclick = () => cut(true);
 $('#bPlaySel').onclick = playSel;
+$('#bStopSel').onclick = () => vid.pause();
 $('#bTrim').onclick = trim;
 
 export const benchScreen = {

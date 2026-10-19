@@ -270,6 +270,10 @@ Seviyeler pattern'deki gibi hex'tir (`00`–`40`). Süreler ondalık saniyedir.
 - **Tune:** klibin vuruştan sonraki perdesini bulur, **Base** ve **Fine**'ı ona göre ayarlar; böylece yazdığın notalar
   yazdığın gibi duyulur. Klibin kendisi değişmez, içindeki bend de kalır: enstrümanın tek bir perdesi olur. Trampet ya da
   hi-hat gibi gürültülü seslerin belirgin perdesi yoktur, o zaman hiçbir şey değişmez; kick ya da tom'un vardır.
+- **Fit:** loop'lar için. Klibi hızlandırır ya da yavaşlatır; `C-4`'te çalınınca bölgesi, şarkının şu anki BPM'inde ve
+  Speed'inde tam sayıda satır sürer (şu anki uzunluğuna en yakın 2'nin kuvveti: 8, 16, 32…). O kadar satırda bir çalınınca
+  dikişsiz tekrar eder. Görüntü ve ses birlikte hızlanıp yavaşlar, perde de onlarla değişir (repitch). **Base** ve
+  **Fine**'ı ayarlar; tempoyu değiştirdikten sonra tekrar bas.
 - **Fine:** FT2'deki gibi ince akort: yarım tonun 1/128'i, −128 ile 127 arası. Klibin kendi perdesi Base artı Fine'dır.
 - **Vol:** `00`–`40`, bu enstrümanın en yüksek sesi. Pattern'deki ses sütunu bunun altında çalar: Vol `20` iken
   ses `40` olan nota `20`, ses `20` olan nota `10` seviyesinde çıkar.
@@ -340,7 +344,7 @@ MP4, MOV, WebM ve MKV keser. YouTube'dan bir video için: `yt-dlp <url>`.
 | 5 | İşaretli parça | Turuncu şerit. **I** başını, **O** sonunu işaretler, ya da zaman çizelgesinde sürükleyebilirsin. Bir ucu taşımak için tutamağını sürükle. |
 | 6 | Zaman çizelgesi | Tıklayınca o noktaya gider. Fare tekerleği ya da iki parmakla yakınlaşır (`=` / `-`, `0` hepsini gösterir). Shift+tekerlek ya da yatay kaydırma boyunca gezer. |
 | 7 | Parça | İşaretli parçanın başı, sonu ve uzunluğu (en fazla 8 sn) |
-| 8 | **▶ Piece** | Parçayı bir kez çalar (Shift+Space) |
+| 8 | **▶ Piece**, **■ Stop**, **Loop** | Parçayı bir kez çalar (Shift+Space); çalarken **▶ Piece** basılı kalır, **■ Stop** durdurur. **Loop** basılıyken durdurana kadar tekrar tekrar çalar; bu sırada uçlarını sürükleyip loop'u bulabilirsin. |
 | 9 | **Cut → Inst.** | Parçayı **yeni** bir enstrümana keser (Enter) |
 | 10 | **Cut → Repl.** | Parçayı **seçili** enstrümanın videosu yapar, sesini korur (Shift+Enter) |
 

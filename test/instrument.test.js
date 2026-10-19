@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FakeAudioBuffer } from './fake-audio.js';
-import { detectPitch, tuneFor, rateFor, fitToVideo } from '../src/core/instrument.js';
+import { detectPitch, tuneFor, rateFor, fitToVideo, fitFor } from '../src/core/instrument.js';
 
 const SR = 48000;
 // seconds of a signal: f(t) → sample
@@ -47,4 +47,16 @@ test('fitToVideo: an instrument up to 2 ms past the video\'s readable end is fit
   assert.equal(fitToVideo(s, 0.367), s);
   assert.deepEqual(fitToVideo(s, 0.366), { ...s, end: 0.366, loopEnd: 0.366 });
   assert.equal(fitToVideo(s, 0.36), null);
+});
+
+test('fitFor: a loop is repitched to last a whole number of rows at C-4', () => {
+  // 125 BPM, speed 6: a row is 0.12 s. A 1.85 s loop is nearest 16 rows (1.92 s): played a little slower, a bit lower
+  const f = fitFor(1.85, 125, 6);
+  assert.equal(f.rows, 16);
+  const I = { baseNote: f.baseNote, fine: f.fine };
+  assert.ok(Math.abs(1.85 / rateFor(I, 48) - 16 * 0.12) < 0.002); // at C-4 it lasts 16 rows
+  assert.ok(f.baseNote * 128 + f.fine > 48 * 128);                 // slower: its own pitch sits above C-4
+  assert.equal(fitFor(1.85, 125, 6, 8).rows, 8);                   // or as many rows as asked
+  assert.equal(fitFor(1.92, 125, 6).baseNote, 48);                 // already 16 rows: C-4, nothing changes
+  assert.equal(fitFor(1.92, 125, 6).fine, 0);
 });
