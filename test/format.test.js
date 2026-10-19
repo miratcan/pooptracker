@@ -111,3 +111,13 @@ test('finetune: written only when it isn\'t 0, read back, checked', () => {
   assert.throws(() => PTFormat.parse(LINE.replace('base=D-4', 'base=D-4;fine=200')), /'fine' value '200' is invalid \(-128–127/);
   assert.throws(() => PTFormat.parse(LINE.replace('base=D-4', 'base=D-4;fine=1.5')), /'fine' value '1.5' is invalid/);
 });
+
+test('Tune\'s result (base note and finetune) is saved: in the .poop song and in a video\'s metadata', async () => {
+  const I = PTFormat.parse(LINE.replace('base=D-4', 'base=E-4;fine=2'));
+  const zip = await PTFormat.unzip(new Uint8Array(await new Blob(songZip(SONG, [{ I, video: 'videos/a.mp4' }])).arrayBuffer()));
+  const back = PTFormat.parseSong(zip).instruments[0];
+  assert.deepEqual([back.baseNote, back.fine], [52, 2]);
+  const mp4 = new Uint8Array([...box('ftyp', new TextEncoder().encode('isom\0\0\0\0isom')), ...box('moov', box('mvhd', new Uint8Array(100))), ...box('mdat', new Uint8Array(16))]);
+  const tagged = PTFormat.parse(PTFormat.mp4ReadTag(PTFormat.mp4WriteTag(mp4, PTFormat.format(I))));
+  assert.deepEqual([tagged.baseNote, tagged.fine, tagged.loop], [52, 2, 'forward']);
+});

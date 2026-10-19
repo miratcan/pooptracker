@@ -101,6 +101,14 @@ test('a replaced video keeps how the instrument sounds; region and hit are found
   assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.avOffset], [0.2, 1.8, 1.5, 1.6, 40]);
 });
 
+test('a video that carries its own instrument (saved with Save) brings all of it, the loop mode too', () => {
+  const other = testInstrument({ dur: 3 }), saved = { ...C.pick(instruments[1], C.INST_KEYS), name: 'saved', baseNote: 52, fine: -7,
+    start: 0.5, end: 2.5, hit: 1, loop: 'pingpong', loopStart: 1.2, loopEnd: 2.4 };
+  C.exec(() => C.setInstrumentVideo(1, other.video, saved));
+  const I = instruments[1];
+  assert.deepEqual([I.name, I.baseNote, I.fine, I.loop, I.loopStart, I.loopEnd], ['saved', 52, -7, 'pingpong', 1.2, 2.4]);
+});
+
 test('the bench: putting a video on it, trimming and clearing it are undoable, and bring their marks back', () => {
   const a = new Blob(['a']), b = new Blob(['b']);
   C.exec(() => C.putOnBench(a));

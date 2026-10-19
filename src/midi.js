@@ -53,7 +53,8 @@ export function parseMidi(bytes) {
         else if (type === 0x2F) break;
         continue;
       }
-      if (s === 0xF0 || s === 0xF7) { o += vlq(); continue; } // SysEx
+      // SysEx: skipped. (Not `o += vlq()`: that adds to o as it was before vlq() read the length, losing those bytes.)
+      if (s === 0xF0 || s === 0xF7) { const len = vlq(); o += len; continue; }
       if (s < 0x80) throw new Error(`MIDI track ${t + 1}: unreadable data at byte ${o}`);
       status = s;
       const ch = s & 15, kind = s >> 4, a = bytes[o], b = bytes[o + 1];

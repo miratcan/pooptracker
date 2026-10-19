@@ -230,7 +230,7 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 | # | Control | What it does |
 |---|---------|--------------|
 | 1 | Instrument list | Click an instrument to select it (or use Shift+↑↓). The selected one is what the note keys play. Drop a video on an instrument here to replace its video. |
-| 2 | **New**, **Load** | **New** adds an empty instrument at the end of the list. **Load** gives the **selected** instrument a video and keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); the region and hit are found again in the new video. With no instrument, Load makes a new one. |
+| 2 | **New**, **Load** | **New** adds an empty instrument at the end of the list. **Load** gives the **selected** instrument a video and keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); the region and hit are found again in the new video. A video saved with **Save** brings all its own settings instead. With no instrument, Load makes a new one. |
 | 3 | **Save** | Saves the video with this instrument's settings in its metadata. It isn't re-encoded. MP4/MOV only. |
 | 4 | **Dup.** | A new instrument from the same video with the same settings. Use it to take another region of the same clip. |
 | 6 | **↑ ↓ Del.** | Move the instrument up or down in the list / delete it (only if no pattern uses it) |

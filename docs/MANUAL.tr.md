@@ -241,7 +241,7 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | # | Kontrol | Ne yapar |
 |---|---------|----------|
 | 1 | Enstrüman listesi | Seçmek için bir enstrümana tıkla (ya da Shift+↑↓). Nota tuşları seçili olanı çalar. Buradaki bir enstrümanın üstüne video bırakırsan videosu değişir. |
-| 2 | **New**, **Load** | **New** listenin sonuna boş bir enstrüman ekler. **Load** **seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. Hiç enstrüman yoksa Load yeni bir tane yapar. |
+| 2 | **New**, **Load** | **New** listenin sonuna boş bir enstrüman ekler. **Load** **seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. **Save** ile kaydedilmiş bir video ise kendi ayarlarının hepsini getirir. Hiç enstrüman yoksa Load yeni bir tane yapar. |
 | 3 | **Save** | Videoyu, bu enstrümanın ayarları metadata'sında olacak şekilde kaydeder. Yeniden encode edilmez. Sadece MP4/MOV. |
 | 4 | **Dup.** | Aynı videodan, aynı ayarlarla yeni bir enstrüman. Aynı klipten başka bir bölge almak için kullan. |
 | 6 | **↑ ↓ Del.** | Enstrümanı listede yukarı ya da aşağı taşır / siler (sadece hiçbir pattern kullanmıyorsa) |

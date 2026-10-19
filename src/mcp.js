@@ -236,7 +236,8 @@ const MCP_TOOLS = {
   async replace_video(a) {
     const i = instArg(a.instrument), focus = focusArg(a), f = await fileArg(a.file);
     const { fromMetadata } = await replaceVideo(i, f, progress, a.region ? { ...a.region, focus } : null), I = instruments[i];
-    return done(true, `instrument ${hex2(i)}: video → ${f.name}; name, base note, volume, reverb, envelope and loop mode kept; ${fromMetadata ? 'region and hit from the video\'s metadata' : `region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`}`);
+    return done(true, `instrument ${hex2(i)}: video → ${f.name}; ` + (fromMetadata ? 'all its settings from the video\'s metadata (it was saved by PoopTracker)'
+      : `name, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`));
   },
   async open_song(a) {
     const f = await fileArg(a.file), r = await readSong(f, progress);

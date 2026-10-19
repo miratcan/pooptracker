@@ -30,6 +30,7 @@ The first public version.
 - On the workbench, Trim keeps only the marked piece on the bench and throws the rest away (not re-encoded).
 - Under the instrument list, **Load** now gives the selected instrument a video (what Repl. did; Repl. is gone) and
   the new **New** adds an empty instrument (with the REPLACE ME video) to load into: Load never adds one by surprise.
+  A video saved with Save brings all its settings, its loop mode too (it used to keep the instrument's).
 - Tune (next to Base) finds an instrument's pitch and sets Base and the new Fine to it; Fine is FT2's finetune (1/128
   semitone, -128–127), saved as `fine=` only when it isn't 0, so older files open as before. MCP `tune_instrument`, and
   `set_instrument fine`.

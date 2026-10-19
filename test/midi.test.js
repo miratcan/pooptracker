@@ -90,3 +90,13 @@ test('a file that is not MIDI, or a kind we do not read, is refused with a reaso
   assert.throws(() => parseMidi(smf([[on(0, 60)]], { format: 2 })), /type 2 files aren't supported/);
   assert.throws(() => midiToSong(parseMidi(smf([[tempo(0, 120)]]))), /has no notes/);
 });
+
+test('SysEx messages are skipped whole, also when their length takes two bytes (as a GS reset does)', () => {
+  const sysex = n => [0, 0xF0, ...vlq(n), ...Array(n - 1).fill(0x41), 0xF7];
+  const S = midiToSong(parseMidi(smf([
+    [tempo(0, 120)],
+    [name('Strings'), sysex(137), sysex(9), on(0, 60), off(24, 60)],
+  ])), 'song');
+  assert.deepEqual(S.names, ['Strings']);
+  assert.equal(cellsOf(S.song, 0)[0].n, 48);
+});

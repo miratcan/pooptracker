@@ -100,13 +100,14 @@ export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])
 // What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
 // (region, hit, loop points, focus, A/V offset) and mean nothing in another one.
 export const SOUND_KEYS = ['name', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
-// another video for an instrument: the places are found again as when a video is loaded (the region is the whole
-// video, the hit is detected), or come from the new video's own metadata (place: its instrument line)
+// another video for an instrument. Without place, it keeps how it sounds and the places are found again as when a
+// video is loaded (the region is the whole video, the hit is detected). place is a whole instrument line: a video
+// saved with its settings brings all of them (its loop mode too); a caller that keeps the sound puts it in place
 export function setInstrumentVideo(idx, V, place = null, label = 'replace video') {
   const I = instruments[idx]; if (!I) fail(`instrument ${hex2(idx)} doesn't exist`);
   const oldVideo = I.video, old = pick(I, INST_KEYS);
   let nu;
-  if (place) nu = { ...pick(place, INST_KEYS), ...pick(I, SOUND_KEYS) };
+  if (place) nu = pick(place, INST_KEYS);
   else {
     const hit = round3(Math.min(detectHit(V.buffer), V.dur));
     nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, focus: [] };

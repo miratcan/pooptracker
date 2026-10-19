@@ -209,7 +209,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <section class="card" id="instCard">
     <h2>Instruments</h2>
     <div id="instList" class="well"></div>
-    <div class="btnRow"><button id="iNew" title="Add an empty instrument at the end of the list; Load then gives it a video">New</button><button id="bLoad" title="Load a video into the selected instrument: it keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); region and hit are found in the new video. Or drop the video on the instrument in the list.">Load</button><input id="file" type="file" accept="video/*" hidden>
+    <div class="btnRow"><button id="iNew" title="Add an empty instrument at the end of the list; Load then gives it a video">New</button><button id="bLoad" title="Load a video into the selected instrument: it keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); region and hit are found in the new video. A video saved with Save brings all its own settings instead. Or drop the video on the instrument in the list.">Load</button><input id="file" type="file" accept="video/*" hidden>
       <button id="bVidSave" title="Save the video with this instrument's settings (hit, loop, ADSR…) in its metadata; dropped on the tracker, it arrives as a ready instrument. The video isn't re-encoded. MP4/MOV only.">Save</button>
       <button id="bSplit" title="Duplicate: a new instrument from the same video with the same settings; then change its region">Dup.</button>
       <button id="iUp" title="Move up" aria-label="Move instrument up">↑</button><button id="iDown" title="Move down" aria-label="Move instrument down">↓</button>
@@ -298,7 +298,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=eccfec70a7",
+    "./src/core/commands.js": "./src/core/commands.js?v=3cac1f37df",
     "./src/core/instrument.js": "./src/core/instrument.js?v=cd9438b372",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
@@ -307,15 +307,15 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
     "./src/io.js": "./src/io.js?v=4bca3949ed",
     "./src/main.js": "./src/main.js?v=cd5d341c18",
-    "./src/mcp.js": "./src/mcp.js?v=860a29baf5",
-    "./src/midi.js": "./src/midi.js?v=64f4b7dc45",
+    "./src/mcp.js": "./src/mcp.js?v=6c03215d4a",
+    "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
     "./src/ptformat.js": "./src/ptformat.js?v=17fdd75844",
     "./src/ui/bench.js": "./src/ui/bench.js?v=94a7f63412",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=4f09a2e54a",
+    "./src/ui/files.js": "./src/ui/files.js?v=763cc187e6",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=99ff0b3cc7",
     "./src/ui/output.js": "./src/ui/output.js?v=54a17a1609",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",

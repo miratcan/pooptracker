@@ -25,8 +25,8 @@ export async function loadVideoFile(file) {
 async function swapVideo(idx, file) {
   try {
     const { fromMetadata } = await replaceVideo(idx, file, progress), I = instruments[idx];
-    setStatus(escHtml(`instrument ${hex2(idx)} ${I.name}: video → ${file.name}, sound kept; ` +
-      (fromMetadata ? 'region and hit from the video\'s metadata' : `hit found automatically at ${I.hit.toFixed(3)}s, check it`)));
+    setStatus(escHtml(`instrument ${hex2(idx)} ${I.name}: video → ${file.name}, ` +
+      (fromMetadata ? 'with all its settings from the video\'s metadata' : `sound kept; hit found automatically at ${I.hit.toFixed(3)}s, check it`)));
   } catch (err) {
     if (err instanceof CmdError) return showError(err.message);
     console.error(err); showError(`Couldn't replace the video: ${file.name} (${err.message})`);
