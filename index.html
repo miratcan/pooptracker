@@ -9,43 +9,47 @@
    write a color by hand; a new color is a new line here. */
 :root{
   /* surfaces, dark to light */
-  --black:#000; --bevelLo:#05070a; --well:#0a0e13; --bg:#0d1117; --panel:#151b23; --panel2:#1b222c; --line:#2a3340;
-  --faint:#39424e; --bevelHi:#4a5768;
+  --black:#000; --bevelLo:#18282d; --well:#000; --bg:#000; --panel:#497582; --panel2:#497582; --line:#18282d;
+  --faint:#3d3d3d; --bevelHi:#77b5c7;
   /* ink */
-  --dim:#7d8896; --text:#d6dde6; --white:#fff;
+  --dim:#d5d5d5; --text:#fff; --white:#fff;
+  /* buttons (FT2): black ink on a grey face, a shade darker while held down */
+  --btn:#9e9e9e; --btnDown:#868686; --btnInk:#000;
   /* accents, and their dark tints for backgrounds */
-  --acc:#f2b53a; --accDim:#2e2410; --acc2:#4fc3f7; --acc2Dim:#1d2a3a; --red:#ff5d5d; --redDim:#3a1d1d; --green:#6bd968; --pink:#e58cff;
+  --acc:#ffff82; --accDim:#3a3a1e; --acc2:#8adbf3; --acc2Dim:#18282d; --red:#ff5d5d; --redDim:#3a1d1d; --green:#6bd968; --pink:#e58cff;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+/* IBM VGA 8x16, from The Ultimate Oldschool PC Font Pack (VileR, CC BY-SA 4.0); crisp only at 16px steps */
+@font-face{font-family:dos;src:url(media/fonts/Px437_IBM_VGA_8x16.ttf)}
+/* the small one (IBM EGA 8x8, same pack) for names on frames: crisp at 8px and 16px */
+@font-face{font-family:dos8;src:url(media/fonts/Px437_IBM_EGA_8x8.ttf)}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.25 dos,ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:none}
 html,body{height:100%}
 #shell{display:flex;flex-direction:column;height:100vh;min-height:640px}
-header{display:flex;flex-wrap:wrap;gap:6px 9px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
-header h1{font-size:14px;margin:0 6px 0 0;color:var(--acc);letter-spacing:.5px}
-.grp{display:flex;gap:6px;align-items:center}
-/* a group with a name on its frame */
-fieldset.grp{margin:0;padding:2px 8px 5px;border:1px solid var(--line);min-width:0}
-fieldset.grp legend{padding:0 4px;color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1px}
-fieldset.grp legend label{color:inherit}
-/* a hard bevel, like a DOS program (FT2): flat face, 1px light edge top/left, 1px dark edge bottom/right, no blur,
-   no gradient; held down, the edges swap. Three colors: --bevelHi, the face, --bevelLo */
-button{background:var(--panel2);color:var(--text);border:1px solid;border-color:var(--bevelHi) var(--bevelLo) var(--bevelLo) var(--bevelHi);border-radius:0;padding:4px 9px;font:inherit;cursor:pointer}
-button:hover{background:var(--line)}
-button:active{border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo);padding:5px 8px 3px 10px}
-button.on{background:var(--redDim);border-color:var(--red) var(--bevelLo) var(--bevelLo) var(--red);color:var(--white)}
-button.on:active{border-color:var(--bevelLo) var(--red) var(--red) var(--bevelLo)}
-button:disabled{color:var(--dim);cursor:default}
-button:disabled:active{border-color:var(--bevelHi) var(--bevelLo) var(--bevelLo) var(--bevelHi);padding:4px 9px}
-input,select{background:var(--well);color:var(--text);border:1px solid var(--line);padding:3px 5px;font:inherit}
-/* our own dropdown arrow: the browser's can't be moved off the right edge (a sharp pixel triangle, like the rest) */
-select{-webkit-appearance:none;appearance:none;padding-right:22px;background-color:var(--well);background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);background-size:5px 5px;background-position:right 13px center,right 8px center;background-repeat:no-repeat}
+header{display:flex;flex-wrap:wrap;gap:6px 9px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--bevelLo);box-shadow:0 1px 0 var(--bevelHi);flex:none}
+header h1{font:inherit;margin:0 0 0 auto;color:var(--acc)} /* auto: pushed to the far right */
+/* a group with a name on its frame, its controls in a row; the frame is cut in (FT2): a dark line, then a light one beside it */
+fieldset{display:flex;gap:3px;align-items:center;margin:0;padding:2px 8px 5px;border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);min-width:0}
+fieldset legend{padding:0;background:var(--panel);color:var(--dim);font:8px dos8;text-transform:uppercase}
+fieldset legend label{color:inherit}
+/* a hard bevel, like a DOS program (FT2): flat grey face, a 1px black frame, inside it a 1px white edge top/left and a
+   1px dark edge bottom/right; 3px corners, no blur, no gradient, no hover; held down, the edges swap */
+button{background:var(--btn);color:var(--btnInk);border:1px solid var(--black);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);border-radius:3px;padding:2px 7px;font:inherit;cursor:pointer}
+/* a key that is in effect stays down, like a tape deck's: a playing ▶ until Stop, the open screen until the other one */
+button:active,button.down{background:var(--btnDown);box-shadow:inset 1px 1px 0 var(--faint),inset -1px -1px 0 var(--white);padding:3px 6px 1px 8px}
+button:disabled{color:var(--faint);cursor:default}
+button:disabled:active{background:var(--btn);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);padding:2px 7px}
+input{background:var(--well);color:var(--text);border:1px solid var(--line);padding:3px 5px;font:inherit}
+/* a dropdown is a button (same face, frame and bevel) with our own arrow: the browser's can't be moved off the right
+   edge (a sharp pixel triangle, like the rest) */
+select{-webkit-appearance:none;appearance:none;color:var(--btnInk);border:1px solid var(--black);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);border-radius:3px;padding:2px 22px 2px 7px;font:inherit;cursor:pointer;background-color:var(--btn);background-image:linear-gradient(45deg,transparent 50%,var(--btnInk) 50%),linear-gradient(135deg,var(--btnInk) 50%,transparent 50%);background-size:5px 5px;background-position:right 13px center,right 8px center;background-repeat:no-repeat}
 /* text fields are sunk in: the reverse of a button's bevel (dark top/left, light bottom/right) */
 input:not([type=checkbox]):not([type=range]){border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)}
 input[type=number]{width:60px}
 /* no spinner arrows: values are typed (or changed with ↑↓ while the field has focus) */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-label{color:var(--dim)}
+label{color:var(--dim);display:inline-flex;align-items:center;gap:3px} /* the gap stands for the space between its words and its field */
 /* the panels sit edge to edge and share their 1px borders (the -1px margins): no space is wasted between them */
 #work{flex:1;min-height:0;display:flex;margin-top:-1px}
 #leftCol{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -57,17 +61,18 @@ label{color:var(--dim)}
 #bVideo{flex:1;min-width:0;min-height:0;width:100%;object-fit:contain;cursor:crosshair}
 #bFocus{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #bEmpty{margin:auto;padding:16px;text-align:center;color:var(--text);line-height:2}
-#bTime{display:block;width:100%;height:42px;margin-top:6px;cursor:pointer;border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
+#bTime{display:block;width:100%;height:42px;margin-top:6px;cursor:pointer}
 #bBar{margin:6px 0 0}
 #bSel{flex:1;white-space:pre}
-button.cur{background:var(--accDim);color:var(--acc)} /* the open screen */
 #songCard{flex:1;display:flex;gap:10px;min-height:0;min-width:0}
 #ordCol{display:flex;flex-direction:column;min-height:0;width:96px}
-#ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
+/* a well: a black area sunk into the panel (a list, the pattern), the reverse of a button's bevel */
+.well{background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo);border-radius:3px}
+#ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px}
 #patCol{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
 .cardHead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .cardHead h2{margin:0 6px 0 0}
-#patBox{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;outline:2px solid transparent;outline-offset:-2px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken */
+#patBox{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;outline:2px solid transparent;outline-offset:-2px}
 #patBox.editing{outline-color:var(--red)} /* edit mode: notes are written */
 .ord{padding:1px 6px;cursor:pointer;color:var(--dim)}
 .ord b{color:var(--text);font-weight:400}
@@ -76,8 +81,8 @@ button.cur{background:var(--accDim);color:var(--acc)} /* the open screen */
 .ordBtns{display:flex;gap:4px;margin-top:4px}
 .ordBtns button{flex:1;padding:2px 0}
 .err{color:var(--red)}
-.card{background:var(--panel);border:1px solid var(--line);padding:8px}
-.card h2{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:0 0 6px}
+.card{background:var(--panel);border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);padding:8px}
+.card h2{font:8px dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
 #pat{display:block;cursor:text}
 #outCard{flex:none;display:flex;flex-direction:column;min-height:0;margin-left:-1px;padding:8px 0 0} /* the video touches the card's edges; the title and stats keep their margin */
 #outCard h2,#outCard #stats{padding:0 8px}
@@ -88,27 +93,26 @@ button.cur{background:var(--accDim);color:var(--acc)} /* the open screen */
 #instEd{margin-left:-1px}
 #instCard .btnRow button{padding:4px 7px}
 #instCard{display:flex;flex-direction:column;min-height:0}
-#instList{display:flex;flex-direction:column;gap:4px;flex:1 1 0;min-height:0;overflow:auto;padding:3px;background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)} /* sunken, like the fields */
+#instList{display:flex;flex-direction:column;gap:4px;flex:1 1 0;min-height:0;overflow:auto;padding:3px}
 .btnRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .dim{color:var(--dim)}
 .legend{margin-top:4px}
 .ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #instEd .cardHead{flex-wrap:nowrap}
-#instEd .cardHead #iVideo{flex:1}
 #instEd input[type=number]{width:60px}
 /* no spinner arrows: values are typed (or changed with ↑↓ while the field has focus) */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-#statusBar{flex:none;display:flex;gap:12px;align-items:center;padding:5px 12px;margin-top:-1px;background:var(--panel);border-top:1px solid var(--line);min-height:26px;white-space:nowrap}
+#statusBar{flex:none;display:flex;gap:12px;align-items:center;padding:5px 12px;margin-top:-1px;background:var(--panel);border-top:1px solid var(--bevelLo);box-shadow:inset 0 1px 0 var(--bevelHi);min-height:26px;white-space:nowrap}
 #statusBar #status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* small links in the status bar instead of buttons: Keys, MCP, GitHub */
 .footLink,#mcpState{flex:none;color:var(--dim);text-decoration:none}
 .footLink:hover{color:var(--acc)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc2);outline-offset:1px}
 #pat{outline:none} /* the pattern has the focus nearly always (it gets it on start); its cursor shows where you are */
-dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);max-width:860px;line-height:1.7;padding:14px 18px}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);max-width:860px;line-height:1.7;padding:14px 18px}
 dialog::backdrop{background:color-mix(in srgb,var(--black) 60%,transparent)}
-dialog h2{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:0 0 6px}
+dialog h2{font:8px dos8;color:var(--dim);text-transform:uppercase;margin:0 0 6px}
 dialog p{margin:0 0 8px;color:var(--dim)}
 dialog b{color:var(--text);font-weight:600}
 dialog .close{float:right}
@@ -125,36 +129,36 @@ dialog .close{float:right}
 #status{color:var(--acc2)}
 #status a{color:var(--acc)}
 kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:0 4px;color:var(--text)}
-#drop{position:fixed;inset:0;background:color-mix(in srgb,var(--acc2) 15%,transparent);border:3px dashed var(--acc2);display:none;align-items:center;justify-content:center;font-size:22px;color:var(--white);z-index:20;pointer-events:none}
+#drop{position:fixed;inset:0;background:color-mix(in srgb,var(--acc2) 15%,transparent);border:3px dashed var(--acc2);display:none;align-items:center;justify-content:center;font:16px dos8;color:var(--white);z-index:20;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="shell">
 <header>
-  <h1>▦ PoopTracker</h1>
-  <fieldset class="grp"><legend>Module</legend>
+  <fieldset><legend>Module</legend>
     <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S">Save</button>
     <input id="songFile" type="file" accept=".poop,.mid,.midi" hidden>
     <input id="tTitle" maxlength="64" style="width:160px" placeholder="song title" aria-label="Song title">
   </fieldset>
-  <fieldset class="grp"><legend>Transport</legend>
+  <fieldset><legend>Transport</legend>
     <button id="bSong" title="Space">▶ Song</button>
     <button id="bPat">▶ Pattern</button>
     <button id="bStop">■ Stop</button>
-    <button id="bRec" title="Record the song from its start as a video (MP4 where the browser can); while recording this is the Stop button">● Rec</button>
+    <button id="bRec" title="Record the song from its start as a video (MP4 where the browser can); Stop ends it">● Rec</button>
   </fieldset>
-  <fieldset class="grp"><legend>Tempo</legend>
-    <label>BPM <input id="tBpm" type="number" min="32" max="255" value="125" style="width:46px"></label>
-    <label>Speed <input id="tSpd" type="number" min="1" max="31" value="6" style="width:38px"></label>
+  <fieldset><legend>Tempo</legend>
+    <label>BPM<input id="tBpm" type="number" min="32" max="255" value="125" style="width:46px"></label>
+    <label>Speed<input id="tSpd" type="number" min="1" max="31" value="6" style="width:38px"></label>
   </fieldset>
-  <fieldset class="grp"><legend>Edit</legend>
-    <label>Oct <input id="tOct" type="number" min="0" max="7" value="4" style="width:38px"></label>
-    <label>Step <input id="tStep" type="number" min="0" max="16" value="1" style="width:38px"></label>
-    <label><input type="checkbox" id="tFollow" checked> Follow</label>
+  <fieldset><legend>Edit</legend>
+    <label>Oct<input id="tOct" type="number" min="0" max="7" value="4" style="width:38px"></label>
+    <label>Step<input id="tStep" type="number" min="0" max="16" value="1" style="width:38px"></label>
+    <label><input type="checkbox" id="tFollow" checked>Follow</label>
   </fieldset>
-  <fieldset class="grp"><legend>Screen</legend>
-    <button id="bScreenPat" class="cur" title="Pattern editor (⌘/Ctrl+B switches)">Pattern</button><button id="bScreenBench" title="Workbench: cut pieces out of long videos (⌘/Ctrl+B switches)">Bench</button>
+  <fieldset><legend>Screen</legend>
+    <button id="bScreenPat" class="down" title="Pattern editor (⌘/Ctrl+B switches)">Pattern</button><button id="bScreenBench" title="Workbench: cut pieces out of long videos (⌘/Ctrl+B switches)">Bench</button>
   </fieldset>
+  <h1>PoopTracker</h1>
 </header>
 
 <div id="work">
@@ -163,7 +167,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <section class="card" id="songCard" aria-label="Order and pattern">
     <div id="ordCol">
       <h2>Order</h2>
-      <div id="ordList"></div>
+      <div id="ordList" class="well"></div>
       <div class="ordBtns"><button id="oAdd" title="Insert the edited pattern below the selected position" aria-label="Insert position">+</button><button id="oDel" title="Delete the selected position" aria-label="Delete position">−</button><button id="oUp" title="Move up" aria-label="Move position up">↑</button><button id="oDown" title="Move down" aria-label="Move position down">↓</button></div>
       <div class="ordBtns"><button id="oPrev" title="Previous pattern number at the selected position" aria-label="Decrease the position's pattern number">◀</button><button id="oNext" title="Next pattern number at the selected position" aria-label="Increase the position's pattern number">▶</button></div>
     </div>
@@ -174,25 +178,25 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
         <button id="pAdd" title="New empty pattern (same length)">New</button>
         <button id="pNew" title="Duplicate: a new pattern as a copy of the current one">Dup.</button>
         <button id="pDel" title="Delete the pattern (if the order doesn't use it)">Del.</button>
-        <label>Length <input id="pLen" type="number" min="1" max="256" style="width:52px"></label>
+        <label>Length<input id="pLen" type="number" min="1" max="256" style="width:52px"></label>
         <button id="cAdd" title="Add a channel at the end (up to 10)" style="margin-left:auto">+ Chn.</button>
         <button id="cDel" title="Delete the channel under the cursor (if empty)">− Chn.</button>
       </div>
-      <div id="patBox"><canvas id="pat" tabindex="0" aria-label="Pattern editor"></canvas></div>
+      <div id="patBox" class="well"><canvas id="pat" tabindex="0" aria-label="Pattern editor"></canvas></div>
     </div>
   </section>
 </main>
 <section class="card" id="bench" hidden aria-label="Workbench">
-  <div class="cardHead"><h2>Bench</h2>
-    <button id="bBenchLoad" title="Put a long video on the bench (or drop it here while the bench is open)">Load</button><input id="bFile" type="file" accept="video/*" hidden>
+  <div class="cardHead"><button id="bBenchLoad" title="Put a long video on the bench (or drop it here while the bench is open)">Load</button><input id="bFile" type="file" accept="video/*" hidden>
     <span id="bName" class="dim ell"></span>
-    <button id="bClear" title="Throw the video off the bench (nothing is saved)" style="margin-left:auto">Clear</button>
+    <button id="bTrim" title="Keep only the marked piece on the bench and throw the rest away (not re-encoded; the bench is never saved)" style="margin-left:auto">Trim</button>
+    <button id="bClear" title="Throw the video off the bench (nothing is saved)">Clear</button>
   </div>
   <div id="bView">
     <video id="bVideo" playsinline hidden title="Click: the focus, the point the instrument's tiles keep in view · Backspace: back to the middle"></video><canvas id="bFocus"></canvas>
     <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument, <kbd>Shift</kbd>+<kbd>Enter</kbd> into the selected one.<br><span class="dim">MP4, MOV, WebM or MKV (from YouTube: <code>yt-dlp &lt;url&gt;</code>).</span></div>
   </div>
-  <canvas id="bTime" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
+  <canvas id="bTime" class="well" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
   <div class="row" id="bBar">
     <span id="bSel" class="dim"></span>
     <button id="bPlaySel" title="Play the marked piece (Shift+Space)">▶ Piece</button>
@@ -204,7 +208,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <div id="instPanel">
   <section class="card" id="instCard">
     <h2>Instruments</h2>
-    <div id="instList"></div>
+    <div id="instList" class="well"></div>
     <div class="btnRow"><button id="bLoad" title="Load a video as a new instrument (or drop a video on the page)">Load</button><input id="file" type="file" accept="video/*" multiple hidden>
       <button id="bVidSave" title="Save the video with this instrument's settings (hit, loop, ADSR…) in its metadata; dropped on the tracker, it arrives as a ready instrument. The video isn't re-encoded. MP4/MOV only.">Save</button>
       <button id="bSplit" title="Duplicate: a new instrument from the same video with the same settings; then change its region">Dup.</button>
@@ -212,35 +216,33 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <button id="iUp" title="Move up" aria-label="Move instrument up">↑</button><button id="iDown" title="Move down" aria-label="Move instrument down">↓</button>
       <button id="iDel" title="Delete the selected instrument (if no pattern uses it)">Del.</button></div>
   </section>
-  <section class="card" id="instEd">
-    <div class="cardHead"><h2>Instrument settings</h2>
-      <button id="bHitPlay">▶ From hit</button><button id="bFull">▶ From start</button>
-      <button id="bSync" title="A click plays exactly at the hit point. The hit in the video should line up with the click.">Sync test</button>
-      <span id="iVideo" class="dim ell"></span></div>
+  <section class="card" id="instEd" aria-label="Instrument settings">
+    <div class="cardHead"><button id="bHitPlay">▶ From hit</button><button id="bFull">▶ From start</button>
+      <button id="bSync" title="A click plays exactly at the hit point. The hit in the video should line up with the click.">Sync test</button></div>
     <div class="row">
-    <fieldset class="grp"><legend>Sample</legend>
-      <label>Name <input id="iName" maxlength="16" style="width:130px"></label>
-      <label title="Base note: at this note the clip plays at its original speed">Base <input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
-      <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol <input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
-      <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev <input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
-      <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms <input id="iAV" type="number" step="1" style="width:52px"></label>
+    <fieldset><legend>Sample</legend>
+      <label>Name<input id="iName" maxlength="16" style="width:130px"></label>
+      <label title="Base note: at this note the clip plays at its original speed">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
+      <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol<input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev<input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms<input id="iAV" type="number" step="1" style="width:52px"></label>
     </fieldset>
-    <fieldset class="grp"><legend>Region</legend>
+    <fieldset><legend>Region</legend>
       <input id="iStart" type="number" step="0.001" min="0" title="Region start and end (seconds)" aria-label="Region start (s)"> – <input id="iEnd" type="number" step="0.001" min="0" aria-label="Region end (s)">
     </fieldset>
-    <fieldset class="grp"><legend>Hit</legend>
+    <fieldset><legend>Hit</legend>
       <input id="iHit" type="number" step="0.001" min="0" title="Hit point (seconds)" aria-label="Hit point (s)">
       <button id="bAuto" title="Find the hit point in the audio automatically">Auto</button>
     </fieldset>
-    <fieldset class="grp"><legend>Loop</legend>
+    <fieldset><legend>Loop</legend>
       <select id="iLoop" aria-label="Loop mode" title="none: plays once · forward: loop start → end, again and again · pingpong: start → end → start…"><option value="none">none</option><option value="forward">forward</option><option value="pingpong">pingpong</option></select>
       <input id="iLS" type="number" step="0.001" min="0" aria-label="Loop start (s)"> – <input id="iLE" type="number" step="0.001" min="0" aria-label="Loop end (s)">
     </fieldset>
-    <fieldset class="grp" title="Envelope (ADSR)"><legend>Env.</legend>
-      <label title="Attack: how long the note takes to rise from silence to full volume. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">A <input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
-      <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D <input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
-      <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S <input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
-      <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R <input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
+    <fieldset title="Envelope (ADSR)"><legend>Env.</legend>
+      <label title="Attack: how long the note takes to rise from silence to full volume. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">A<input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
+      <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D<input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
+      <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S<input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
     </fieldset>
     </div>
     <div id="waveWrap"><canvas id="wave"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
@@ -294,37 +296,37 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=640e90eb6e",
+    "./src/core/commands.js": "./src/core/commands.js?v=91082bda3f",
     "./src/core/instrument.js": "./src/core/instrument.js?v=25befc1b83",
-    "./src/core/song.js": "./src/core/song.js?v=f2d261d757",
+    "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
     "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
     "./src/io.js": "./src/io.js?v=187eb9d89a",
-    "./src/main.js": "./src/main.js?v=d519e5c523",
+    "./src/main.js": "./src/main.js?v=cd5d341c18",
     "./src/mcp.js": "./src/mcp.js?v=4cfe49e5f5",
     "./src/midi.js": "./src/midi.js?v=64f4b7dc45",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
     "./src/ptformat.js": "./src/ptformat.js?v=5d377c4d32",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=26658bd72c",
-    "./src/ui/bug.js": "./src/ui/bug.js?v=646ec12444",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=0027ff1048",
+    "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=9352818319",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=6cd8b0c038",
-    "./src/ui/output.js": "./src/ui/output.js?v=870ed87ec8",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=bc5a2c9548",
+    "./src/ui/output.js": "./src/ui/output.js?v=54a17a1609",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
-    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=cdb31f0348",
+    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=5b46b30a85",
     "./src/ui/screens.js": "./src/ui/screens.js?v=e248a497ff",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
-    "./src/ui/transport.js": "./src/ui/transport.js?v=4ce62d313d",
+    "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
     "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
     "./src/util.js": "./src/util.js?v=bffb1cb8ec",
     "./src/webm.js": "./src/webm.js?v=ea9d076299"
   }
 }
 </script>
-<script type="module" src="src/main.js?v=d519e5c523"></script>
+<script type="module" src="src/main.js?v=cd5d341c18"></script>
 </body>
 </html>

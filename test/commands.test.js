@@ -2,7 +2,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { openTestSong, testInstrument, testPattern } from './helpers.js';
-import { song, instruments } from '../src/core/song.js';
+import { song, instruments, bench } from '../src/core/song.js';
 import * as C from '../src/core/commands.js';
 import { focusAt } from '../src/core/instrument.js';
 
@@ -99,4 +99,20 @@ test('a replaced video keeps how the instrument sounds; region and hit are found
   assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.loopEnd, I.avOffset, I.focus], [0, 3, 0.7, 0.7, 3, 0, []]);
   C.undo();
   assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.avOffset], [0.2, 1.8, 1.5, 1.6, 40]);
+});
+
+test('the bench: putting a video on it, trimming and clearing it are undoable, and bring their marks back', () => {
+  const a = new Blob(['a']), b = new Blob(['b']);
+  C.exec(() => C.putOnBench(a));
+  assert.equal(bench.file, a); assert.equal(bench.in, null);
+  Object.assign(bench, { in: 10, out: 13, focus: { x: 0.3, y: 0.5 } }); // marks are not commands
+  C.exec(() => C.trimBench(b, 3));
+  assert.deepEqual({ ...bench }, { file: b, in: 0, out: 3, focus: { x: 0.3, y: 0.5 } });
+  C.exec(C.clearBench);
+  assert.equal(bench.file, null);
+  C.undo(); assert.equal(bench.file, b);
+  C.undo(); assert.deepEqual({ ...bench }, { file: a, in: 10, out: 13, focus: { x: 0.3, y: 0.5 } });
+  C.redo(); assert.deepEqual({ ...bench }, { file: b, in: 0, out: 3, focus: { x: 0.3, y: 0.5 } });
+  assert.equal(C.putOnBench(b), null); // the same video again is no change
+  assert.ok(changes.every(c => c.scope === 'bench'));
 });

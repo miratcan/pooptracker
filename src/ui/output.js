@@ -64,11 +64,11 @@ function drawTile({ ch, x, y, w: TW, h: TH }, now) {
   for (const v of list) if (v.hitT <= now && v.hitT > lastHit) lastHit = v.hitT;
   og.globalAlpha = 1;
   if (inv > 0.01) { og.globalCompositeOperation = 'difference'; og.fillStyle = alpha(pal.white, clamp(inv, 0, 1)); og.fillRect(x, y, TW, TH); og.globalCompositeOperation = 'source-over'; }
-  if (isMuted(ch)) { og.fillStyle = alpha(pal.black, .75); og.fillRect(x, y, TW, TH); og.fillStyle = pal.red; og.font = 'bold 20px ui-monospace,Menlo,monospace'; og.fillText('MUTE', x + TW / 2 - 24, y + TH / 2 + 6); }
+  if (isMuted(ch)) { og.fillStyle = alpha(pal.black, .75); og.fillRect(x, y, TW, TH); og.fillStyle = pal.red; og.font = '16px dos8, ui-monospace, monospace'; og.fillText('MUTE', x + TW / 2 - 32, y + TH / 2 + 6); }
   // hit flash border
   const ha = lastHit >= 0 ? Math.exp(-(now - lastHit) / 0.09) : 0;
   og.strokeStyle = alpha(pal.acc, 0.15 + ha * 0.85); og.lineWidth = 1 + ha * 4; og.strokeRect(x + 1, y + 1, TW - 2, TH - 2);
-  og.font = '11px ui-monospace,Menlo,monospace'; og.fillStyle = alpha(pal.black, .55); og.fillRect(x + 4, y + TH - 19, 8 + og.measureText(`${ch + 1} ${label}`).width, 15);
+  og.font = '16px dos, ui-monospace, monospace'; og.fillStyle = alpha(pal.black, .55); og.fillRect(x + 4, y + TH - 22, 8 + og.measureText(`${ch + 1} ${label}`).width, 18);
   og.fillStyle = pal.white; og.fillText(`${ch + 1} ${label}`, x + 8, y + TH - 8);
   og.restore();
 }

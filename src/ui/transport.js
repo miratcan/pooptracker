@@ -11,17 +11,16 @@ let recorder = null;
 // the channel count can't change, and the song can't be replaced, in the middle of a recording
 setGuard(action => !recorder ? null : action === 'newSong' ? "can't start a new song while recording" : "the channel count can't change while recording");
 
-// while recording, Rec is the Stop button and nothing else starts playback: the take is the song from its start
+// while recording, ▶ Song and ● Rec stay down together like a tape deck's, and only Stop works: the take is the song from its start
 export function updateButtons() {
-  $('#bSong').classList.toggle('on', player.playing && player.mode === 'song');
-  $('#bPat').classList.toggle('on', player.playing && player.mode === 'pattern');
-  $('#bRec').classList.toggle('on', !!recorder);
-  $('#bRec').textContent = recorder ? '■ Stop' : '● Rec';
-  for (const id of ['#bSong', '#bPat', '#bStop']) $(id).disabled = !!recorder;
+  $('#bSong').classList.toggle('down', player.playing && player.mode === 'song');
+  $('#bPat').classList.toggle('down', player.playing && player.mode === 'pattern');
+  $('#bRec').classList.toggle('down', !!recorder);
+  for (const id of ['#bSong', '#bPat', '#bRec']) $(id).disabled = !!recorder;
 }
 onPlayer(() => { updateButtons(); if (!player.playing) view.vis = null; view.patDirty = true; });
 
-const unlessRecording = fn => (...a) => recorder ? setStatus('● Recording… Stop (the Rec button) or Space ends it') : fn(...a);
+const unlessRecording = fn => (...a) => recorder ? setStatus('● Recording… Stop or Space ends it') : fn(...a);
 // every way to start playback from the screens goes through here (startPlay's arguments)
 export const play = unlessRecording(startPlay);
 export const playSong = () => play('song');
@@ -33,7 +32,6 @@ $('#bPat').onclick = playPattern;
 $('#bStop').onclick = () => userStop();
 
 $('#bRec').onclick = () => {
-  if (recorder) { userStop(); return; }
   ensureAudio();
   // MP4 (H.264 + AAC) first: it opens everywhere (QuickTime, phones, Instagram, WhatsApp); WebM where the browser can't
   const mimes = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
@@ -52,6 +50,6 @@ $('#bRec').onclick = () => {
   recorder.start(250);
   if (player.playing) stopPlay();
   startPlay('song');
-  setStatus('● Recording the song from its start… Stop (the Rec button) or Space ends it');
+  setStatus('● Recording the song from its start… Stop or Space ends it');
   updateButtons();
 };

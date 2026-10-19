@@ -27,13 +27,16 @@ The first public version.
   made in code (no files). FT2 has no reverb; this deviates from [ZEN-FT2] on purpose. Recordings include it.
 - The workbench also cuts WebM and MKV (AV1, VP9, H.264, HEVC pictures; Opus, AAC sound), still without re-encoding:
   the packets are copied into an MP4 piece. VP8 and Vorbis have no place in MP4 and are refused by name.
+- On the workbench, Trim keeps only the marked piece on the bench and throws the rest away (not re-encoded).
+- The video on the workbench changes through commands like the song: Ctrl+Z brings back what Trim or Clear threw away.
+  [ZEN-NO-CONFIRMATION] now reads "Everything that throws something away can be undone".
 - On the workbench, Shift+Enter (Cut → Repl.) cuts the piece into the selected instrument: its video is replaced, how
   it sounds is kept, as with Repl. MCP replace_video takes start/end (and focus) for the same.
 - An instrument's Vol is the ceiling of its sound: the volume column plays under it (Vol 20: volume 40 sounds at 20,
   20 at 10). The picture follows the volume column alone (full at 40). Vol used to be only the volume a note without a
   volume column got.
 - Right-clicking a channel tile or a channel's header solos it (as FT2's scopes); right-clicking it again brings all back.
-- While recording, Rec is the Stop button and nothing else starts playback; a recording always starts at the song's start.
+- While recording, ▶ Song and ● Rec stay down like a tape deck's keys and only Stop works (it ends the take); a recording always starts at the song's start.
 - With Follow on, the order list follows the song while it plays.
 - Edit mode (off at start, red frame when on): off, the note keys only play; on, they write into the pattern. Cut and
   paste (⌘/Ctrl+X / V, Alt+F3 / F5…) work either way.

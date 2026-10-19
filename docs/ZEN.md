@@ -10,7 +10,7 @@ changed on purpose, in its own commit.
 * **[ZEN-INTUITIVE]:** PoopTracker stays as simple as a tracker can be, close to BeepBox. Learning happens by playing, not by reading.
 * **[ZEN-FT2]:** When in doubt, PoopTracker does what FastTracker 2 does. It deviates only where video demands it (pre-roll, Sxx, Ixx).
 * **[ZEN-FLAT-SCREENS]:** PoopTracker has few screens and never nests them. Each screen owns its keys.
-* **[ZEN-NO-CONFIRMATION]:** PoopTracker doesn't ask "are you sure?". Everything that changes a song can be undone.
+* **[ZEN-NO-CONFIRMATION]:** PoopTracker doesn't ask "are you sure?". Everything that throws something away can be undone.
 
 ## Video
 

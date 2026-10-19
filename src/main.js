@@ -35,7 +35,7 @@ onChange(({ cmd, scope, how }) => {
   if (cmd.P) { const i = song.patterns.indexOf(cmd.P); if (i >= 0 && i !== ed.pat) { ed.pat = i; ed.sel = null; } }
   if (how && cmd.at) { ed.row = cmd.at.row; ed.ch = cmd.at.ch; }
   if (cmd.inst) { const i = instruments.indexOf(cmd.inst); if (i > 0) ed.inst = i; }
-  if (scope === 'cells') view.patDirty = true; else refreshUI();
+  if (scope === 'cells') view.patDirty = true; else if (scope !== 'bench') refreshUI(); // the bench follows by itself
   if (how) setStatus(`${how === 'undo' ? '↶ undone' : '↷ redone'}: ${cmd.label}`);
 });
 setGlobalKeys({

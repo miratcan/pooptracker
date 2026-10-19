@@ -60,7 +60,7 @@ PoopTracker has two screens, **Pattern** and **Bench**, and they share one windo
 On the Bench screen, the order list and the pattern editor are replaced by the [workbench](#the-workbench).
 Instruments and the output stay visible.
 
-PoopTracker never asks "are you sure?". Anything that changes the song can be undone with **⌘/Ctrl+Z** and redone
+PoopTracker never asks "are you sure?". Anything that changes the song, or throws a video off the workbench, can be undone with **⌘/Ctrl+Z** and redone
 with **⌘/Ctrl+Shift+Z** ([ZEN-NO-CONFIRMATION](ZEN.md)).
 
 ---
@@ -78,7 +78,7 @@ with **⌘/Ctrl+Shift+Z** ([ZEN-NO-CONFIRMATION](ZEN.md)).
 | 5 | **▶ Song** | Plays the song from the start (**Enter**). |
 | 6 | **▶ Pattern** | Loops the pattern you are editing (**⌘/Ctrl+Enter**). |
 | 7 | **■ Stop** | Stops playback (**Space**). |
-| 8 | **● Rec** | Records the song from its start as a video. While recording, this button becomes **■ Stop**. See [Recordings](#recording-a-video). |
+| 8 | **● Rec** | Records the song from its start as a video. While recording, **▶ Song** and **● Rec** stay down and only **■ Stop** works. See [Recordings](#recording-a-video). |
 | 9 | **BPM** | Tempo, 32–255. One tick lasts 2.5 / BPM seconds. |
 | 10 | **Speed** | Ticks per row, 1–31. A lower speed plays rows faster. |
 | 11 | **Oct** | The octave of the lower row of note keys (F1–F8 also change it). |
@@ -315,7 +315,8 @@ It cuts MP4, MOV, WebM and MKV. A video from YouTube: `yt-dlp <url>`.
 |---|---------|--------------|
 | 1 | **Load** | Puts a video on the bench. You can also drop it on the page while the bench is open. |
 | 2 | Name | The file and its length |
-| 3 | **Clear** | Takes the video off the bench |
+| 3 | **Clear** | Takes the video off the bench (Ctrl+Z puts it back) |
+|  | **Trim** | Keeps only the marked piece on the bench and throws the rest away (Ctrl+Z brings it back); it stays marked, ready to cut. The piece can be longer than 8 s. |
 | 4 | Picture | Click it to set the **focus** of the instrument you are about to cut. Backspace resets it to the middle. |
 | 5 | Marked piece | The orange band. **I** marks its start and **O** its end, or you can drag on the timeline. Drag a handle to move that end. |
 | 6 | Timeline | Click it to go to that point. Zoom with the wheel or a pinch (`=` / `-`, `0` shows everything). Shift+wheel or sideways scrolling moves along it. |
@@ -380,7 +381,7 @@ a video on it in the list) to give it a real one. The status bar reports any not
 ### Recording a video
 
 **● Rec** plays the song from its start and records the output with its sound, reverb included. Press **■ Stop**
-(the same button) or **Space** to finish, and PoopTracker asks where to save. The file is MP4 where the browser can
+or **Space** to finish, and PoopTracker asks where to save. The file is MP4 where the browser can
 make one, otherwise WebM. While recording, nothing else can start playback, and the channel count can't change.
 
 ---

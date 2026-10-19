@@ -12,7 +12,7 @@ import { selectInst } from './instrumentPanel.js';
 import { selectOrd } from './songPanel.js';
 
 const pc = $('#pat'), pg = pc.getContext('2d');
-const PAT = { font: '12px ui-monospace, Menlo, Consolas, monospace', RH: 16, HDR: 22, VIS: 35, x0: 0, chW: 0, CW: 7 };
+const PAT = { font: '16px dos, ui-monospace, Menlo, Consolas, monospace', RH: 16, HDR: 22, VIS: 35, x0: 0, chW: 0, CW: 7 };
 const COL_OFF = [0, 4, 5, 7, 8, 10, 11, 12], COL_W = [3, 1, 1, 1, 1, 1, 1, 1];
 let dpr = 1;
 let viewTop = null; // while dragging a selection the view stays still (normally the cursor row is centered)

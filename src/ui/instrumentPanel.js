@@ -27,7 +27,6 @@ export function selectInst(idx) {
   $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
-  $('#iVideo').textContent = `video: ${I.video.name} (${I.video.dur.toFixed(3)} s)`;
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
   $('#iLoop').value = I.loop; $('#iLS').disabled = $('#iLE').disabled = I.loop === 'none'; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
   refreshInstList(); drawWave(null);
@@ -120,7 +119,7 @@ function drawWave(hoverT) {
     wg.strokeStyle = wg.fillStyle = pal[col]; wg.lineWidth = k === 'hit' ? 2 : 1;
     wg.beginPath(); wg.moveTo(x, 0); wg.lineTo(x, H); wg.stroke(); wg.fillRect(x - 4, 0, 8, 8);
   }
-  wg.lineWidth = 1; wg.fillStyle = pal.acc2; wg.font = '11px ui-monospace,Menlo,monospace';
+  wg.lineWidth = 1; wg.fillStyle = pal.acc2; wg.font = '8px dos8, ui-monospace, monospace';
   if (tx(I.hit) - tx(I.start) > 60) wg.fillText('pre-roll', tx(I.start) + 6, TH + 14);
   wg.fillStyle = pal.red; wg.fillText(`hit ${I.hit.toFixed(3)}s`, Math.min(tx(I.hit) + 5, W - 95), H - 6);
   if (hoverT != null) { wg.strokeStyle = alpha(pal.white, .5); wg.beginPath(); wg.moveTo(tx(hoverT), 0); wg.lineTo(tx(hoverT), H); wg.stroke(); }
@@ -135,7 +134,7 @@ function drawWave(hoverT) {
     fpg.fillStyle = pal.acc; fpg.fillRect(fx - 7, fy - 1, 14, 2); fpg.fillRect(fx - 1, fy - 7, 2, 14);
   }
   fpg.fillStyle = alpha(pal.black, .6); fpg.fillRect(0, fp.height - 22, fp.width, 22);
-  fpg.fillStyle = hoverT != null ? pal.white : pal.red; fpg.font = '14px ui-monospace,Menlo,monospace';
+  fpg.fillStyle = hoverT != null ? pal.white : pal.red; fpg.font = '16px dos, ui-monospace, monospace';
   fpg.fillText(hoverT != null ? `${hoverT.toFixed(3)} s` : `hit frame ${I.hit.toFixed(3)} s`, 8, fp.height - 7);
 }
 // the frame preview shows the middle of the frame: from 0–1 frame coordinates to its pixels and back

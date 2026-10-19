@@ -28,7 +28,7 @@ css.textContent = `
 #bug .legs path:nth-child(even){animation-direction:alternate-reverse}
 #bug.still .legs path{animation:none}
 @keyframes bugLegs{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
-#bugSay{position:fixed;z-index:31;pointer-events:none;background:var(--text);color:var(--bg);font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 9px;width:max-content;max-width:min(260px,calc(100vw - 16px));opacity:0;transition:opacity .2s}
+#bugSay{position:fixed;z-index:31;pointer-events:none;background:var(--text);color:var(--bg);font:16px/1.25 dos,ui-monospace,monospace;padding:5px 9px;width:max-content;max-width:min(260px,calc(100vw - 16px));opacity:0;transition:opacity .2s}
 #bugSay.on{opacity:1}
 #bugSay::after{content:'';position:absolute;left:14px;bottom:-6px;border:6px solid transparent;border-top-color:var(--text);border-bottom:0}`;
 document.head.appendChild(css);

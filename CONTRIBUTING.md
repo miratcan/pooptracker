@@ -37,6 +37,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The short version:
 
 - **The song changes only through a command** in `src/core/commands.js`. A change that writes `song.…` or
   `instruments[…]…` directly will be sent back: it can't be undone, MCP can't do it, and the screens won't know.
+  The same holds for the video on the workbench (`bench.file`).
 - **`core/` and `engine/` never touch the DOM.** They run in Node; that is what makes them testable.
 - **The UI reacts to change events**; panels don't call each other to refresh.
 

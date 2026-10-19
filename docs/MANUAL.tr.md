@@ -64,7 +64,7 @@ PoopTracker'ın iki ekranı var, **Pattern** ve **Bench**, ikisi aynı pencereyi
 Bench ekranında order listesi ve pattern editörünün yerine [tezgâh](#tezgah) gelir. Enstrümanlar ve çıktı görünür
 kalır.
 
-PoopTracker hiçbir zaman "emin misin?" diye sormaz. Şarkıyı değiştiren her şey **⌘/Ctrl+Z** ile geri alınır,
+PoopTracker hiçbir zaman "emin misin?" diye sormaz. Şarkıyı değiştiren ya da tezgâhtan bir videoyu atan her şey **⌘/Ctrl+Z** ile geri alınır,
 **⌘/Ctrl+Shift+Z** ile yeniden yapılır ([ZEN-NO-CONFIRMATION](ZEN.md)).
 
 ---
@@ -83,7 +83,7 @@ PoopTracker hiçbir zaman "emin misin?" diye sormaz. Şarkıyı değiştiren her
 | 5 | **▶ Song** | Şarkıyı baştan çalar (**Enter**). |
 | 6 | **▶ Pattern** | Düzenlediğin pattern'i döngüde çalar (**⌘/Ctrl+Enter**). |
 | 7 | **■ Stop** | Çalmayı durdurur (**Space**). |
-| 8 | **● Rec** | Şarkıyı baştan video olarak kaydeder. Kayıt sürerken bu düğme **■ Stop** olur. Bkz. [Video kaydı](#video-kaydi). |
+| 8 | **● Rec** | Şarkıyı baştan video olarak kaydeder. Kayıt sürerken **▶ Song** ile **● Rec** basılı kalır, yalnızca **■ Stop** çalışır. Bkz. [Video kaydı](#video-kaydi). |
 | 9 | **BPM** | Tempo, 32–255. Bir tick 2,5 / BPM saniye sürer. |
 | 10 | **Speed** | Satır başına tick sayısı, 1–31. Düşük speed satırları daha hızlı çalar. |
 | 11 | **Oct** | Alt sıradaki nota tuşlarının oktavı (F1–F8 de değiştirir). |
@@ -329,7 +329,8 @@ MP4, MOV, WebM ve MKV keser. YouTube'dan bir video için: `yt-dlp <url>`.
 |---|---------|----------|
 | 1 | **Load** | Tezgâha bir video koyar. Tezgâh açıkken videoyu sayfaya bırakmak da olur. |
 | 2 | Ad | Dosya ve uzunluğu |
-| 3 | **Clear** | Videoyu tezgâhtan kaldırır |
+| 3 | **Clear** | Videoyu tezgâhtan kaldırır (Ctrl+Z geri koyar) |
+|  | **Trim** | Tezgâhta yalnızca işaretli parçayı bırakır, gerisini atar (Ctrl+Z geri getirir); parça işaretli kalır, hemen kesilebilir. Parça 8 sn'den uzun olabilir. |
 | 4 | Görüntü | Keseceğin enstrümanın **odağını** belirlemek için tıkla. Backspace ortaya döndürür. |
 | 5 | İşaretli parça | Turuncu şerit. **I** başını, **O** sonunu işaretler, ya da zaman çizelgesinde sürükleyebilirsin. Bir ucu taşımak için tutamağını sürükle. |
 | 6 | Zaman çizelgesi | Tıklayınca o noktaya gider. Fare tekerleği ya da iki parmakla yakınlaşır (`=` / `-`, `0` hepsini gösterir). Shift+tekerlek ya da yatay kaydırma boyunca gezer. |
@@ -397,8 +398,8 @@ notalar varsa durum çubuğu söyler.
 <a id="video-kaydi"></a>
 ### Video kaydı
 
-**● Rec** şarkıyı baştan çalar ve çıktıyı sesiyle birlikte kaydeder, reverb dahil. Bitirmek için **■ Stop**'a (aynı
-düğme) ya da **Space**'e bas, PoopTracker nereye kaydedeceğini sorar. Tarayıcı yapabiliyorsa dosya MP4, yoksa WebM
+**● Rec** şarkıyı baştan çalar ve çıktıyı sesiyle birlikte kaydeder, reverb dahil. Bitirmek için **■ Stop**'a
+ya da **Space**'e bas, PoopTracker nereye kaydedeceğini sorar. Tarayıcı yapabiliyorsa dosya MP4, yoksa WebM
 olur. Kayıt sürerken başka hiçbir şey çalmayı başlatamaz ve kanal sayısı değişemez.
 
 ---

@@ -4,12 +4,12 @@
 // the same factories, so they share validation and undo.
 //
 // After a command is applied, undone or redone, every onChange listener hears { cmd, scope, how }:
-//   scope: 'cells' | 'song' | 'order' | 'patterns' | 'instrument' | 'instruments' | 'channels' | 'all'
+//   scope: 'cells' | 'song' | 'order' | 'patterns' | 'instrument' | 'instruments' | 'channels' | 'all' | 'bench'
 //   how:   undefined (applied) | 'undo' | 'redo' | 'open' (a whole song was loaded; not undoable)
 // The engine and the screens react to these; nothing else needs to tell them what changed.
 import PTFormat from '../ptformat.js';
 import { MAX_CH, hex2, copy, same, round3 } from '../util.js';
-import { song, instruments, videos, nch, emptyCell, isEmptyCell, newPattern } from './song.js';
+import { song, instruments, videos, bench, nch, emptyCell, isEmptyCell, newPattern } from './song.js';
 import { sliceRegion, detectHit } from './instrument.js';
 
 export class CmdError extends Error {}
@@ -191,6 +191,18 @@ export function importSong(S, insts, vids, label) {
   const set = (s, i, v) => { Object.assign(song, s); instruments.length = 0; instruments.push(...i); videos.length = 0; videos.push(...v); };
   return { label, scope: 'all', resetEditor: true, apply: () => set(S, [null, ...insts], vids), revert: () => set(keep, oldInst, oldVideos) };
 }
+
+// the workbench's video: put on it, trimmed or thrown off as a command, so Ctrl+Z brings the one before back with its
+// marks. file = a File/Blob or null; marks = what starts marked on it
+function benchVideo(file, marks, label) {
+  if (file === bench.file) return null;
+  const old = { ...bench }, nu = { file, in: null, out: null, focus: null, ...marks };
+  return { label, scope: 'bench', apply: () => Object.assign(bench, nu), revert: () => Object.assign(bench, old) };
+}
+export const putOnBench = file => benchVideo(file, {}, 'video on the bench');
+// the piece (len seconds, cut out of the video on the bench) takes its place, marked whole and keeping the focus
+export const trimBench = (file, len) => benchVideo(file, { in: 0, out: len, focus: bench.focus }, 'trim');
+export const clearBench = () => benchVideo(null, {}, 'clear the bench');
 
 // Not commands (no undo): a loaded video joins the list of videos; a whole song replaces the current one.
 export const addVideo = V => { videos.push(V); };

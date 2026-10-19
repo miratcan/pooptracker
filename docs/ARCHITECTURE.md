@@ -15,7 +15,7 @@ src/
   midi.js         .mid files → a song (notes, tempo, one instrument per track)       (no DOM, no audio)
   util.js         constants and small helpers                                        (no DOM, no audio)
   core/           the song and the commands that change it                           (no DOM, no audio)
-    song.js         song, instruments, videos: the data
+    song.js         song, instruments, videos, and the video on the workbench: the data
     commands.js     the ONLY writer of that data; undo / redo; change events
     instrument.js   videos and instruments: regions, hit point, pitch, ADSR, normalize, hit detection
   engine/         plays the song on an AudioContext                                  (no DOM)
@@ -43,6 +43,7 @@ Dependencies only point down: `ui` → `io`, `engine`, `core` → `midi` → `pt
    `CmdError` with a readable message if the change is invalid; nothing is applied. Otherwise it returns
    `{ label, scope, apply, revert }`. `exec()` applies it and records it for undo. The keyboard, the mouse and MCP
    all use the same commands, so they share validation and undo. Nobody writes `song.…` or `instruments[…]…` directly.
+   The video on the workbench (`bench.file`) changes the same way, so a trim or a clear can be undone; its marks don't.
 2. **Changes are announced, not pushed.** After a command is applied, undone or redone, `onChange` listeners hear
    `{ cmd, scope, how }`. The engine follows the song (tempo, channel list); the UI redraws what the scope touched
    (`cells` → the pattern only; anything else → `refreshUI()`). A panel never calls another panel to update it.
