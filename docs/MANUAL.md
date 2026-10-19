@@ -218,8 +218,9 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 
 ### Adding an instrument
 
-- Drop a video on the page (on the Pattern screen), or press **Load** under the instrument list. You can choose
-  several files at once.
+- Drop a video on the page (on the Pattern screen): it becomes a new instrument. Dropped on an instrument in the list,
+  it becomes that instrument's video.
+- Or press **New** under the instrument list for an empty instrument, then **Load** a video into it.
 - PoopTracker finds the **hit** (the moment the sound kicks in) automatically. Check it: the note will land on its
   row exactly at the hit.
 - A video saved from PoopTracker with **Save** comes back with all its settings.
@@ -229,10 +230,9 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 | # | Control | What it does |
 |---|---------|--------------|
 | 1 | Instrument list | Click an instrument to select it (or use Shift+↑↓). The selected one is what the note keys play. Drop a video on an instrument here to replace its video. |
-| 2 | **Load** | Loads a video as a new instrument |
+| 2 | **New**, **Load** | **New** adds an empty instrument at the end of the list. **Load** gives the **selected** instrument a video and keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); the region and hit are found again in the new video. With no instrument, Load makes a new one. |
 | 3 | **Save** | Saves the video with this instrument's settings in its metadata. It isn't re-encoded. MP4/MOV only. |
 | 4 | **Dup.** | A new instrument from the same video with the same settings. Use it to take another region of the same clip. |
-| 5 | **Repl.** | Replaces the video and keeps how the instrument sounds (name, base note, volume, reverb, envelope, loop mode). The region and hit are found again in the new video. |
 | 6 | **↑ ↓ Del.** | Move the instrument up or down in the list / delete it (only if no pattern uses it) |
 | 7 | **▶ From hit** | Plays the instrument from its hit point |
 | 8 | **▶ From start** | Plays it from the start of its region |
@@ -255,12 +255,18 @@ Levels are hex, like in the pattern (`00`–`40`). Times are decimal seconds.
 **Sample**
 - **Name:** up to 16 characters. It is shown on the tile.
 - **Base:** at this note the clip plays at its original speed (usually `C-4`).
+- **Tune:** finds the pitch of the clip after its hit and sets **Base** and **Fine** to it, so the notes you write
+  sound as written. The clip itself is not changed, and a bend in it stays: the instrument gets one pitch. A noisy sound
+  (a snare, a hi-hat) has no clear pitch, and then nothing changes; a kick or a tom has one.
+- **Fine:** finetune, as in FT2: 1/128 of a semitone, −128 to 127. The clip's own pitch is Base plus Fine.
 - **Vol:** `00`–`40`, the loudest this instrument gets. The pattern's volume column plays under it: with Vol `20`,
   volume `40` sounds at `20` and volume `20` sounds at `10`.
 - **Rev:** how much of the sound goes into the reverb, `00`–`40` (`00` is dry). All instruments share one hall.
 - **A/V ms:** fixes a video whose sound is shifted against its picture.
 
-**Region:** the start and end (in seconds) of the part of the video that is used.
+**Region:** the start and end (in seconds) of the part of the video that is used. **Trim** cuts the video down to the
+region and throws the rest away, without re-encoding: the instrument plays the same and the song file gets smaller.
+⌘/Ctrl+Z brings the whole video back.
 
 **Hit:** where the sound hits, in seconds. **Auto** finds it in the audio again.
 
@@ -375,8 +381,8 @@ drop that video on any PoopTracker, it arrives as a ready instrument. This is th
 ### MIDI import
 
 **Load** a `.mid` file (type 0 or 1), or drop it on the page. The notes come in with one instrument per track and
-one per drum sound. Each instrument starts with a silent "REPLACE ME" video. Select it and press **Repl.** (or drop
-a video on it in the list) to give it a real one. The status bar reports any notes that were moved, clamped or dropped.
+one per drum sound. Each instrument starts with a silent "REPLACE ME" video. Select it and press **Load** under the instrument
+list (or drop a video on it in the list) to give it a real one. The status bar reports any notes that were moved, clamped or dropped.
 
 ### Recording a video
 

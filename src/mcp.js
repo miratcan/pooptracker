@@ -4,10 +4,10 @@
 import PTFormat from './ptformat.js';
 import { FX, KEYOFF, hex2, noteName, same, round3 } from './util.js';
 import { song, instruments, nch, emptyCell, newPattern, clonePattern } from './core/song.js';
-import { makeInstrument, detectHit } from './core/instrument.js';
+import { makeInstrument, detectHit, detectPitch, tuneFor, hitPos } from './core/instrument.js';
 import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument, newSong, addChannel, deleteChannel,
   deletePattern, setPatternLength, addInstrument, deleteInstrument, moveInstrument } from './core/commands.js';
-import { importVideo, replaceVideo, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
+import { importVideo, replaceVideo, trimInstrument, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
 import { processRow, newChan } from './engine/player.js';
 import { $, setStatus, escHtml } from './ui/common.js';
 
@@ -164,11 +164,11 @@ const MCP_TOOLS = {
     return done(cmd, Object.entries(f).map(([k, v]) => `${k}=${v}`).join(', '));
   },
   set_instrument(a) {
-    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', reverb: 'rev', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le',
+    const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', reverb: 'rev', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le', fine: 'fine',
       region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus' };
     for (const [k, key] of Object.entries(map)) if (k in a) {
       if (k === 'loop' && !PTFormat.LOOP_MODES.includes(a.loop)) fail(`loop must be none, forward or pingpong (got '${a.loop}')`);
-      try { f[{ name: 'name', base: 'baseNote', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
+      try { f[{ name: 'name', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
       catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); } // drop the parser's line prefix, whatever its wording
     }
     if (!Object.keys(f).length) fail(`nothing to change (${Object.keys(map).join(', ')})`);
@@ -208,10 +208,20 @@ const MCP_TOOLS = {
     const cmd = exec(() => moveInstrument(i, d));
     return cmd ? done(cmd, `instrument ${hex2(i)} is now ${hex2(i + d)} (the pattern cells follow it)`) : `instrument ${hex2(i)} is already ${d < 0 ? 'the first' : 'the last'}`;
   },
+  async trim_instrument(a) {
+    const i = instArg(a.instrument), cmd = await trimInstrument(i, progress), I = instruments[i];
+    return cmd ? done(cmd, `instrument ${hex2(i)}: its video is now only its region (0–${I.end.toFixed(3)} s, hit ${I.hit.toFixed(3)} s)`) : `instrument ${hex2(i)}: the region is already the whole video`;
+  },
   duplicate_instrument(a) {
     const i = instArg(a.instrument), I = instruments[i];
     exec(() => addInstrument(makeInstrument(I.video, I), `MCP: copy of instrument ${hex2(i)}`));
     return done(true, `instrument ${hex2(instruments.length - 1)} created: the same video and settings as ${hex2(i)}`);
+  },
+  tune_instrument(a) {
+    const i = instArg(a.instrument), I = instruments[i], hz = detectPitch(I.buffer, hitPos(I)), t = hz && tuneFor(hz);
+    if (!t) fail(`instrument ${hex2(i)}: no clear pitch after the hit (a noisy sound like a snare or a hi-hat has none); nothing changed`);
+    const cmd = exec(() => setInstrument(i, t, 'MCP: tune'));
+    return done(cmd, `instrument ${hex2(i)}: ${hz.toFixed(1)} Hz → base note ${noteName(t.baseNote)}, fine ${t.fine}`);
   },
   detect_hit(a) {
     const i = instArg(a.instrument), I = instruments[i], hit = round3(I.start + detectHit(I.buffer));

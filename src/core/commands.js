@@ -95,14 +95,14 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
 // What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
 // (region, hit, loop points, focus, A/V offset) and mean nothing in another one.
-export const SOUND_KEYS = ['name', 'baseNote', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
+export const SOUND_KEYS = ['name', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
 // another video for an instrument: the places are found again as when a video is loaded (the region is the whole
 // video, the hit is detected), or come from the new video's own metadata (place: its instrument line)
-export function setInstrumentVideo(idx, V, place = null) {
+export function setInstrumentVideo(idx, V, place = null, label = 'replace video') {
   const I = instruments[idx]; if (!I) fail(`instrument ${hex2(idx)} doesn't exist`);
   const oldVideo = I.video, old = pick(I, INST_KEYS);
   let nu;
@@ -114,7 +114,7 @@ export function setInstrumentVideo(idx, V, place = null) {
   if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) nu.loop = 'none';
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);
   const set = (vals, video) => { Object.assign(I, copy(vals)); I.video = video; sliceRegion(I); };
-  return { label: `${hex2(idx)} replace video`, scope: 'instrument', inst: I, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
+  return { label: `${hex2(idx)} ${label}`, scope: 'instrument', inst: I, apply: () => set(nu, V), revert: () => set(old, oldVideo) };
 }
 // before: values to restore on undo, for edits that were previewed live (slider / waveform drag)
 export function setInstrument(idx, fields, label = 'instrument', before) {

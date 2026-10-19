@@ -11,7 +11,7 @@ export function makeVideo(name, frames, buffer, file = null) {
 export const loops = I => I.loop !== 'none' && I.loopEnd > I.loopStart;
 export const videoFrame = (V, t) => V.frames[clamp(Math.floor(t * V.fps), 0, V.frames.length - 1)];
 export function makeInstrument(V, o) {
-  const I = Object.assign({ name: '', start: 0, end: V.dur, hit: 0, baseNote: 48, vol: 64, reverb: 0,
+  const I = Object.assign({ name: '', start: 0, end: V.dur, hit: 0, baseNote: 48, fine: 0, vol: 64, reverb: 0,
     A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0, focus: [] }, o);
   I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R }; I.focus = I.focus.map(k => ({ ...k }));
   sliceRegion(I);
@@ -25,7 +25,8 @@ export function sliceRegion(I) {
 }
 // I.buffer holds only the region, so playback positions are relative to I.start
 export const hitPos = I => I.hit - I.start;
-export const rateFor = (I, pitch) => Math.pow(2, (pitch - I.baseNote) / 12);
+// fine: FT2's finetune, 1/128 of a semitone: the clip's own pitch is baseNote + fine / 128
+export const rateFor = (I, pitch) => Math.pow(2, (pitch - I.baseNote - I.fine / 128) / 12);
 export const frameAt = (I, pos) => videoFrame(I.video, I.start + pos + I.avOffset / 1000);
 // where the picture looks at video time t ({ x, y }, 0–1 across the frame): along the focus path, the middle without one
 export function focusAt(I, t) {
@@ -62,6 +63,41 @@ export function normalizeVideoAudio(buf) {
   return g;
 }
 // Onset detection: largest jump in short-window energy.
+// the pitch of a sound in Hz, or null when it has none clear enough (a drum, noise, silence). YIN (de Cheveigné &
+// Kawahara, 2002) on 30 ms windows over the 2 s after `from` (seconds: the hit), the median of the windows that have one
+export function detectPitch(buf, from = 0) {
+  const sr = buf.sampleRate, nc = buf.numberOfChannels, i1 = Math.min(buf.length, Math.round((from + 2) * sr));
+  const d = new Float32Array(buf.length);
+  for (let c = 0; c < nc; c++) { const x = buf.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] += x[i] / nc; }
+  const W = Math.round(sr * 0.03), minLag = Math.floor(sr / 1500), maxLag = Math.ceil(sr / 50), hop = Math.round(sr * 0.02);
+  let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  const dd = new Float32Array(maxLag + 2), found = [];
+  const last = Math.min(d.length, i1 + W + maxLag + 1); // windows start in those 2 s and may read on past them
+  for (let i0 = Math.round(from * sr); i0 + W + maxLag + 1 <= last; i0 += hop) {
+    let e = 0; for (let i = i0; i < i0 + W; i++) e += d[i] * d[i];
+    if (Math.sqrt(e / W) < peak * 0.05) continue; // too quiet to tell
+    // the cumulative mean normalized difference; the first dip under 0.15 is the period
+    let sum = 0; dd[0] = 1;
+    for (let tau = 1; tau <= maxLag + 1; tau++) {
+      let s = 0; for (let i = i0; i < i0 + W; i++) { const q = d[i] - d[i + tau]; s += q * q; }
+      sum += s; dd[tau] = sum ? s * tau / sum : 1;
+    }
+    let tau = -1;
+    for (let t = minLag; t <= maxLag; t++) if (dd[t] < 0.15) { while (t < maxLag && dd[t + 1] < dd[t]) t++; tau = t; break; }
+    if (tau < 0) continue;
+    const a = dd[tau - 1], b = dd[tau], c = dd[tau + 1], den = a - 2 * b + c; // between samples: a parabola through the dip
+    found.push(sr / (den ? tau + (a - c) / (2 * den) : tau));
+  }
+  if (found.length < 3) return null;
+  found.sort((x, y) => x - y);
+  return found[found.length >> 1];
+}
+// a pitch in Hz → the base note and finetune that play the clip as itself (A-4 = 440 Hz); null outside C-0…B-7
+export function tuneFor(hz) {
+  const n = 57 + 12 * Math.log2(hz / 440), baseNote = Math.round(n);
+  return baseNote >= 0 && baseNote <= 95 ? { baseNote, fine: Math.round((n - baseNote) * 128) } : null;
+}
+
 export function detectHit(buf) {
   const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.floor(sr * 0.01);
   const e = [];

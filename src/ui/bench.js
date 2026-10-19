@@ -1,6 +1,6 @@
 // The workbench: a kitchen counter for long videos. A video is put on it, a piece is marked (I / O) and cut
 // (Enter); the piece goes into the pot as a new instrument, or becomes the selected instrument's video (Shift+Enter, as
-// Repl. does: it keeps how the instrument sounds), without re-encoding (../mp4cut.js). The bench itself
+// Load does: it keeps how the instrument sounds), without re-encoding (../mp4cut.js). The bench itself
 // is never saved: what isn't cut into an instrument is thrown away. Which video is on it is core state (song.js bench),
 // changed by commands like the song, so Ctrl+Z brings back a video that was trimmed or cleared away.
 // Only the browser's video player plays the long video: its sound is never decoded whole (an hour would not fit). For

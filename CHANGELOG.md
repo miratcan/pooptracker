@@ -28,6 +28,13 @@ The first public version.
 - The workbench also cuts WebM and MKV (AV1, VP9, H.264, HEVC pictures; Opus, AAC sound), still without re-encoding:
   the packets are copied into an MP4 piece. VP8 and Vorbis have no place in MP4 and are refused by name.
 - On the workbench, Trim keeps only the marked piece on the bench and throws the rest away (not re-encoded).
+- Under the instrument list, **Load** now gives the selected instrument a video (what Repl. did; Repl. is gone) and
+  the new **New** adds an empty instrument (with the REPLACE ME video) to load into: Load never adds one by surprise.
+- Tune (next to Base) finds an instrument's pitch and sets Base and the new Fine to it; Fine is FT2's finetune (1/128
+  semitone, -128–127), saved as `fine=` only when it isn't 0, so older files open as before. MCP `tune_instrument`, and
+  `set_instrument fine`.
+- Trim in an instrument's Region cuts its video down to the region (not re-encoded; hit, loop and focus move with it),
+  so the song file gets smaller; Ctrl+Z brings the whole video back. MCP `trim_instrument` does the same.
 - The video on the workbench changes through commands like the song: Ctrl+Z brings back what Trim or Clear threw away.
   [ZEN-NO-CONFIRMATION] now reads "Everything that throws something away can be undone".
 - On the workbench, Shift+Enter (Cut → Repl.) cuts the piece into the selected instrument: its video is replaced, how

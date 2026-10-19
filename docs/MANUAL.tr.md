@@ -230,8 +230,9 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 
 ### Enstrüman eklemek
 
-- Bir videoyu sayfaya bırak (Pattern ekranındayken) ya da enstrüman listesinin altındaki **Load**'a bas. Aynı anda
-  birden fazla dosya seçebilirsin.
+- Bir videoyu sayfaya bırak (Pattern ekranındayken): yeni bir enstrüman olur. Listedeki bir enstrümanın üstüne
+  bırakırsan o enstrümanın videosu olur.
+- Ya da enstrüman listesinin altındaki **New** ile boş bir enstrüman ekle, sonra **Load** ile ona bir video yükle.
 - PoopTracker **vuruşu** (sesin patladığı anı) kendisi bulur. Kontrol et: nota, satırına tam vuruş anında oturur.
 - PoopTracker'dan **Save** ile kaydedilmiş bir video, bütün ayarlarıyla geri gelir.
 
@@ -240,10 +241,9 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | # | Kontrol | Ne yapar |
 |---|---------|----------|
 | 1 | Enstrüman listesi | Seçmek için bir enstrümana tıkla (ya da Shift+↑↓). Nota tuşları seçili olanı çalar. Buradaki bir enstrümanın üstüne video bırakırsan videosu değişir. |
-| 2 | **Load** | Bir videoyu yeni enstrüman olarak yükler |
+| 2 | **New**, **Load** | **New** listenin sonuna boş bir enstrüman ekler. **Load** **seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. Hiç enstrüman yoksa Load yeni bir tane yapar. |
 | 3 | **Save** | Videoyu, bu enstrümanın ayarları metadata'sında olacak şekilde kaydeder. Yeniden encode edilmez. Sadece MP4/MOV. |
 | 4 | **Dup.** | Aynı videodan, aynı ayarlarla yeni bir enstrüman. Aynı klipten başka bir bölge almak için kullan. |
-| 5 | **Repl.** | Videoyu değiştirir, enstrümanın sesini korur (ad, taban nota, ses, reverb, zarf, döngü modu). Bölge ve vuruş yeni videoda yeniden bulunur. |
 | 6 | **↑ ↓ Del.** | Enstrümanı listede yukarı ya da aşağı taşır / siler (sadece hiçbir pattern kullanmıyorsa) |
 | 7 | **▶ From hit** | Enstrümanı vuruş noktasından çalar |
 | 8 | **▶ From start** | Bölgesinin başından çalar |
@@ -267,12 +267,17 @@ Seviyeler pattern'deki gibi hex'tir (`00`–`40`). Süreler ondalık saniyedir.
 **Sample**
 - **Name:** en fazla 16 karakter. Karenin üstünde görünür.
 - **Base:** bu notada klip kendi hızında oynar (genelde `C-4`).
+- **Tune:** klibin vuruştan sonraki perdesini bulur, **Base** ve **Fine**'ı ona göre ayarlar; böylece yazdığın notalar
+  yazdığın gibi duyulur. Klibin kendisi değişmez, içindeki bend de kalır: enstrümanın tek bir perdesi olur. Trampet ya da
+  hi-hat gibi gürültülü seslerin belirgin perdesi yoktur, o zaman hiçbir şey değişmez; kick ya da tom'un vardır.
+- **Fine:** FT2'deki gibi ince akort: yarım tonun 1/128'i, −128 ile 127 arası. Klibin kendi perdesi Base artı Fine'dır.
 - **Vol:** `00`–`40`, bu enstrümanın en yüksek sesi. Pattern'deki ses sütunu bunun altında çalar: Vol `20` iken
   ses `40` olan nota `20`, ses `20` olan nota `10` seviyesinde çıkar.
 - **Rev:** sesin ne kadarının reverb'e gittiği, `00`–`40` (`00` kuru). Bütün enstrümanlar tek bir salonu paylaşır.
 - **A/V ms:** sesi görüntüsüne göre kaymış bir videoyu düzeltir.
 
-**Region:** videonun kullanılan kısmının başı ve sonu (saniye).
+**Region:** videonun kullanılan kısmının başı ve sonu (saniye). **Trim** videoyu bölgeye keser, gerisini atar; yeniden
+encode etmez: enstrüman aynı çalar, şarkı dosyası küçülür. ⌘/Ctrl+Z videonun tamamını geri getirir.
 
 **Hit:** sesin vurduğu an, saniye olarak. **Auto** onu sesten yeniden bulur.
 
@@ -392,7 +397,7 @@ paylaşmanın yolu bu.
 
 Bir `.mid` dosyasını (tip 0 ya da 1) **Load** ile aç ya da sayfaya bırak. Notalar her track için bir enstrüman, her
 davul sesi için bir enstrümanla gelir. Her enstrüman sessiz bir "REPLACE ME" videosuyla başlar. Gerçek bir video
-vermek için onu seç ve **Repl.**'e bas (ya da listede üstüne bir video bırak). Taşınan, sınırlanan ya da atılan
+vermek için onu seç ve enstrüman listesinin altındaki **Load**'a bas (ya da listede üstüne bir video bırak). Taşınan, sınırlanan ya da atılan
 notalar varsa durum çubuğu söyler.
 
 <a id="video-kaydi"></a>

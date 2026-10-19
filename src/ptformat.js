@@ -32,7 +32,7 @@ const focusStr = keys => keys.map(k => `${t3(k.t)}:${k.x.toFixed(3)},${k.y.toFix
 function format(I, video) {
   const f = [VERSION, 'name=' + esc(I.name)];
   if (video) f.push('video=' + esc(video));
-  f.push('start=' + t3(I.start), 'end=' + t3(I.end), 'hit=' + t3(I.hit), 'base=' + noteStr(I.baseNote),
+  f.push('start=' + t3(I.start), 'end=' + t3(I.end), 'hit=' + t3(I.hit), 'base=' + noteStr(I.baseNote), ...(I.fine ? ['fine=' + I.fine] : []),
     'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'), 'rev=' + I.reverb.toString(16).toUpperCase().padStart(2, '0'),
     'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + I.S.toString(16).toUpperCase().padStart(2, '0'), 'r=' + envStr(I.R),
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
@@ -60,6 +60,8 @@ const PARSE = {
   video: (k, v) => unesc(v),
   start: time, end: time, hit: time, ls: time, le: time,
   base: (k, v) => { const n = noteNum(v); return n >= 0 ? n : bad(k, v, 'C-0…B-7'); },
+  // finetune, FT2's: 1/128 of a semitone; written only when it isn't 0
+  fine: (k, v) => /^[-+]?\d+$/.test(v) && +v >= -128 && +v <= 127 ? +v : bad(k, v, '-128–127, integer'),
   vol: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
   // how much of the sound goes to the reverb, hex like vol (00 = dry)
   rev: (k, v) => /^[0-9A-F]{1,2}$/i.test(v) && parseInt(v, 16) <= 64 ? parseInt(v, 16) : bad(k, v, '00–40'),
@@ -73,7 +75,7 @@ const PARSE = {
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
   focus,
 };
-const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', vol: 'vol', rev: 'reverb',
+const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb',
   a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', focus: 'focus' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
@@ -90,7 +92,7 @@ function parse(line) {
     kv[k] = PARSE[k](k, v);
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
-  const I = { vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
+  const I = { fine: 0, vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
     loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, focus: [] };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
@@ -109,6 +111,7 @@ function checkInstrument(I) {
   for (const [k, label] of [['start', 'region start'], ['end', 'region end'], ['hit', 'hit point'], ['loopStart', 'loop start'], ['loopEnd', 'loop end']])
     if (!isTime(I[k])) return `${label} '${I[k]}' is invalid (seconds, 0 or more)`;
   if (!isInt(I.baseNote, 0, 95)) return `base note is invalid (C-0…B-7)`;
+  if (!isInt(I.fine, -128, 127)) return `finetune '${I.fine}' is invalid (-128–127, integer)`;
   if (!isInt(I.vol, 0, 64)) return `volume '${showHex(I.vol)}' is invalid (range 00–40)`;
   if (!isInt(I.reverb, 0, 64)) return `reverb '${showHex(I.reverb)}' is invalid (range 00–40)`;
   for (const k of ['A', 'D', 'R']) {

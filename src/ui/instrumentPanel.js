@@ -2,13 +2,13 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, loops } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
 import { previewNote, syncTest } from '../engine/player.js';
-import { $, ed, run, num, showError, refreshUI } from './common.js';
+import { $, ed, run, num, showError, refreshUI, setStatus } from './common.js';
 import { drawCover, coverRect } from './output.js';
 import { pal, alpha } from './palette.js';
-import { saveInstrumentVideo } from './files.js';
+import { saveInstrumentVideo, trimInstrumentVideo } from './files.js';
 
 export const curInst = () => instruments[ed.inst];
 function refreshInstList() {
@@ -24,7 +24,7 @@ function refreshInstList() {
 }
 export function selectInst(idx) {
   ed.inst = idx; const I = curInst(); if (!I) return;
-  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
+  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iFine').value = I.fine; $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
@@ -36,6 +36,18 @@ $('#iName').onchange = e => instCmd({ name: e.target.value }, 'name');
 $('#iBase').onchange = e => {
   const n = parseNote(e.target.value);
   if (n < 0 || n > 95) { showError(`base note '${e.target.value}' is invalid (C-0…B-7)`); refreshUI(); } else instCmd({ baseNote: n }, 'base note');
+};
+$('#iFine').onchange = e => {
+  const n = +e.target.value;
+  if (!Number.isInteger(n) || n < -128 || n > 127) { showError(`finetune '${e.target.value}' is invalid (-128–127, integer)`); refreshUI(); } else instCmd({ fine: n }, 'finetune');
+};
+// Tune: the pitch heard after the hit becomes Base + Fine (a bend in the clip stays: one pitch for the whole instrument)
+$('#bTune').onclick = () => {
+  const I = curInst(); if (!I) return;
+  const hz = detectPitch(I.buffer, hitPos(I)), t = hz && tuneFor(hz);
+  if (!t) return showError(`${hex2(ed.inst)} ${I.name}: no clear pitch after the hit (a noisy sound like a snare or a hi-hat has none)`);
+  instCmd(t, 'tune');
+  setStatus(`${hex2(ed.inst)} ${I.name}: ${hz.toFixed(1)} Hz → Base ${noteName(t.baseNote)}, Fine ${t.fine > 0 ? '+' : ''}${t.fine}`);
 };
 // volume is hex, as everywhere in the tracker (00–40)
 $('#iVol').onchange = e => {
@@ -70,6 +82,7 @@ $('#iLoop').onchange = e => {
 };
 $('#iLS').onchange = e => instCmd({ loopStart: round3(num(e.target)) }, 'loop start');
 $('#iLE').onchange = e => instCmd({ loopEnd: round3(num(e.target)) }, 'loop end');
+$('#bTrimInst').onclick = () => trimInstrumentVideo(ed.inst);
 $('#bAuto').onclick = () => { const I = curInst(); instCmd({ hit: round3(I.start + detectHit(I.buffer)) }, 'auto hit'); };
 $('#bVidSave').onclick = () => { const I = curInst(); if (I) saveInstrumentVideo(I); };
 $('#bSplit').onclick = () => { const I = curInst(); if (I) run(() => addInstrument(makeInstrument(I.video, I), 'new instrument from this video')); };

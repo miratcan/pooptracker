@@ -102,3 +102,12 @@ test('a focus key out of the frame, or out of time order, is an error that says 
   assert.throws(() => PTFormat.parse(LINE + ';focus=0:0.5'), /time:x,y/);
   assert.throws(() => PTFormat.parse(LINE + ';focus=1:0.5,0.5|0.5:0.5,0.5'), /focus key 2: time 0.500 must be after the key before it/);
 });
+
+test('finetune: written only when it isn\'t 0, read back, checked', () => {
+  assert.equal(PTFormat.parse(LINE).fine, 0); // files from before it have none
+  const I = PTFormat.parse(LINE.replace('base=D-4', 'base=D-4;fine=-23'));
+  assert.equal(I.fine, -23);
+  assert.equal(PTFormat.format(I), LINE.replace('base=D-4', 'base=D-4;fine=-23'));
+  assert.throws(() => PTFormat.parse(LINE.replace('base=D-4', 'base=D-4;fine=200')), /'fine' value '200' is invalid \(-128–127/);
+  assert.throws(() => PTFormat.parse(LINE.replace('base=D-4', 'base=D-4;fine=1.5')), /'fine' value '1.5' is invalid/);
+});

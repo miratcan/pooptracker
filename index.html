@@ -209,10 +209,9 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <section class="card" id="instCard">
     <h2>Instruments</h2>
     <div id="instList" class="well"></div>
-    <div class="btnRow"><button id="bLoad" title="Load a video as a new instrument (or drop a video on the page)">Load</button><input id="file" type="file" accept="video/*" multiple hidden>
+    <div class="btnRow"><button id="iNew" title="Add an empty instrument at the end of the list; Load then gives it a video">New</button><button id="bLoad" title="Load a video into the selected instrument: it keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); region and hit are found in the new video. Or drop the video on the instrument in the list.">Load</button><input id="file" type="file" accept="video/*" hidden>
       <button id="bVidSave" title="Save the video with this instrument's settings (hit, loop, ADSR…) in its metadata; dropped on the tracker, it arrives as a ready instrument. The video isn't re-encoded. MP4/MOV only.">Save</button>
       <button id="bSplit" title="Duplicate: a new instrument from the same video with the same settings; then change its region">Dup.</button>
-      <button id="bSwap" title="Replace the instrument's video: it keeps how it sounds (name, base note, volume, envelope, loop mode); region and hit are found again in the new video. Or drop the new video on the instrument in the list.">Repl.</button><input id="fileSwap" type="file" accept="video/*" hidden>
       <button id="iUp" title="Move up" aria-label="Move instrument up">↑</button><button id="iDown" title="Move down" aria-label="Move instrument down">↓</button>
       <button id="iDel" title="Delete the selected instrument (if no pattern uses it)">Del.</button></div>
   </section>
@@ -223,12 +222,15 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <fieldset><legend>Sample</legend>
       <label>Name<input id="iName" maxlength="16" style="width:130px"></label>
       <label title="Base note: at this note the clip plays at its original speed">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
+      <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Tune</button>
+      <label title="Finetune, as in FT2: 1/128 of a semitone (-128–127). The clip's own pitch is Base plus this.">Fine<input id="iFine" type="number" min="-128" max="127" step="1" style="width:52px"></label>
       <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol<input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev<input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms<input id="iAV" type="number" step="1" style="width:52px"></label>
     </fieldset>
     <fieldset><legend>Region</legend>
       <input id="iStart" type="number" step="0.001" min="0" title="Region start and end (seconds)" aria-label="Region start (s)"> – <input id="iEnd" type="number" step="0.001" min="0" aria-label="Region end (s)">
+      <button id="bTrimInst" title="Cut the video down to the region and throw the rest away (not re-encoded; it plays the same, the song file gets smaller; Ctrl+Z brings it back)">Trim</button>
     </fieldset>
     <fieldset><legend>Hit</legend>
       <input id="iHit" type="number" step="0.001" min="0" title="Hit point (seconds)" aria-label="Hit point (s)">
@@ -296,25 +298,25 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/core/commands.js": "./src/core/commands.js?v=91082bda3f",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=25befc1b83",
+    "./src/core/commands.js": "./src/core/commands.js?v=eccfec70a7",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=cd9438b372",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
     "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
-    "./src/io.js": "./src/io.js?v=187eb9d89a",
+    "./src/io.js": "./src/io.js?v=4bca3949ed",
     "./src/main.js": "./src/main.js?v=cd5d341c18",
-    "./src/mcp.js": "./src/mcp.js?v=4cfe49e5f5",
+    "./src/mcp.js": "./src/mcp.js?v=860a29baf5",
     "./src/midi.js": "./src/midi.js?v=64f4b7dc45",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=3de6c1775d",
-    "./src/ptformat.js": "./src/ptformat.js?v=5d377c4d32",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=0027ff1048",
+    "./src/ptformat.js": "./src/ptformat.js?v=17fdd75844",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=94a7f63412",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=9352818319",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=bc5a2c9548",
+    "./src/ui/files.js": "./src/ui/files.js?v=4f09a2e54a",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=99ff0b3cc7",
     "./src/ui/output.js": "./src/ui/output.js?v=54a17a1609",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=5b46b30a85",

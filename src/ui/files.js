@@ -3,7 +3,7 @@
 import { hex2 } from '../util.js';
 import { song, instruments } from '../core/song.js';
 import { CmdError, newSong } from '../core/commands.js';
-import { importVideo, replaceVideo, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName, importMidi } from '../io.js';
+import { importVideo, replaceVideo, newInstrument, trimInstrument, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName, importMidi } from '../io.js';
 import { $, ed, run, setStatus, showError, escHtml } from './common.js';
 import { curInst } from './instrumentPanel.js';
 import { activeScreen } from './screens.js';
@@ -32,6 +32,18 @@ async function swapVideo(idx, file) {
     console.error(err); showError(`Couldn't replace the video: ${file.name} (${err.message})`);
   }
 }
+export async function trimInstrumentVideo(idx) {
+  const I = instruments[idx]; if (!I) return;
+  try {
+    const size = I.video.file?.size;
+    if (!await trimInstrument(idx, progress)) return setStatus(`${hex2(idx)} ${escHtml(I.name)}: the region is already the whole video`);
+    setStatus(escHtml(`${hex2(idx)} ${I.name}: video trimmed to its region (${I.end.toFixed(3)} s, ${mb(size)} → ${mb(I.video.file.size)}, not re-encoded; Ctrl+Z brings the whole video back)`));
+  } catch (err) {
+    if (err instanceof CmdError) return showError(err.message);
+    console.error(err); showError(`Couldn't trim: ${err.message}`);
+  }
+}
+const mb = n => n < 1048576 ? Math.ceil(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
 export async function openSong(file) {
   try {
     setStatus(`Opening: ${escHtml(file.name)}`);
@@ -78,21 +90,25 @@ export async function saveInstrumentVideo(I) {
   } catch (err) { showError(`Couldn't save: ${err.message}`); }
 }
 
+// Load gives the selected instrument a video (how it sounds is kept); with none selected, the video is a new one.
+// New adds an empty instrument to load into: Load never adds one by surprise.
 $('#bLoad').onclick = () => $('#file').click();
-$('#file').onchange = async e => { for (const f of e.target.files) await loadVideoFile(f); e.target.value = ''; };
-$('#bSwap').onclick = () => { if (curInst()) $('#fileSwap').click(); };
-$('#fileSwap').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await swapVideo(ed.inst, f); };
+$('#file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await (curInst() ? swapVideo(ed.inst, f) : loadVideoFile(f)); };
+$('#iNew').onclick = async () => {
+  try { const { idx } = await newInstrument(progress); setStatus(`Instrument ${hex2(idx)} added, waiting for its video: <b>Load</b> one into it, or drop one on it`); }
+  catch (err) { if (!(err instanceof CmdError)) console.error(err); showError(`Couldn't add an instrument: ${err.message}`); }
+};
 $('#bSave').onclick = () => saveSong();
 $('#bNew').onclick = () => { if (run(() => newSong())) setStatus('Zapped: a new empty song. Ctrl+Z brings the previous one back.'); };
 $('#bOpen').onclick = () => $('#songFile').click();
 const isMidi = f => /\.(mid|midi)$/i.test(f.name);
 $('#songFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await (isMidi(f) ? openMidi(f) : openSong(f)); };
-// a MIDI file: its notes become a new song; every instrument waits for a video (Repl.)
+// a MIDI file: its notes become a new song; every instrument waits for a video (Load)
 export async function openMidi(file) {
   try {
     setStatus(`Importing: ${escHtml(file.name)}`);
     const { report, nInst } = await importMidi(file, progress);
-    setStatus(`Imported ${escHtml(file.name)}: ${nInst} instruments, each with a REPLACE ME video: give them theirs with <b>Repl.</b> (Ctrl+Z brings the previous song back)` +
+    setStatus(`Imported ${escHtml(file.name)}: ${nInst} instruments, each with a REPLACE ME video: select each and <b>Load</b> its own (Ctrl+Z brings the previous song back)` +
       (report.length ? `<br>${report.map(escHtml).join('<br>')}` : ''));
   } catch (err) {
     if (!(err instanceof CmdError)) console.error(err);

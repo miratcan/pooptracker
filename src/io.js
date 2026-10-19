@@ -4,8 +4,9 @@
 // Every song change goes through the command layer (or replaceSong, for a whole song).
 import PTFormat from './ptformat.js';
 import { FPS, FRAME_SHORT, MAX_SAMPLE_SEC, hex2, round3 } from './util.js';
-import { song, instruments } from './core/song.js';
-import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio } from './core/instrument.js';
+import { song, instruments, videos } from './core/song.js';
+import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio, focusAt } from './core/instrument.js';
+import { cutVideo, reader } from './mp4cut.js';
 import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, importSong, pick, INST_KEYS } from './core/commands.js';
 import { parseMidi, midiToSong } from './midi.js';
 import { ctx } from './engine/audio.js';
@@ -95,16 +96,49 @@ export async function replaceVideo(idx, file, progress, region = null) {
   return { cmd, fromMetadata: !!line };
 }
 
-// ── MIDI: the notes come in, the sounds don't. Every instrument starts with the same 1 s silent "REPLACE ME" video
-// (a real video, so nothing else needs to know about it); Repl. gives each one its own.
+// an instrument's video cut down to its region, without re-encoding: the rest of the video is thrown away (the song
+// file gets smaller) and it plays the same, its hit, loop points and focus moving with it. Only this instrument gets
+// the new video (another one using the old video keeps it). One command: Ctrl+Z brings the whole video back.
+// Returns the command, or null when the region is already the whole video.
+export async function trimInstrument(idx, progress) {
+  const I = instruments[idx]; if (!I) throw new Error(`instrument ${hex2(idx)} doesn't exist`);
+  const file = I.video.file; if (!file) throw new Error('This demo instrument has no video file. Load a real video.');
+  if (I.start === 0 && I.end >= I.video.dur && I.video.dur < MAX_SAMPLE_SEC) return null;
+  progress(`Trimming ${I.name} to its region…`);
+  const piece = await cutVideo(reader(file), file.size, I.start, I.end);
+  const V = await decodeVideo(new File([piece.bytes], file.name.replace(/\.[^.]+$/, '') + '.mp4', { type: 'video/mp4' }), progress);
+  const len = round3(Math.min(piece.end, V.dur)), at = t => round3(Math.max(0, Math.min(len, t - I.start)));
+  // the focus where the region starts, then the keys inside it
+  const f0 = focusAt(I, I.start), inside = I.focus.filter(k => k.t > I.start && k.t < I.end).map(k => ({ ...k, t: at(k.t) }));
+  const focus = I.focus.length ? [{ t: 0, x: round3(f0.x), y: round3(f0.y) }, ...inside] : [];
+  const place = { ...pick(I, INST_KEYS), start: 0, end: len, hit: at(I.hit), loopStart: at(I.loopStart), loopEnd: at(I.loopEnd), focus };
+  const cmd = exec(() => setInstrumentVideo(idx, V, place, 'trim to region'));
+  addVideo(V);
+  return cmd;
+}
+
+// ── An instrument waiting for its video (New, and every instrument a MIDI file brings) has the same 1 s silent
+// "REPLACE ME" video: a real video, so nothing else needs to know about it. Load gives it its own.
 const PLACEHOLDER = new URL('../media/replace-me.mp4', import.meta.url);
-// a .mid file → a new song (one command, Ctrl+Z brings the old one back). Returns { report: [lines], nInst }.
-export async function importMidi(file, progress) {
-  const { song: S, names, report } = midiToSong(parseMidi(new Uint8Array(await file.arrayBuffer())), file.name.replace(/\.[^.]+$/, ''));
+let placeholder = null; // decoded once, shared by all of them
+async function placeholderVideo(progress) {
+  if (placeholder) return placeholder;
   progress('Loading the placeholder video…');
   const res = await fetch(PLACEHOLDER);
   if (!res.ok) throw new Error(`couldn't load the placeholder video (${res.status})`);
-  const V = await decodeVideo(new File([await res.blob()], 'replace-me.mp4', { type: 'video/mp4' }), progress);
+  return placeholder = await decodeVideo(new File([await res.blob()], 'replace-me.mp4', { type: 'video/mp4' }), progress);
+}
+// New: an empty instrument at the end of the list (one command). Returns { idx, I }.
+export async function newInstrument(progress) {
+  const V = await placeholderVideo(progress), I = makeInstrument(V, { name: 'empty', hit: 0, loopStart: 0 });
+  exec(() => addInstrument(I, 'new instrument'));
+  if (!videos.includes(V)) addVideo(V);
+  return { idx: instruments.indexOf(I), I };
+}
+// a .mid file → a new song (one command, Ctrl+Z brings the old one back). Returns { report: [lines], nInst }.
+export async function importMidi(file, progress) {
+  const { song: S, names, report } = midiToSong(parseMidi(new Uint8Array(await file.arrayBuffer())), file.name.replace(/\.[^.]+$/, ''));
+  const V = await placeholderVideo(progress);
   const insts = names.map(name => makeInstrument(V, { name, hit: 0, loopStart: 0 }));
   exec(() => importSong(S, insts, [V], `import ${file.name}`));
   return { report, nInst: insts.length };
