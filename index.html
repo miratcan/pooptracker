@@ -68,6 +68,13 @@ label{color:var(--dim);display:inline-flex;align-items:center;gap:3px} /* the ga
 #ordCol{display:flex;flex-direction:column;min-height:0;width:96px}
 /* a well: a black area sunk into the panel (a list, the pattern), the reverse of a button's bevel */
 .well{background:var(--well);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo);border-radius:3px}
+/* scroll bars as FT2's: a grey thumb with the button's frame and bevel, in a black well (held: pressed in). Chrome
+   ignores these once scrollbar-color is set, so that is only for the browsers without them (Firefox) */
+::-webkit-scrollbar{width:12px;height:12px;background:var(--well)}
+::-webkit-scrollbar-thumb{background:var(--btn);border:1px solid var(--black);border-radius:3px;box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint)}
+::-webkit-scrollbar-thumb:active{background:var(--btnDown);box-shadow:inset 1px 1px 0 var(--faint),inset -1px -1px 0 var(--white)}
+::-webkit-scrollbar-corner{background:var(--well)}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-color:var(--btn) var(--well)}}
 #ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px}
 #patCol{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
 .cardHead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
@@ -299,13 +306,13 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 {
   "imports": {
     "./src/core/commands.js": "./src/core/commands.js?v=3cac1f37df",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=cd9438b372",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=2504b5e939",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=d654f7ed02",
     "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
-    "./src/io.js": "./src/io.js?v=4bca3949ed",
+    "./src/io.js": "./src/io.js?v=a6b29e1950",
     "./src/main.js": "./src/main.js?v=cd5d341c18",
     "./src/mcp.js": "./src/mcp.js?v=6c03215d4a",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",

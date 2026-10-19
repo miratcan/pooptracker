@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FakeAudioBuffer } from './fake-audio.js';
-import { detectPitch, tuneFor, rateFor } from '../src/core/instrument.js';
+import { detectPitch, tuneFor, rateFor, fitToVideo } from '../src/core/instrument.js';
 
 const SR = 48000;
 // seconds of a signal: f(t) → sample
@@ -39,4 +39,12 @@ test('tuneFor: a pitch becomes the base note and finetune; that note then plays 
   assert.ok(Math.abs(rateFor(I, 12 * Math.log2(270 / 440) + 57) - 1) < 3e-4); // the clip's own pitch: original speed (fine is rounded to 1/128)
   assert.ok(Math.abs(rateFor(I, I.baseNote + 12) / rateFor(I, I.baseNote) - 2) < 1e-9); // an octave up: twice as fast
   assert.equal(tuneFor(5), null); // below C-0
+});
+
+test('fitToVideo: an instrument up to 2 ms past the video\'s readable end is fitted to it; further past, it doesn\'t fit', () => {
+  // saved at 48 kHz, opened at 44.1 kHz: the video reads 1 ms shorter
+  const s = { start: 0.1, end: 0.367, hit: 0.2, loopStart: 0.3, loopEnd: 0.367, where: 'song.txt:18' };
+  assert.equal(fitToVideo(s, 0.367), s);
+  assert.deepEqual(fitToVideo(s, 0.366), { ...s, end: 0.366, loopEnd: 0.366 });
+  assert.equal(fitToVideo(s, 0.36), null);
 });

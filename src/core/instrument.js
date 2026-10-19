@@ -7,6 +7,17 @@ import { FPS, clamp } from '../util.js';
 export function makeVideo(name, frames, buffer, file = null) {
   return { name, file, frames, fps: FPS, buffer, peaks: computePeaks(buffer, 1200), dur: Math.floor(buffer.duration * 1000) / 1000 };
 }
+// A video's readable end comes from its decoded sound, whose length depends on the sample rate the browser decodes at
+// (the output device's): a song saved at 48 kHz can find its videos 1 ms shorter at 44.1 kHz. An instrument that
+// reaches at most READ_SLACK past the end is fitted to it (its region end, and the points past it, move back);
+// further past, it doesn't fit: null.
+export const READ_SLACK = 0.002;
+export function fitToVideo(s, dur) {
+  if (s.end > dur + READ_SLACK) return null;
+  if (s.end <= dur) return s;
+  const at = t => Math.min(t, dur);
+  return { ...s, end: dur, hit: at(s.hit), loopStart: at(s.loopStart), loopEnd: at(s.loopEnd) };
+}
 // the clip repeats (forward or pingpong) once it reaches the loop end
 export const loops = I => I.loop !== 'none' && I.loopEnd > I.loopStart;
 export const videoFrame = (V, t) => V.frames[clamp(Math.floor(t * V.fps), 0, V.frames.length - 1)];

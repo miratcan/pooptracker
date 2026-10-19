@@ -5,7 +5,7 @@
 import PTFormat from './ptformat.js';
 import { FPS, FRAME_SHORT, MAX_SAMPLE_SEC, hex2, round3 } from './util.js';
 import { song, instruments, videos } from './core/song.js';
-import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio, focusAt } from './core/instrument.js';
+import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio, focusAt, fitToVideo } from './core/instrument.js';
 import { cutVideo, reader } from './mp4cut.js';
 import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, importSong, pick, INST_KEYS } from './core/commands.js';
 import { parseMidi, midiToSong } from './midi.js';
@@ -61,10 +61,10 @@ export async function decodeVideo(file, progress = () => {}) {
 export async function importVideo(file, progress, region = null) {
   let line = null;
   try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
-  const s = line == null ? null : PTFormat.parse(line);
-  if (s && 'video' in s) throw new Error("the instrument line in the metadata can't have a 'video' field");
-  const V = await decodeVideo(file, progress);
-  if (s && s.end > V.dur) throw new Error(`metadata: region end (${s.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
+  const tag = line == null ? null : PTFormat.parse(line);
+  if (tag && 'video' in tag) throw new Error("the instrument line in the metadata can't have a 'video' field");
+  const V = await decodeVideo(file, progress), s = tag && fitToVideo(tag, V.dur);
+  if (tag && !s) throw new Error(`metadata: region end (${tag.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
   if (region?.end != null && region.end - (region.start ?? 0) > MAX_SAMPLE_SEC + 0.001) throw new Error(`the piece is ${(region.end - (region.start ?? 0)).toFixed(3)} s; an instrument can be at most ${MAX_SAMPLE_SEC} s`);
   const name = region?.name ?? file.name.replace(/\.[^.]+$/, '').slice(0, 16);
   const span = region?.end != null ? { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) } : {};
@@ -81,14 +81,15 @@ export async function importVideo(file, progress, region = null) {
 export async function replaceVideo(idx, file, progress, region = null) {
   let line = null;
   if (!region) try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
-  let place = line == null ? null : PTFormat.parse(line);
-  if (place && 'video' in place) throw new Error("the instrument line in the metadata can't have a 'video' field");
+  const tag = line == null ? null : PTFormat.parse(line);
+  if (tag && 'video' in tag) throw new Error("the instrument line in the metadata can't have a 'video' field");
   const V = await decodeVideo(file, progress);
-  if (place && place.end > V.dur) throw new Error(`metadata: region end (${place.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
+  let place = tag && fitToVideo(tag, V.dur);
+  if (tag && !place) throw new Error(`metadata: region end (${tag.end.toFixed(3)}) is past the readable end of the video (${V.dur.toFixed(3)})`);
   if (region) {
     const span = { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) };
     const hit = round3(Math.min(span.start + detectHit(makeInstrument(V, span).buffer), V.dur));
-    // a whole instrument line, as metadata would give: the sound fields are the instrument's own (they are kept anyway)
+    // a whole instrument line, as metadata would give, with the instrument's own sound fields: they are kept
     place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, focus: region.focus ?? [] };
   }
   const cmd = exec(() => setInstrumentVideo(idx, V, place));
@@ -182,9 +183,10 @@ export async function readSong(file, progress) {
   for (const s of res.instruments) if (!vids.has(s.video))
     vids.set(s.video, await decodeVideo(new File([zip.get(s.video)], s.video.split('/').pop()), progress));
   // the playable length of a video is only known after decoding it
-  const errors = res.instruments.map((s, k) => s.end > vids.get(s.video).dur ? `${s.where}  instrument ${hex2(k + 1)}: region end (${s.end.toFixed(3)}) is past the readable end of the video (${vids.get(s.video).dur.toFixed(3)})` : null).filter(Boolean);
+  const fitted = res.instruments.map(s => fitToVideo(s, vids.get(s.video).dur));
+  const errors = res.instruments.map((s, k) => fitted[k] ? null : `${s.where}  instrument ${hex2(k + 1)}: region end (${s.end.toFixed(3)}) is past the readable end of the video (${vids.get(s.video).dur.toFixed(3)})`).filter(Boolean);
   if (errors.length) return { errors };
-  replaceSong(res.song, res.instruments.map(s => makeInstrument(vids.get(s.video), pick(s, INST_KEYS))), [...vids.values()]);
+  replaceSong(res.song, fitted.map(s => makeInstrument(vids.get(s.video), pick(s, INST_KEYS))), [...vids.values()]);
   return { nVideos: vids.size };
 }
 // an instrument written into a copy of its video's file (MP4/MOV; audio and video untouched)
