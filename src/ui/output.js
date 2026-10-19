@@ -3,7 +3,7 @@
 import { OUT_W, OUT_H, clamp, hex2, noteName, spanCells } from '../util.js';
 import { song, videos, nch } from '../core/song.js';
 import { frameAt, focusAt } from '../core/instrument.js';
-import { ctx, ensureAudio, isMuted, toggleMute } from '../engine/audio.js';
+import { ctx, ensureAudio, isMuted, toggleMute, visualTime } from '../engine/audio.js';
 import { voices, voicesAt, visualFx } from '../engine/voice.js';
 import { $, view } from './common.js';
 import { pal, alpha } from './palette.js';
@@ -102,7 +102,7 @@ export function updateStats(fps) {
   const nv = voices.reduce((a, l) => a + l.length, 0);
   const frames = videos.reduce((a, V) => a + V.frames.length, 0);
   const mb = videos.reduce((a, V) => a + V.frames.length * V.frames[0].width * V.frames[0].height, 0) * 4 / 1048576;
-  const lat = ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * 1000;
+  const lat = ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * 1000, pic = (visualTime() - ctx.currentTime) * 1000; // the picture's lag behind the sound
   const v = view.vis, pos = v ? `order ${hex2(v.ord)} · pattern ${hex2(v.pat)} · row ${hex2(v.row)}` : 'stopped';
-  $('#stats').textContent = `${fps.toFixed(0)} fps · ${nv} active voices · ${frames} frames cached (~${mb.toFixed(0)} MB) · audio latency ${lat.toFixed(0)} ms · ${pos}`;
+  $('#stats').textContent = `${fps.toFixed(0)} fps · ${nv} active voices · ${frames} frames cached (~${mb.toFixed(0)} MB) · audio latency ${lat.toFixed(0)} ms · picture ${pic.toFixed(0)} ms · ${pos}`;
 }

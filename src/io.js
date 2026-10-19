@@ -25,8 +25,9 @@ export async function decodeVideo(file, progress = () => {}) {
   if (video.readyState < 2) await once(video, 'loadeddata');
   if (!isFinite(stated)) throw new Error("couldn't read the video's duration");
   const dur = Math.min(stated, MAX_SAMPLE_SEC);
-  // audio track → AudioBuffer
-  let buffer;
+  // audio track → AudioBuffer. A video with no sound this browser can read (none at all, or e.g. Opus in Safari) gets
+  // silence, and says so (V.noSound): it is never silent without a word
+  let buffer, noSound = false;
   try {
     const full = await ctx.decodeAudioData(await file.arrayBuffer());
     const len = Math.min(full.length, Math.ceil(dur * full.sampleRate));
@@ -34,7 +35,7 @@ export async function decodeVideo(file, progress = () => {}) {
     for (let c = 0; c < full.numberOfChannels; c++) buffer.copyToChannel(full.getChannelData(c).subarray(0, len), c);
   } catch (err) {
     console.warn('audio decode failed', err);
-    buffer = ctx.createBuffer(1, Math.ceil(dur * ctx.sampleRate), ctx.sampleRate);
+    buffer = ctx.createBuffer(1, Math.ceil(dur * ctx.sampleRate), ctx.sampleRate); noSound = true;
   }
   normalizeVideoAudio(buffer);
   // frames → ImageBitmaps, uncropped (each output tile crops its own shape). Seeking happens ONCE here, never during playback.
@@ -50,7 +51,9 @@ export async function decodeVideo(file, progress = () => {}) {
     if (i % 5 === 0) progress(`${file.name}: extracting frames ${i + 1}/${n}`);
   }
   URL.revokeObjectURL(url);
-  return makeVideo(file.name, frames, buffer, file);
+  const V = makeVideo(file.name, frames, buffer, file);
+  if (noSound) V.noSound = true;
+  return V;
 }
 
 // a video → a new instrument (one command). A video saved by PoopTracker carries its instrument in its
@@ -72,7 +75,7 @@ export async function importVideo(file, progress, region = null) {
   const I = makeInstrument(V, s || { name, ...span, hit, loopStart: hit, focus: region?.focus ?? [] });
   exec(() => addInstrument(I, `load ${file.name}`));
   addVideo(V);
-  return { idx: instruments.indexOf(I), I, fromMetadata: !!s };
+  return { idx: instruments.indexOf(I), I, fromMetadata: !!s, noSound: !!V.noSound };
 }
 // another video for an instrument (one command): it keeps how it sounds; region, hit and loop points are found
 // again in the new video (or read from its metadata, when it was saved by PoopTracker). A piece cut on the workbench
@@ -94,7 +97,7 @@ export async function replaceVideo(idx, file, progress, region = null) {
   }
   const cmd = exec(() => setInstrumentVideo(idx, V, place));
   addVideo(V);
-  return { cmd, fromMetadata: !!line };
+  return { cmd, fromMetadata: !!line, noSound: !!V.noSound };
 }
 
 // an instrument's video cut down to its region, without re-encoding: the rest of the video is thrown away (the song
@@ -108,6 +111,7 @@ export async function trimInstrument(idx, progress) {
   progress(`Trimming ${I.name} to its region…`);
   const piece = await cutVideo(reader(file), file.size, I.start, I.end);
   const V = await decodeVideo(new File([piece.bytes], file.name.replace(/\.[^.]+$/, '') + '.mp4', { type: 'video/mp4' }), progress);
+  if (V.noSound && !I.video.noSound) throw new Error("this browser can't read the trimmed video's sound, so the instrument would go silent; nothing changed");
   const len = round3(Math.min(piece.end, V.dur)), at = t => round3(Math.max(0, Math.min(len, t - I.start)));
   // the focus where the region starts, then the keys inside it
   const f0 = focusAt(I, I.start), inside = I.focus.filter(k => k.t > I.start && k.t < I.end).map(k => ({ ...k, t: at(k.t) }));
@@ -146,6 +150,8 @@ export async function importMidi(file, progress) {
 }
 
 // ── .poop: a self-contained zip: song.txt + patterns/NN.txt + every used video once (the original file, untouched)
+// what a status line adds when a video came in without sound
+export const NO_SOUND = ' ⚠ no sound: the video has none this browser can read (in Safari: WebM sound, Opus), so this instrument is silent';
 export const safeName = n => n.replace(/[\/\\:*?"<>|;=%\x00-\x1f]/g, '_') || 'video';
 const sameBytes = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 // why the song can't be saved (instruments without a video file: the demo ones), or null

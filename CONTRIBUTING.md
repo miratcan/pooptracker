@@ -29,7 +29,12 @@ npm run stamp       # after changing anything in src/: puts the new module hashe
 `test/ui.test.js` drives the app in a headless Chrome over the Chrome DevTools Protocol (`test/browser.js`, no
 package): what only shows on the page, like keys that stay down, the workbench's timeline and loop, Load / New / Trim /
 Tune / Fit. It finds Chrome where it is usually installed, or at `CHROME=<path>`; without one those tests are skipped.
-A behaviour you check by hand in the browser belongs there.
+A behaviour you check by hand in the browser belongs there. `BROWSER=safari node --test test/ui.test.js` runs them in
+Safari (the Mac app's engine) over safaridriver; Safari needs Develop → Allow Remote Automation once. The tests that
+need CDP are skipped there, and Safari's audio doesn't start under automation, so timing is checked in Chrome.
+
+The desktop app (`desktop/`) is the web app in a Tauri window: `cd desktop && npx @tauri-apps/cli@2 dev` (needs Rust).
+It changes nothing in the app; `desktop/dist.mjs` copies the app in before each run.
 
 The manual's pictures (`docs/manual/*.png`) are made by `npm run shots` (`tools/shots.mjs`): it brings the app to
 each state, draws the numbers the manual's tables use over the elements they name, and takes the picture. Run it after

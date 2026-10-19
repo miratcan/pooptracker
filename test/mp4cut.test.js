@@ -8,6 +8,9 @@
 //   av1.webm  size 96x64, -c:v libsvtav1 -g 30 -b:v 60k -c:a libopus -b:a 24k
 //   av.mkv    ffmpeg -i av.mp4 -c copy av.mkv (H.264 with B-frames, AAC)
 //   vp8.webm  1 s of 32x18 at 10 fps, -c:v libvpx (VP8 has no place in MP4)
+// click.mp4: the same picture, with silence and one 2 ms click at exactly 2.000 s (where a piece's sound starts):
+//   ffmpeg -f lavfi -i testsrc2=size=96x54:rate=30:duration=6 -f lavfi -i "aevalsrc='if(between(t,2,2.002),0.9,0)':s=48000:d=6" \
+//     -c:v libx264 -g 30 -bf 2 -pix_fmt yuv420p -c:a aac -b:a 64k -shortest click.mp4
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -131,4 +134,14 @@ test('soundCutter: only the sound of a piece, without reading the picture; the M
     const B = new Uint8Array(readFileSync(new URL(`./fixtures/${f}`, import.meta.url)));
     assert.deepEqual((await (await soundCutter(reader(B), B.length))(1, 2)).bytes.length > 0, true, f);
   }
+});
+
+test('a piece keeps the sound\'s sample groups (AAC\'s roll): without them Safari ignores the edit list for the sound', async () => {
+  const r = await cut(1.5, 3), b = r.bytes, moov = boxes(b, 0, b.length, bad).find(x => x.type === 'moov');
+  const soun = boxes(b, moov.body, moov.end, bad).filter(x => x.type === 'trak').find(t => fourcc(b, find(b, t, 'mdia', 'hdlr').body + 8) === 'soun');
+  const stbl = find(b, soun, 'mdia', 'minf', 'stbl'), sgpd = find(b, stbl, 'sgpd'), sbgp = find(b, stbl, 'sbgp');
+  assert.equal(fourcc(b, sgpd.body + 4), 'roll');
+  const n = u32(b, find(b, stbl, 'stsz').body + 8), entries = u32(b, sbgp.body + 8);
+  let counted = 0; for (let e = 0; e < entries; e++) counted += u32(b, sbgp.body + 12 + 8 * e);
+  assert.equal(counted, n); // every sample of the piece is in its group, as in the source
 });

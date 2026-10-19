@@ -46,11 +46,17 @@ function hallImpulse(ctx) {
 export function ensureAudio() { if (ctx.state === 'suspended') ctx.resume(); }
 // The time (in AudioContext seconds) that is currently coming out of the speakers.
 export function visualTime() {
+  const plain = ctx.currentTime - (ctx.outputLatency || 0) - (ctx.baseLatency || 0);
   if (ctx.getOutputTimestamp) {
     const ts = ctx.getOutputTimestamp();
-    if (ts.contextTime > 0 && ts.performanceTime > 0) return ts.contextTime + (performance.now() - ts.performanceTime) / 1000;
+    if (ts.contextTime > 0 && ts.performanceTime > 0) {
+      const t = ts.contextTime + (performance.now() - ts.performanceTime) / 1000;
+      // the output timestamp is the better clock, but only trusted near the plain one: a wrong one (seen in WebKit) put
+      // the picture a beat away from the sound, the kick's tile flashing with the snare
+      if (Math.abs(t - plain) < 0.2) return t;
+    }
   }
-  return ctx.currentTime - (ctx.outputLatency || 0) - (ctx.baseLatency || 0);
+  return plain;
 }
 
 // Mute belongs to a channel, not to a channel number: a channel keeps it when another one is deleted

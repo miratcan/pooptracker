@@ -9,7 +9,7 @@ import { join, extname, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+export const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const FIXTURES = join(ROOT, 'test/fixtures');
 
 export const chromePath = [process.env.CHROME, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -18,14 +18,17 @@ export const chromePath = [process.env.CHROME, '/Applications/Google Chrome.app/
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.ttf': 'font/ttf', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm' };
+// what the page throws, kept from its first line (for drivers that can't hear the page's errors themselves)
+const CATCH = '<script>window.__errors = []; addEventListener("error", e => __errors.push(e.message)); '
+  + 'addEventListener("unhandledrejection", e => __errors.push(String(e.reason && e.reason.stack || e.reason)));</script>';
 // the repository over HTTP on a free port (ES modules don't load from file://)
-function serve() {
+export function serve() {
   const server = createServer((req, res) => {
     const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');
     const file = join(ROOT, path.endsWith('/') ? path + 'index.html' : path);
     if (!file.startsWith(ROOT) || !existsSync(file) || !statSync(file).isFile()) { res.writeHead(404); return res.end(); }
     res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
-    res.end(readFileSync(file));
+    res.end(file.endsWith('index.html') ? readFileSync(file, 'utf8').replace('<head>', '<head>' + CATCH) : readFileSync(file));
   });
   return new Promise(ok => server.listen(0, '127.0.0.1', () => ok(server)));
 }

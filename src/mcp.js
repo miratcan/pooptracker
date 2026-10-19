@@ -7,7 +7,7 @@ import { song, instruments, nch, emptyCell, newPattern, clonePattern } from './c
 import { makeInstrument, detectHit, detectPitch, tuneFor, fitFor, hitPos } from './core/instrument.js';
 import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstrument, newSong, addChannel, deleteChannel,
   deletePattern, setPatternLength, addInstrument, deleteInstrument, moveInstrument } from './core/commands.js';
-import { importVideo, replaceVideo, trimInstrument, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
+import { NO_SOUND, importVideo, replaceVideo, trimInstrument, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
 import { processRow, newChan } from './engine/player.js';
 import { $, setStatus, escHtml } from './ui/common.js';
 
@@ -239,13 +239,13 @@ const MCP_TOOLS = {
   // files: mcp/server.mjs reads and writes them; here they arrive / leave as { name, data (base64) }
   async load_video(a) {
     const focus = focusArg(a), f = await fileArg(a.file), r = await importVideo(f, progress, { ...a.region, focus });
-    return done(true, `${f.name} → instrument ${hex2(r.idx)} ${r.I.name} (${r.fromMetadata ? "settings from the video's metadata" : `hit point found automatically at ${fmtTime(r.I.hit)} s`})`);
+    return done(true, `${f.name} → instrument ${hex2(r.idx)} ${r.I.name} (${r.fromMetadata ? "settings from the video's metadata" : `hit point found automatically at ${fmtTime(r.I.hit)} s`})${r.noSound ? NO_SOUND : ''}`);
   },
   async replace_video(a) {
     const i = instArg(a.instrument), focus = focusArg(a), f = await fileArg(a.file);
-    const { fromMetadata } = await replaceVideo(i, f, progress, a.region ? { ...a.region, focus } : null), I = instruments[i];
+    const { fromMetadata, noSound } = await replaceVideo(i, f, progress, a.region ? { ...a.region, focus } : null), I = instruments[i];
     return done(true, `instrument ${hex2(i)}: video → ${f.name}; ` + (fromMetadata ? 'all its settings from the video\'s metadata (it was saved by PoopTracker)'
-      : `name, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`));
+      : `name, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`) + (noSound ? NO_SOUND : ''));
   },
   async open_song(a) {
     const f = await fileArg(a.file), r = await readSong(f, progress);

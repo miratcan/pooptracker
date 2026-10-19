@@ -3,7 +3,7 @@
 import { hex2 } from '../util.js';
 import { song, instruments } from '../core/song.js';
 import { CmdError, newSong } from '../core/commands.js';
-import { importVideo, replaceVideo, newInstrument, trimInstrument, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName, importMidi } from '../io.js';
+import { NO_SOUND, importVideo, replaceVideo, newInstrument, trimInstrument, buildSong, whyNotSavable, readSong, instrumentVideo, instrumentVideoType, safeName, importMidi } from '../io.js';
 import { $, ed, run, setStatus, showError, escHtml } from './common.js';
 import { curInst } from './instrumentPanel.js';
 import { activeScreen } from './screens.js';
@@ -14,9 +14,9 @@ const progress = text => setStatus(escHtml(text));
 
 export async function loadVideoFile(file) {
   try {
-    const { idx, I, fromMetadata } = await importVideo(file, progress);
-    setStatus(fromMetadata ? `${escHtml(file.name)} loaded → instrument ${hex2(idx)} ${escHtml(I.name)} (settings from the video's metadata)`
-      : `${escHtml(file.name)} loaded → instrument ${hex2(idx)} (hit found automatically at ${I.hit.toFixed(3)}s, check it)`);
+    const { idx, I, fromMetadata, noSound } = await importVideo(file, progress);
+    setStatus((fromMetadata ? `${escHtml(file.name)} loaded → instrument ${hex2(idx)} ${escHtml(I.name)} (settings from the video's metadata)`
+      : `${escHtml(file.name)} loaded → instrument ${hex2(idx)} (hit found automatically at ${I.hit.toFixed(3)}s, check it)`) + (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
   } catch (err) {
     if (!(err instanceof CmdError)) console.error(err);
     showError(`Couldn't load: ${file.name} (${err.message})`);
@@ -24,9 +24,9 @@ export async function loadVideoFile(file) {
 }
 async function swapVideo(idx, file) {
   try {
-    const { fromMetadata } = await replaceVideo(idx, file, progress), I = instruments[idx];
+    const { fromMetadata, noSound } = await replaceVideo(idx, file, progress), I = instruments[idx];
     setStatus(escHtml(`instrument ${hex2(idx)} ${I.name}: video → ${file.name}, ` +
-      (fromMetadata ? 'with all its settings from the video\'s metadata' : `sound kept; hit found automatically at ${I.hit.toFixed(3)}s, check it`)));
+      (fromMetadata ? 'with all its settings from the video\'s metadata' : `sound kept; hit found automatically at ${I.hit.toFixed(3)}s, check it`)) + (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
   } catch (err) {
     if (err instanceof CmdError) return showError(err.message);
     console.error(err); showError(`Couldn't replace the video: ${file.name} (${err.message})`);

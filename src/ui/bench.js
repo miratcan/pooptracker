@@ -7,7 +7,7 @@
 // the timeline's waveform it is decoded a minute at a time, in the background, and only each minute's peaks are kept.
 import { MAX_SAMPLE_SEC, hex2, round3 } from '../util.js';
 import { cutVideo, soundCutter, reader } from '../mp4cut.js';
-import { importVideo, replaceVideo } from '../io.js';
+import { importVideo, replaceVideo, NO_SOUND } from '../io.js';
 import { instruments, bench } from '../core/song.js';
 import { CmdError, exec, onChange, putOnBench as putCmd, trimBench, clearBench } from '../core/commands.js';
 import { $, ed, setStatus, showError, escHtml } from './common.js';
@@ -21,7 +21,7 @@ let busy = false; // cutting or trimming
 // the waveform: the loudest and the quietest sample of every 1/PPS second (NaN = not read yet); top: the loudest of
 // all so far, which fills the height (as an instrument's sound is normalized)
 const PPS = 100, WINDOW = 60;
-const peaks = { min: null, max: null, top: 0, job: 0 };
+const peaks = { min: null, max: null, top: 0, job: 0, filled: 0 }; // filled: how far it has been read (redraws the picture)
 const peaksOf = new WeakMap(); // file → its finished peaks: an undone trim brings its waveform back at once
 // file → a promise of its sound cutter (mp4cut soundCutter): the waveform and the loop read only the sound, indexed once
 const cutters = new WeakMap();
@@ -65,13 +65,18 @@ onChange(({ scope }) => { if (scope === 'bench') show(); });
 // its peaks are written; a video that can't be cut shows no waveform. A new video stops the reading.
 async function readPeaks(file, D) {
   const job = ++peaks.job;
-  if (peaksOf.has(file)) { Object.assign(peaks, peaksOf.get(file)); draw(); return; }
+  if (peaksOf.has(file)) { Object.assign(peaks, peaksOf.get(file), { filled: Infinity }); draw(); return; }
   const n = Math.ceil(D * PPS), ctx = new OfflineAudioContext(1, 1, 44100);
   peaks.min = new Float32Array(n).fill(NaN); peaks.max = new Float32Array(n).fill(NaN); peaks.top = 0;
   for (let t0 = 0; t0 < D; t0 += WINDOW) {
     let buf;
     try { buf = await ctx.decodeAudioData((await (await soundOf(file))(t0, Math.min(D, t0 + WINDOW))).bytes.buffer); }
-    catch (err) { if (t0 === 0) { console.warn('no waveform:', err.message); return; } continue; }
+    catch (err) {
+      if (t0 > 0) continue;
+      console.warn('no waveform:', err.message);
+      if (job === peaks.job) setStatus(`<span class="err">⚠ This browser can't read the sound of ${escHtml(file.name)} (in Safari: WebM sound, Opus): no waveform, and the pieces cut from it will be silent</span>`);
+      return;
+    }
     if (job !== peaks.job) return;
     const chans = [...Array(buf.numberOfChannels).keys()].map(c => buf.getChannelData(c)), per = buf.sampleRate / PPS;
     for (let i = 0, b = Math.round(t0 * PPS); i < buf.length / per && b < n; i++, b++) {
@@ -79,7 +84,7 @@ async function readPeaks(file, D) {
       for (const d of chans) for (let s = Math.floor(i * per), e = Math.min(d.length, Math.floor((i + 1) * per)); s < e; s++) { if (d[s] < lo) lo = d[s]; if (d[s] > hi) hi = d[s]; }
       peaks.min[b] = lo; peaks.max[b] = hi; peaks.top = Math.max(peaks.top, hi, -lo);
     }
-    draw();
+    peaks.filled = t0; draw();
   }
   peaksOf.set(file, { min: peaks.min, max: peaks.max, top: peaks.top });
 }
@@ -150,9 +155,14 @@ function loopTick() {
     lp.src.loopStart = s[0] - lp.from; lp.src.loopEnd = s[1] - lp.from;
   }
   const now = ctx.currentTime; lp.pos += now - lp.last; lp.last = now;
-  if (lp.pos >= s[1]) { if (lp.ending) { vid.pause(); return; } lp.pos = s[0] + (lp.pos - s[1]) % (s[1] - s[0]); }
-  if (Math.abs(vid.currentTime - lp.pos) > 0.08) vid.currentTime = lp.pos;
+  let turned = false;
+  if (lp.pos >= s[1]) { if (lp.ending) { vid.pause(); return; } lp.pos = s[0] + (lp.pos - s[1]) % (s[1] - s[0]); turned = true; }
+  // the picture jumps back with each turn; otherwise only when it has drifted, and not more than twice a second: every
+  // seek stalls the decoder, and a heavy video that can't keep up would be seeking all the time
+  if (turned || (Math.abs(vid.currentTime - lp.pos) > 0.15 && now - (lp.seekedAt ?? 0) > 0.5)) { vid.currentTime = lp.pos; lp.seekedAt = now; }
 }
+// where the play head is: the sound's clock while Loop plays (smooth even while the picture catches up), else the video's
+const playPos = () => lp ? lp.pos : vid.currentTime;
 $('#bLoopSel').onclick = () => {
   looping = !looping; $('#bLoopSel').classList.toggle('down', looping); $('#bLoopSel').setAttribute('aria-pressed', looping);
   const s = sel();
@@ -200,12 +210,11 @@ async function cut(replace = false) {
     const region = { start: piece.start, end: piece.end, focus: bench.focus ? [{ t: 0, ...bench.focus }] : [] }, progress = t => setStatus(escHtml(t));
     const size = piece.bytes.length < 1048576 ? Math.ceil(piece.bytes.length / 1024) + ' KB' : (piece.bytes.length / 1048576).toFixed(1) + ' MB';
     if (replace) {
-      await replaceVideo(idx, out, progress, region);
-      const I = instruments[idx];
-      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(idx)} ${escHtml(I.name)}: its video is replaced, how it sounds is kept (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)`);
+      const { noSound } = await replaceVideo(idx, out, progress, region), I = instruments[idx];
+      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(idx)} ${escHtml(I.name)}: its video is replaced, how it sounds is kept (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)` + (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
     } else {
-      const { idx: n, I } = await importVideo(out, progress, { ...region, name: `${base.slice(0, 15 - at.length)} ${at}` });
-      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(n)} ${escHtml(I.name)} (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)`);
+      const { idx: n, I, noSound } = await importVideo(out, progress, { ...region, name: `${base.slice(0, 15 - at.length)} ${at}` });
+      setStatus(`Cut ${fmt(s[0])} – ${fmt(s[1])} → instrument ${hex2(n)} ${escHtml(I.name)} (${size}, not re-encoded; hit found at ${I.hit.toFixed(3)} s, check it)` + (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
     }
   } catch (err) {
     if (!(err instanceof CmdError)) console.error(err);
@@ -227,8 +236,26 @@ const fit = () => setView(0, dur());
 // zoom by k (< 1 in, > 1 out) keeping the time t where it is on screen
 const zoom = (k, t = vid.currentTime) => { const f = (t - view.from) / (span() || 1); const s = span() * k; setView(t - f * s, t - f * s + s); };
 // while playing, the view turns the page when the play head leaves it
-const follow = () => { const t = vid.currentTime; if (t < view.from || t > view.to) setView(t - span() * 0.1, t + span() * 0.9); };
+const follow = () => { const t = playPos(); if (t < view.from || t > view.to) setView(t - span() * 0.1, t + span() * 0.9); };
 const TICKS = [0.1, 0.5, 1, 5, 10, 30, 60, 300, 600, 1800, 3600];
+// the waveform's picture: for every pixel, the peaks of the time it covers. Drawn again only when what it shows
+// changes (the view, the size, more peaks read), not on every frame while playing: a long video has hundreds of
+// thousands of peaks
+const wave = { c: document.createElement('canvas'), key: '' };
+function waveImage(w, hh, k) {
+  const key = [peaks.job, view.from, view.to, w, hh, k, peaks.top, peaks.filled].join();
+  if (key === wave.key) return wave.c;
+  wave.key = key; wave.c.width = Math.round(w * k); wave.c.height = Math.round(hh * k);
+  const wg = wave.c.getContext('2d'), a = hh / 2 / peaks.top;
+  wg.setTransform(k, 0, 0, k, 0, 0); wg.fillStyle = alpha(pal.acc2, 0.45);
+  for (let px = 0; px < w; px++) {
+    let lo = 0, hi = 0;
+    for (let b = Math.floor((view.from + px / w * span()) * PPS), e = Math.max(b + 1, Math.floor((view.from + (px + 1) / w * span()) * PPS)); b < e && b < peaks.max.length; b++)
+      if (peaks.max[b] === peaks.max[b]) { if (peaks.min[b] < lo) lo = peaks.min[b]; if (peaks.max[b] > hi) hi = peaks.max[b]; }
+    if (hi > lo) wg.fillRect(px, Math.round(hh / 2 - hi * a), 1, Math.max(1, Math.round((hi - lo) * a)));
+  }
+  return wave.c;
+}
 function draw() {
   const w = tl.clientWidth, h = tl.clientHeight, k = devicePixelRatio || 1;
   if (tl.width !== Math.round(w * k) || tl.height !== Math.round(h * k)) { tl.width = Math.round(w * k); tl.height = Math.round(h * k); }
@@ -237,17 +264,9 @@ function draw() {
   const D = dur(); if (!D) return;
   if (!(view.to > view.from)) { view.from = 0; view.to = D; }
   const x = t => (t - view.from) / span() * w, zoomed = span() < D - 1e-6, bar = zoomed ? 4 : 0, hh = h - bar;
+  // the sound under it all
+  if (peaks.max && peaks.top > 0) g.drawImage(waveImage(w, hh, k), 0, 0, w, hh);
   // ticks no closer than 70 px, each with its time
-  // the sound under it all: for every pixel, the peaks of the time it covers
-  if (peaks.max && peaks.top > 0) {
-    g.fillStyle = alpha(pal.acc2, 0.45); const k = hh / 2 / peaks.top;
-    for (let px = 0; px < w; px++) {
-      let lo = 0, hi = 0;
-      for (let b = Math.floor((view.from + px / w * span()) * PPS), e = Math.max(b + 1, Math.floor((view.from + (px + 1) / w * span()) * PPS)); b < e && b < peaks.max.length; b++)
-        if (peaks.max[b] === peaks.max[b]) { if (peaks.min[b] < lo) lo = peaks.min[b]; if (peaks.max[b] > hi) hi = peaks.max[b]; }
-      if (hi > lo) g.fillRect(px, Math.round(hh / 2 - hi * k), 1, Math.max(1, Math.round((hi - lo) * k)));
-    }
-  }
   const every = TICKS.find(e => e / span() * w >= 70) ?? 3600;
   g.font = '8px dos8, ui-monospace, monospace'; g.textBaseline = 'bottom';
   for (let t = Math.ceil(view.from / every) * every; t <= view.to; t += every) {
@@ -263,14 +282,15 @@ function draw() {
     const px = Math.round(x(t));
     g.fillRect(px, 0, 1, hh); g.fillRect(px - 3, 0, 7, 7); g.fillRect(px - 3, hh - 7, 7, 7);
   }
-  g.fillStyle = pal.acc2; g.fillRect(Math.round(x(vid.currentTime)) - 1, 0, 2, hh);
+  const pos = playPos();
+  g.fillStyle = pal.acc2; g.fillRect(Math.round(x(pos)) - 1, 0, 2, hh);
   g.fillStyle = pal.text; g.font = '8px dos8, ui-monospace, monospace'; g.textBaseline = 'top';
-  const now = fmt(vid.currentTime), tw = g.measureText(now).width, px = x(vid.currentTime);
+  const now = fmt(pos), tw = g.measureText(now).width, px = x(pos);
   g.fillText(now, px + 4 + tw < w ? px + 4 : px - 4 - tw, 3);
   if (zoomed) {
     g.fillStyle = pal.panel2; g.fillRect(0, hh, w, bar);
     g.fillStyle = pal.dim; g.fillRect(view.from / D * w, hh, Math.max(2, span() / D * w), bar);
-    g.fillStyle = pal.acc2; g.fillRect(vid.currentTime / D * w, hh, 1, bar);
+    g.fillStyle = pal.acc2; g.fillRect(pos / D * w, hh, 1, bar);
   }
 }
 // click: go there · drag an end's handle: move it (the video shows that frame) · drag elsewhere: mark a new piece

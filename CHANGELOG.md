@@ -34,6 +34,18 @@ The first public version.
 - Under the instrument list, **Load** now gives the selected instrument a video (what Repl. did; Repl. is gone) and
   the new **New** adds an empty instrument (with the REPLACE ME video) to load into: Load never adds one by surprise.
   A video saved with Save brings all its settings, its loop mode too (it used to keep the instrument's).
+- A desktop app: `desktop/` wraps the web app in Tauri (the system's web view; WKWebView on the Mac) without changing
+  it: `desktop/dist.mjs` copies index.html, src/ and media/ in. Saving there needs a bridge still.
+- A piece cut out of a video keeps the sound's sample groups (AAC's roll): without them Safari ignored the piece's edit
+  list for the sound and started it 7–16 ms early, ahead of the picture. Now exact to the sample in Chrome and Safari.
+- A video whose sound this browser can't read (none at all, or WebM's Opus in Safari) says so, on the workbench at
+  once and when it becomes an instrument, instead of making a silent instrument without a word; the instrument's Trim
+  refuses to make it silent.
+- The picture's clock trusts the sound device's output timestamp only near the plain one: in WebKit a wrong one put the
+  picture a beat away from the sound (the kick's tile flashing with the snare). The stats line shows the picture's lag.
+- The workbench's loop: the play head follows the sound's clock (it stuttered with the picture's seeks), the picture
+  seeks at most twice a second, and the waveform is drawn only when what it shows changes.
+- Browser tests run in Safari too: `BROWSER=safari` (test/safari.js, safaridriver).
 - The manual's pictures are made by `npm run shots` from the app itself, numbers included, and show the current
   screen; the instrument and workbench tables are numbered again (New / Load, Trim).
 - Section headings that wrap onto two lines no longer overlap.

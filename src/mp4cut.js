@@ -107,6 +107,23 @@ function withDuration(b, x, at32, at64, value) {
   return out;
 }
 
+// the track's sample groups for the piece's samples: each sgpd as it is, each sbgp (which samples are in which group)
+// cut down to [from, to]. AAC's 'roll' group (every packet needs the one before it) is what Safari looks for before it
+// trusts the edit list with the sound; without it, it starts 2112 samples after the first packet, up to 20 ms off
+function sampleGroups(b, P) {
+  const { t } = P; if (!t.stbl) return [];
+  const all = boxes(b, t.stbl), out = all.filter(x => x.type === 'sgpd').map(x => b.slice(x.start, x.end));
+  for (const x of all.filter(x => x.type === 'sbgp')) {
+    const v = b[x.body], type = u32(b, x.body + 4), param = v === 1 ? u32(b, x.body + 8) : null, at = x.body + (v === 1 ? 12 : 8);
+    const group = new Uint32Array(P.n);
+    for (let e = 0, i = 0, m = u32(b, at); e < m; e++)
+      for (let k = 0, c = u32(b, at + 4 + 8 * e), g = u32(b, at + 8 + 8 * e); k < c; k++, i++) if (i >= P.from && i <= P.to) group[i - P.from] = g;
+    const rows = runs(P.n, i => group[i]);
+    out.push(box('sbgp', be32(v << 24), be32(type), ...(param != null ? [be32(param)] : []), be32(rows.length), ...rows.flatMap(([c, g]) => [be32(c), be32(g)])));
+  }
+  return out;
+}
+
 function trackBox(b, P, movieScale, chunks) {
   const { t } = P, mdia = need(b, t.trak, 'mdia'), minf = need(b, mdia, 'minf');
   const segment = Math.round(P.shown * movieScale), whole = Math.round(P.delay * movieScale) + segment;
@@ -121,7 +138,7 @@ function trackBox(b, P, movieScale, chunks) {
     ...(t.sync ? [table('stss', 0, [...Array(P.n).keys()].filter(i => t.sync[P.from + i]).map(i => [i + 1]), 1)] : []),
     table('stsc', 0, stsc, 3),
     box('stsz', be32(0), be32(0), be32(P.n), ...Array.from(t.size.subarray(P.from, P.to + 1), be32)),
-    table('stco', 0, chunks.map(c => [c.at]), 1)];
+    table('stco', 0, chunks.map(c => [c.at]), 1), ...sampleGroups(b, P)];
   return box('trak',
     withDuration(b, need(b, t.trak, 'tkhd'), 20, 28, whole),
     box('edts', table('elst', 1, edits, 5)),
