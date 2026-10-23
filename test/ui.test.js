@@ -165,6 +165,21 @@ test('instruments: a video saved with Save brings all its settings, the loop mod
   assert.deepEqual(saved, ['A-4', '0', 'forward']);
 });
 
+test('the song is kept: a reload opens it as it was, its own videos and the demo\'s, instead of the demo', { skip }, async t => {
+  const page = await app(t);
+  await page.click('#instList .inst:nth-child(2)');
+  await page.eval(() => { const e = document.querySelector('#iVol'); e.value = '20'; e.dispatchEvent(new Event('change')); });
+  await loadFixture(page);
+  await page.eval(async () => { const c = await import('/src/core/commands.js'); c.exec(() => c.setSong({ title: 'kept' }, 'title')); });
+  await sleep(1500); // kept a moment after the last change
+  await page.reload();
+  await page.waitFor(() => /back where you left off/.test(document.querySelector('#status').textContent), SLOW);
+  assert.deepEqual(await instNames(page), ['01 Kick', '02 Snare', '03 HiHat']);
+  await page.click('#instList .inst:nth-child(2)');
+  assert.equal(await val(page, '#iVol'), '20');
+  assert.deepEqual(await page.eval(() => [pooptracker.song.title, pooptracker.instruments[2].video.name, !!pooptracker.instruments[1].video.file]), ['kept', 'av.mp4', false]);
+});
+
 test('instruments: Tune finds A-4 in a 440 Hz clip; Fit makes its region last a power of two rows at C-4', { skip }, async t => {
   const page = await app(t);
   await loadFixture(page);

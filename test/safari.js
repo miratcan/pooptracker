@@ -42,6 +42,8 @@ export class SafariBrowser {
     const page = new SafariPage(this);
     await this.call('POST', `/session/${this.session}/url`, { url: this.base + 'blank' }); // the app's origin, before the app
     await page.eval(() => { try { localStorage.setItem('pooptracker.manualAsked', '1'); } catch {} });
+    // no song kept from an earlier test
+    await page.eval(() => new Promise(ok => { const r = indexedDB.deleteDatabase('pooptracker'); r.onsuccess = r.onerror = r.onblocked = () => ok(); }));
     await this.call('POST', `/session/${this.session}/url`, { url: this.base + 'index.html?mcp=9' });
     await page.waitFor(() => document.querySelectorAll('#instList .inst').length > 0, 15000);
     return page;
@@ -56,6 +58,7 @@ const KEYS = { Mod: '\uE009', Shift: '\uE008', Alt: '\uE00A', Space: ' ', Escape
 class SafariPage extends Page {
   constructor(b) { super({ handlers: new Set() }); Object.assign(this, { b, s: `/session/${b.session}`, errors: [] }); }
   send() { throw new Error('this test needs CDP (Chrome)'); }
+  async reload() { await this.b.call('POST', `${this.s}/refresh`, {}); }
   async eval(fn, ...args) {
     const r = await this.b.call('POST', `${this.s}/execute/async`, { args: [], script:
       `const done = arguments[arguments.length - 1]; Promise.resolve().then(() => (${fn})(...${JSON.stringify(args)}))

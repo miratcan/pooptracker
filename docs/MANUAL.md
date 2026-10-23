@@ -32,7 +32,8 @@ If you only want to start making noise, read [Quick start](#quick-start) and kee
 
 1. Open https://miratcan.github.io/pooptracker/ in Chrome. There is nothing to install. (Running it on your own
    computer is only needed for [MCP](#mcp).)
-2. A demo beat (Kick, Snare, HiHat) is already loaded. Press **Enter** to play it and **Space** to stop.
+2. A demo beat (Kick, Snare, HiHat) is already loaded. Press **Enter** to play it and **Space** to stop. Your song
+   is kept in the browser as you work: the next time you open PoopTracker, it is there instead of the demo.
 3. Drop a short video (a few seconds, with a clear sound in it) anywhere on the page. It becomes a new instrument.
 4. Click the pattern, press **Space** to turn on edit mode (the pattern gets a red frame), and play notes on the
    keyboard: `Z S X D C V…` is one octave and `Q 2 W 3 E R…` is the octave above it. Each key writes a note with

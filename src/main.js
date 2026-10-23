@@ -22,6 +22,7 @@ import './ui/bug.js';
 import { askManual } from './ui/welcome.js';
 import { startMcp } from './mcp.js';
 import { loadDemo } from './demo.js';
+import * as autosave from './autosave.js';
 
 // ── how the UI follows the song: every applied / undone / redone command, and every opened song
 onRefresh(() => clampEditor(song, nch()));
@@ -83,9 +84,15 @@ async function boot() {
   setupPat(); fitOut();
   setStatus('Making demo instruments…');
   await loadDemo(ctx.sampleRate);
+  // the song from last time, if there is one, opens in place of the demo
+  let back = false;
+  try { back = await autosave.restore(text => setStatus(`Opening the song from last time… ${text}`)); }
+  catch (err) { console.warn("Couldn't open the song from last time:", err); }
+  autosave.keep();
   requestAnimationFrame(loop);
   startMcp();
-  setStatus('Ready: <b>Enter</b> plays, <b>Space</b> stops / turns on edit mode, the note keys jam. Drag and drop to load your own video.');
+  setStatus(back ? 'Ready: back where you left off. <b>Zap</b> starts an empty song (Ctrl+Z brings this one back).'
+    : 'Ready: <b>Enter</b> plays, <b>Space</b> stops / turns on edit mode, the note keys jam. Drag and drop to load your own video.');
   focusPattern();
   askManual();
 }

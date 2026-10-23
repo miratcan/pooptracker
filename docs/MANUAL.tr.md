@@ -35,7 +35,8 @@ Arayüz İngilizce olduğu için düğme ve alan adları burada da ekranda gör�
 
 1. Chrome'da https://miratcan.github.io/pooptracker/ adresini aç. Kurulacak bir şey yok. (Kendi bilgisayarında
    çalıştırmak yalnızca [MCP](#mcp) için gerekli.)
-2. Hazır bir demo ritim (Kick, Snare, HiHat) yüklü gelir. Çalmak için **Enter**, durdurmak için **Space**.
+2. Hazır bir demo ritim (Kick, Snare, HiHat) yüklü gelir. Çalmak için **Enter**, durdurmak için **Space**. Sen
+   çalıştıkça parçan tarayıcıda saklanır: PoopTracker'ı bir dahaki açışında demo yerine o gelir.
 3. Kısa bir videoyu (birkaç saniyelik, içinde net bir ses olan) sayfanın herhangi bir yerine bırak. Yeni bir
    enstrüman olur.
 4. Pattern'e tıkla, edit modunu açmak için **Space**'e bas (pattern kırmızı çerçeve alır) ve klavyeden nota çal:

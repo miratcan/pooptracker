@@ -183,11 +183,14 @@ export async function buildSong() {
 // Returns { errors } (each 'file:line  message'), or { nVideos } when it was opened.
 export async function readSong(file, progress) {
   const zip = await PTFormat.unzip(new Uint8Array(await file.arrayBuffer()));
+  return openSongZip(zip, path => decodeVideo(new File([zip.get(path)], path.split('/').pop()), progress));
+}
+// the same, from a zip that is already open; videoAt(path) gives the decoded video stored at that path
+export async function openSongZip(zip, videoAt) {
   const res = PTFormat.parseSong(zip);
   if (res.errors.length) return { errors: res.errors };
   const vids = new Map();
-  for (const s of res.instruments) if (!vids.has(s.video))
-    vids.set(s.video, await decodeVideo(new File([zip.get(s.video)], s.video.split('/').pop()), progress));
+  for (const s of res.instruments) if (!vids.has(s.video)) vids.set(s.video, await videoAt(s.video));
   // the playable length of a video is only known after decoding it
   const fitted = res.instruments.map(s => fitToVideo(s, vids.get(s.video).dur));
   const errors = res.instruments.map((s, k) => fitted[k] ? null : `${s.where}  instrument ${hex2(k + 1)}: region end (${s.end.toFixed(3)}) is past the readable end of the video (${vids.get(s.video).dur.toFixed(3)})`).filter(Boolean);

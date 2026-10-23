@@ -24,7 +24,7 @@
 /* the small one (IBM EGA 8x8, same pack) for names on frames: crisp at 8px and 16px */
 @font-face{font-family:dos8;src:url(media/fonts/Px437_IBM_EGA_8x8.ttf)}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.25 dos,ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:none}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none} /* no swipe back off the page */
 #shell{display:flex;flex-direction:column;height:100vh;min-height:640px}
 header{display:flex;flex-wrap:wrap;gap:6px 9px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--bevelLo);box-shadow:0 1px 0 var(--bevelHi);flex:none}
 header h1{font:inherit;margin:0 0 0 auto;color:var(--acc)} /* auto: pushed to the far right */
@@ -305,6 +305,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
+    "./src/autosave.js": "./src/autosave.js?v=431d73bad3",
     "./src/core/commands.js": "./src/core/commands.js?v=bac3a05fe4",
     "./src/core/instrument.js": "./src/core/instrument.js?v=f3eb80ca17",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
@@ -312,8 +313,8 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
     "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
-    "./src/io.js": "./src/io.js?v=d9f62c8096",
-    "./src/main.js": "./src/main.js?v=cd5d341c18",
+    "./src/io.js": "./src/io.js?v=6f3fe52c60",
+    "./src/main.js": "./src/main.js?v=5f214fb9b9",
     "./src/mcp.js": "./src/mcp.js?v=4a6b18c433",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
@@ -336,6 +337,6 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   }
 }
 </script>
-<script type="module" src="src/main.js?v=cd5d341c18"></script>
+<script type="module" src="src/main.js?v=5f214fb9b9"></script>
 </body>
 </html>

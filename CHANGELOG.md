@@ -18,6 +18,8 @@ The first public version.
 - Enter plays the song from its start; Shift+Enter from the pattern being edited (tempo, instruments and volumes set
   earlier carry over); ⌘/Ctrl+Enter loops the pattern. Playing a pattern from the cursor row is gone.
 - ⌘/Ctrl+S saves the song and ⌘/Ctrl+O loads one (the browser would otherwise save the page itself).
+- The song is kept in the browser as it changes: a reload, a closed tab or a swipe back opens it again instead of the
+  demo (Zap starts an empty one, Ctrl+Z brings it back). Swiping sideways no longer leaves the page.
 - MIDI import (.mid, type 0 and 1; Load, drag & drop, MCP import_midi): one instrument per track, one per drum sound;
   each starts with a silent 1 s REPLACE ME video until Repl. gives it its own. The grid is the coarsest that holds every
   note; tempo changes become Fxx; what was moved, clamped or dropped is reported. No EDx.

@@ -77,7 +77,9 @@ export class Browser {
     const page = new Page(this.conn, sessionId, targetId);
     await page.send('Runtime.enable'); await page.send('Page.enable'); await page.send('DOM.enable');
     await page.send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: scale, mobile: false });
-    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: "try { localStorage.setItem('pooptracker.manualAsked', '1'); } catch {}" });
+    // and no song kept from an earlier test: the kept one is thrown away once per tab, so a reload still finds it
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: "try { localStorage.setItem('pooptracker.manualAsked', '1'); } catch {}" +
+      "if (!sessionStorage.getItem('pooptracker.fresh')) { sessionStorage.setItem('pooptracker.fresh', '1'); indexedDB.deleteDatabase('pooptracker'); }" });
     if (before) await before(page);
     await page.goto(this.base + 'index.html?mcp=9');
     await page.waitFor(() => document.querySelectorAll('#instList .inst').length > 0, 10000); // the demo song is there
@@ -87,7 +89,7 @@ export class Browser {
     try { await this.conn.send('Browser.close'); } catch {}
     this.ws.close(); this.proc.kill(); this.server.close();
     await new Promise(ok => this.proc.exitCode != null ? ok() : this.proc.on('exit', ok));
-    rmSync(this.dir, { recursive: true, force: true });
+    rmSync(this.dir, { recursive: true, force: true, maxRetries: 10 }); // Chrome may still be writing the profile as it goes
   }
 }
 
@@ -112,6 +114,10 @@ export class Page {
   async goto(url) {
     const loaded = new Promise(ok => { this.loaded = ok; });
     await this.send('Page.navigate', { url }); await loaded;
+  }
+  async reload() {
+    const loaded = new Promise(ok => { this.loaded = ok; });
+    await this.send('Page.reload'); await loaded;
   }
   // fn runs in the page with args (JSON); its (awaited) value comes back
   async eval(fn, ...args) {
