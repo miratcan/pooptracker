@@ -296,3 +296,27 @@ test('instruments: Amp adds a step that changes the sample (above 100% it clips)
   assert.deepEqual(await page.eval(() => window.pooptracker.instruments[1].amp), []);
   assert.ok(await peak() < 1);
 });
+
+test('frames decoded in order (WebCodecs) are the frames a seek shows: a whole video, and pieces cut mid-frame (H.264, AV1)', { skip: cdp }, async t => {
+  const page = await app(t);
+  const res = await page.eval(async () => {
+    const { decodeFrames } = await import('./src/frames.js');
+    const { cutVideo, reader } = await import('./src/mp4cut.js');
+    const get = async p => new Uint8Array(await (await fetch(p)).arrayBuffer());
+    const piece = async (p, t0) => { const b = await get(p); return (await cutVideo(reader(b), b.length, t0, t0 + 1)).bytes; };
+    const once = (el, ev) => new Promise(ok => el.addEventListener(ev, ok, { once: true }));
+    const out = {};
+    for (const [name, bytes] of [['whole', await get('test/fixtures/av.mp4')], ['h264 piece', await piece('test/fixtures/av.mp4', 1.0137)], ['av1 piece', await piece('test/fixtures/av1.webm', 2.0219)]]) {
+      const v = document.createElement('video'); v.muted = true; v.src = URL.createObjectURL(new Blob([bytes])); await once(v, 'loadeddata');
+      const w = v.videoWidth, h = v.videoHeight, n = Math.floor(Math.min(v.duration, 1) * 30), times = Array.from({ length: n }, (_, i) => (i + 0.25) / 30);
+      const fr = await decodeFrames(bytes, times, w, h);
+      if (!fr) { out[name] = 'not decoded'; continue; }
+      const g = new OffscreenCanvas(w, h).getContext('2d', { willReadFrequently: true }), px = s => { g.drawImage(s, 0, 0, w, h); return g.getImageData(0, 0, w, h).data; };
+      const seek = []; for (const t of times) { v.currentTime = t; await once(v, 'seeked'); seek.push(px(v)); }
+      const diff = (a, b) => { let d = 0; for (let j = 0; j < a.length; j++) d += Math.abs(a[j] - b[j]); return d / a.length; };
+      out[name] = fr.map((f, i) => { const c = px(f), ds = [seek[i - 1], seek[i], seek[i + 1]].map(s => s ? diff(s, c) : Infinity); return ds[1] <= Math.min(ds[0], ds[2]) ? null : i; }).filter(i => i != null);
+    }
+    return out;
+  });
+  assert.deepEqual(res, { whole: [], 'h264 piece': [], 'av1 piece': [] });
+});

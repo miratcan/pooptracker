@@ -28,6 +28,10 @@ The first public version.
 - Amp (FT2's sample editor Volume): Start % and End % (0–200) amplify, fade in or fade out the sample itself, step by
   step; past full scale it clips, on purpose. Kept as `amp=` steps in the instrument line (the video file is untouched),
   MCP amplify_instrument. Opening a song now shows how far it has got in a window in the middle, not only in the status bar.
+- Videos load many times faster (a song of 11 clips: 77 s → 12 s): an MP4's frames (H.264, AV1) are decoded once, in
+  order, with WebCodecs, instead of seeking to each one (a seek decodes again from the keyframe before it; a 4K AV1 clip
+  took a quarter of a second a frame). The frames are the ones a seek shows, also where a piece's edit list starts in the
+  middle of a frame. Other videos (WebM, HEVC, a phone video turned on its side) are still seeked.
 - Reverb: each instrument has a Rev amount (hex 00–40, `rev=` in its line; 00 = dry) into one shared ~3 s dark hall,
   made in code (no files). FT2 has no reverb; this deviates from [ZEN-FT2] on purpose. Recordings include it.
 - The workbench also cuts WebM and MKV (AV1, VP9, H.264, HEVC pictures; Opus, AAC sound), still without re-encoding:

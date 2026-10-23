@@ -7,6 +7,7 @@ import { FPS, FRAME_SHORT, MAX_SAMPLE_SEC, hex2, round3 } from './util.js';
 import { song, instruments, videos } from './core/song.js';
 import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio, focusAt, fitToVideo } from './core/instrument.js';
 import { cutVideo, reader } from './mp4cut.js';
+import { decodeFrames } from './frames.js';
 import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, importSong, pick, INST_KEYS } from './core/commands.js';
 import { parseMidi, midiToSong } from './midi.js';
 import { ctx } from './engine/audio.js';
@@ -29,8 +30,9 @@ export async function decodeVideo(file, progress = () => {}) {
   // audio track → AudioBuffer. A video with no sound this browser can read (none at all, or e.g. Opus in Safari) gets
   // silence, and says so (V.noSound): it is never silent without a word
   let buffer, noSound = false;
+  const bytes = new Uint8Array(await file.arrayBuffer());
   try {
-    const full = await ctx.decodeAudioData(await file.arrayBuffer());
+    const full = await ctx.decodeAudioData(bytes.slice().buffer); // it takes the buffer over
     const len = Math.min(full.length, Math.ceil(dur * full.sampleRate));
     buffer = ctx.createBuffer(full.numberOfChannels, len, full.sampleRate);
     for (let c = 0; c < full.numberOfChannels; c++) buffer.copyToChannel(full.getChannelData(c).subarray(0, len), c);
@@ -39,13 +41,15 @@ export async function decodeVideo(file, progress = () => {}) {
     buffer = ctx.createBuffer(1, Math.ceil(dur * ctx.sampleRate), ctx.sampleRate); noSound = true;
   }
   normalizeVideoAudio(buffer);
-  // frames → ImageBitmaps, uncropped (each output tile crops its own shape). Seeking happens ONCE here, never during playback.
+  // frames → ImageBitmaps, uncropped (each output tile crops its own shape). Seeking happens ONCE here, never during
+  // playback; decoded in order (frames.js) where it can be, the same frames many times faster
   const vw = video.videoWidth, vh = video.videoHeight, k = Math.min(1, FRAME_SHORT / Math.min(vw, vh));
   const cv = document.createElement('canvas'); cv.width = Math.round(vw * k); cv.height = Math.round(vh * k);
   const cg = cv.getContext('2d');
-  const n = Math.max(1, Math.floor(dur * FPS)), frames = [];
-  for (let i = 0; i < n; i++) {
-    video.currentTime = (i + 0.25) / FPS;
+  const n = Math.max(1, Math.floor(dur * FPS)), times = Array.from({ length: n }, (_, i) => (i + 0.25) / FPS);
+  const frames = await decodeFrames(bytes, times, cv.width, cv.height, i => progress(`${file.name}: extracting frames ${i}/${n}`, i / n)) ?? [];
+  for (let i = frames.length; i < n; i++) {
+    video.currentTime = times[i];
     await once(video, 'seeked');
     cg.drawImage(video, 0, 0, cv.width, cv.height);
     frames.push(await createImageBitmap(cv));

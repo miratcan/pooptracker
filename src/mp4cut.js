@@ -147,7 +147,7 @@ function trackBox(b, P, movieScale, chunks) {
 }
 
 // an MP4/MOV as the cutter needs it: its moov (b), the mvhd in it, the movie's time scale, the tracks' sample tables, its ftyp
-async function indexMp4(read, size) {
+export async function indexMp4(read, size) {
   const top = await topBoxes(read, size);
   if (top.some(x => x.type === 'moof')) fail('the video is a fragmented MP4 (as streamed), which can\'t be cut yet');
   const moovBox = top.find(x => x.type === 'moov') ?? notMp4(), ftypBox = top.find(x => x.type === 'ftyp');
