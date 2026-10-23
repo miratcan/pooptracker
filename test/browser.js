@@ -4,7 +4,8 @@
 // Without Chrome the browser tests are skipped (CHROME=<path> points to it when it isn't where it usually is).
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, readFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, mkdtempSync, statSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join, extname, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -89,7 +90,8 @@ export class Browser {
     try { await this.conn.send('Browser.close'); } catch {}
     this.ws.close(); this.proc.kill(); this.server.close();
     await new Promise(ok => this.proc.exitCode != null ? ok() : this.proc.on('exit', ok));
-    rmSync(this.dir, { recursive: true, force: true, maxRetries: 10 }); // Chrome may still be writing the profile as it goes
+    // Chrome's helpers may still be writing the profile as it goes; a temporary folder left behind fails nothing
+    await rm(this.dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }).catch(() => {});
   }
 }
 
