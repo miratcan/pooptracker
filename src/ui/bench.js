@@ -258,6 +258,7 @@ function waveImage(w, hh, k) {
 }
 function draw() {
   const w = tl.clientWidth, h = tl.clientHeight, k = devicePixelRatio || 1;
+  if (!w || !h) return; // the bench is hidden (another screen): nothing to draw on
   if (tl.width !== Math.round(w * k) || tl.height !== Math.round(h * k)) { tl.width = Math.round(w * k); tl.height = Math.round(h * k); }
   g.setTransform(k, 0, 0, k, 0, 0);
   g.fillStyle = pal.well; g.fillRect(0, 0, w, h);
