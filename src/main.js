@@ -20,6 +20,7 @@ import './ui/transport.js';
 import './ui/files.js';
 import './ui/bug.js';
 import { askManual } from './ui/welcome.js';
+import { opening } from './ui/opening.js';
 import { startMcp } from './mcp.js';
 import { loadDemo } from './demo.js';
 import * as autosave from './autosave.js';
@@ -86,7 +87,7 @@ async function boot() {
   await loadDemo(ctx.sampleRate);
   // the song from last time, if there is one, opens in place of the demo
   let back = false;
-  try { back = await autosave.restore(text => setStatus(`Opening the song from last time… ${text}`)); }
+  try { back = await opening('Opening the song from last time', autosave.restore); }
   catch (err) { console.warn("Couldn't open the song from last time:", err); }
   autosave.keep();
   requestAnimationFrame(loop);

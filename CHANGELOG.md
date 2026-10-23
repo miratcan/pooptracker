@@ -25,6 +25,9 @@ The first public version.
   note; tempo changes become Fxx; what was moved, clamped or dropped is reported. No EDx.
 - Repl. (replace an instrument's video) keeps how it sounds (name, base note, volume, reverb, envelope, loop mode) and finds
   the region and hit again in the new video, as Load does. It used to keep the old video's times.
+- Amp (FT2's sample editor Volume): Start % and End % (0–200) amplify, fade in or fade out the sample itself, step by
+  step; past full scale it clips, on purpose. Kept as `amp=` steps in the instrument line (the video file is untouched),
+  MCP amplify_instrument. Opening a song now shows how far it has got in a window in the middle, not only in the status bar.
 - Reverb: each instrument has a Rev amount (hex 00–40, `rev=` in its line; 00 = dry) into one shared ~3 s dark hall,
   made in code (no files). FT2 has no reverb; this deviates from [ZEN-FT2] on purpose. Recordings include it.
 - The workbench also cuts WebM and MKV (AV1, VP9, H.264, HEVC pictures; Opus, AAC sound), still without re-encoding:

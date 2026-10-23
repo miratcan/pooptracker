@@ -21,11 +21,17 @@ const keyName = e => `${e.metaKey || e.ctrlKey ? 'Mod+' : ''}${e.altKey ? 'Alt+'
 
 // keys that work even while typing in a field: the browser would take them otherwise (Save page, Open file)
 const ANYWHERE = ['Mod+KeyS', 'Mod+KeyO'];
-document.addEventListener('keydown', e => {
+function onKeyDown(e) {
   // typing in a field or reading a dialog (Keys, the manual question): no shortcuts
   if ((e.target.matches('input,select,textarea') || document.querySelector('dialog[open]')) && !ANYWHERE.includes(keyName(e))) return;
   const fn = current?.keys?.[keyName(e)] ?? global[keyName(e)];
   if (fn) { fn(e); e.preventDefault(); view.patDirty = true; return; }
   if (e.altKey || e.metaKey || e.ctrlKey) return;
   if (current?.onKey?.(e)) { e.preventDefault(); view.patDirty = true; }
-});
+}
+document.addEventListener('keydown', onKeyDown);
+// macOS gives CapsLock a keydown only when it turns on; turning it off comes as a lone keyup. Every press is a key-off,
+// so a keyup with no keydown before it counts as the press (elsewhere both come, and the keyup is skipped)
+let capsDown = false;
+document.addEventListener('keydown', e => { if (e.code === 'CapsLock') capsDown = true; });
+document.addEventListener('keyup', e => { if (e.code === 'CapsLock' && !capsDown) onKeyDown(e); if (e.code === 'CapsLock') capsDown = false; });

@@ -123,6 +123,32 @@ dialog h2{font:8px/1.5 dos8;color:var(--dim);text-transform:uppercase;margin:0 0
 dialog p{margin:0 0 8px;color:var(--dim)}
 dialog b{color:var(--text);font-weight:600}
 dialog .close{float:right}
+/* a window in FT2's way: a raised box, its title bar with the close button in it */
+dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-height:1.4;border:2px solid;border-color:var(--bevelHi) var(--bevelLo) var(--bevelLo) var(--bevelHi);box-shadow:none}
+.winHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;padding:3px 3px 3px 8px;background:var(--acc2Dim);border-bottom:1px solid var(--bevelLo)}
+.winHead span{font:8px dos8;color:var(--acc);text-transform:uppercase}
+.winHead .close,.winHead .close:active{float:none;padding:0 5px;line-height:14px}
+.tuneBody{display:flex;gap:10px;align-items:center;padding:8px 8px 4px}
+.tuneSide{flex:1;min-width:0}
+.tuneLcd{font:8px/1 dos8;color:var(--acc);padding:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tuneMeter{position:relative;height:14px;margin:6px 0 2px}
+.tuneMeter::before{content:"";position:absolute;left:50%;top:2px;bottom:2px;border-left:1px dotted var(--dim)}
+#tuneNeedle{position:absolute;top:1px;bottom:1px;width:3px;margin-left:-1px;background:var(--acc2)}
+#tuneNeedle.ok{background:var(--green)}
+.tuneMeter.none #tuneNeedle{display:none}
+.tuneScale{display:flex;justify-content:space-between;font:8px dos8;color:var(--dim)}
+#tuneDlg #tuneHeard{margin:6px 0 0;color:var(--text);min-height:2.8em}
+.tunePad{display:grid;grid-template-columns:repeat(3,28px);grid-template-rows:repeat(3,24px);gap:2px;flex:none}
+.tunePad button,.tunePad button:active,.tunePad button.down{padding:0}
+#tUp{grid-area:1/2}#tLeft{grid-area:2/1}#tPlay{grid-area:2/2}#tRight{grid-area:2/3}#tDown{grid-area:3/2}
+#tuneDlg .tuneHint{margin:0;padding:4px 8px 6px;font-size:11px;color:var(--dim);border-top:1px solid var(--bevelLo)}
+.ampBody{padding:8px 8px 0}
+#ampNow{margin-bottom:8px}
+#ampDlg .ampHint{margin:0;padding:4px 8px 6px;font-size:11px;color:var(--dim);border-top:1px solid var(--bevelLo)}
+#opening .openBody{padding:8px}
+#openNow{font:8px/1.6 dos8;color:var(--acc);padding:4px 6px;min-height:3.2em;overflow-wrap:anywhere}
+.openMeter{height:14px;margin-top:6px;padding:1px}
+#openBar{display:block;height:100%;width:0;background:var(--acc2)}
 .btnLink{display:inline-block;padding:3px 9px;border:1px solid var(--acc);color:var(--acc);text-decoration:none}
 .btnLink:hover{background:var(--accDim)}
 .inst{display:flex;gap:8px;align-items:center;padding:3px;border:1px solid transparent;cursor:pointer}
@@ -228,12 +254,16 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     <div class="row">
     <fieldset><legend>Sample</legend>
       <label>Name<input id="iName" maxlength="16" style="width:130px"></label>
-      <label title="Base note: at this note the clip plays at its original speed">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed"></label>
-      <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Tune</button><button id="bFit" title="Repitch the clip so that, played at C-4, its region lasts a whole number of rows (the power of two nearest to its length now) at this BPM and speed: picture and sound speed up or slow down together. Press again after changing the tempo.">Fit</button>
-      <label title="Finetune, as in FT2: 1/128 of a semitone (-128–127). The clip's own pitch is Base plus this.">Fine<input id="iFine" type="number" min="-128" max="127" step="1" style="width:52px"></label>
-      <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol<input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <button id="bFit" title="Repitch the clip so that, played at C-4, its region lasts a whole number of rows (the power of two nearest to its length now) at this BPM and speed: picture and sound speed up or slow down together. Press again after changing the tempo.">Fit</button>
+      <label title="Volume in hex, 00–40: the loudest this instrument gets. The pattern's volume column plays under it (Vol 20: volume 40 → 20, 20 → 10)">Vol<input id="iVol" maxlength="2" style="width:34px" spellcheck="false"></label><button id="bAmp" title="Amplify the sample, as FT2's sample editor Volume: louder, quieter, fade in or out. It changes the sample itself: above 100% the peaks are cut off (distortion)">Amp</button>
       <label title="Reverb: how much of the sound goes into the hall, hex 00–40 (00 = dry). One hall for every instrument.">Rev<input id="iRev" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms<input id="iAV" type="number" step="1" style="width:52px"></label>
+    </fieldset>
+    <fieldset><legend>Tune</legend>
+      <label title="Base note: at this note the clip plays at its original speed (↑↓ a semitone, Shift+↑↓ an octave)">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed (↑↓ a semitone, Shift+↑↓ an octave)"></label>
+      <label title="Finetune, as in FT2: 1/128 of a semitone (-128–127). The clip's own pitch is Base plus this.">Fine<input id="iFine" type="number" min="-128" max="127" step="1" style="width:52px"></label>
+      <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Auto</button>
+      <button id="bTuneMan" title="Tune by ear: the instrument and a reference C-4 play together; move Base and Fine until they sound the same">Manual</button>
     </fieldset>
     <fieldset><legend>Region</legend>
       <input id="iStart" type="number" step="0.001" min="0" title="Region start and end (seconds)" aria-label="Region start (s)"> – <input id="iEnd" type="number" step="0.001" min="0" aria-label="Region end (s)">
@@ -294,6 +324,39 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <kbd>Home</kbd>/<kbd>End</kbd> · timeline zoom: wheel or pinch, <kbd>=</kbd> / <kbd>-</kbd>, <kbd>0</kbd> all; sideways scroll or <kbd>Shift</kbd>+wheel moves along · <kbd>I</kbd> / <kbd>O</kbd> piece start / end (or drag on the timeline) · <kbd>Shift</kbd>+<kbd>Space</kbd> play the piece · <kbd>Enter</kbd> cut it → new instrument (not re-encoded; MP4, MOV, WebM, MKV) · <kbd>Shift</kbd>+<kbd>Enter</kbd> cut it → the selected instrument's video (Repl.: how it sounds is kept) · <kbd>Esc</kbd> unmark · click the picture: the focus, the point the instrument's tiles keep in view (the frame shows what a one-channel tile sees) · <kbd>Backspace</kbd> focus back to the middle.
   The bench is never saved: what isn't cut is thrown away.</p>
 </dialog>
+<dialog id="tuneDlg" class="win" aria-labelledby="tuneTitle">
+  <form method="dialog" class="winHead"><span id="tuneTitle">Manual tune</span><button class="close" aria-label="Close" title="Close: the tuning is kept (⌘/Ctrl+Z takes it back)">✕</button></form>
+  <div class="tuneBody">
+    <div class="tuneSide">
+      <div class="well tuneLcd" id="tuneNow"></div>
+      <div class="tuneMeter well" title="What the pitch detection (the one Auto uses) hears at C-4: the cents off the nearest semitone, left flat, right sharp, ±50 across"><i id="tuneNeedle"></i></div>
+      <div class="tuneScale"><span>-50</span><span>0</span><span>+50</span></div>
+      <p id="tuneHeard"></p>
+    </div>
+    <div class="tunePad">
+      <button id="tUp" title="A semitone up (↑)" aria-label="A semitone up">↑</button>
+      <button id="tLeft" title="Finetune down, ~3 cents (←; Shift: 1/128 semitone)" aria-label="Finetune down">←</button>
+      <button id="tPlay" title="Play both again (Space)" aria-label="Play again">▶</button>
+      <button id="tRight" title="Finetune up, ~3 cents (→; Shift: 1/128 semitone)" aria-label="Finetune up">→</button>
+      <button id="tDown" title="A semitone down (↓)" aria-label="A semitone down">↓</button>
+    </div>
+  </div>
+  <p class="tuneHint">Each key plays the instrument and a reference C-4 together: move it until they sound as one.</p>
+</dialog>
+<dialog id="ampDlg" class="win" aria-labelledby="ampTitle">
+  <form method="dialog" class="winHead"><span id="ampTitle">Amplify the sample</span><button class="close" aria-label="Close">✕</button></form>
+  <form id="ampForm" class="ampBody">
+    <div class="well tuneLcd" id="ampNow"></div>
+    <div class="row"><label title="The gain at the region's start, in percent (100 = as it is)">Start %<input id="ampA" type="number" min="0" max="200" step="1" style="width:60px"></label>
+    <label title="The gain at the region's end, in percent: from start to end it changes evenly">End %<input id="ampB" type="number" min="0" max="200" step="1" style="width:60px"></label>
+    <button id="ampGo">Apply</button></div>
+  </form>
+  <p class="ampHint">It changes the sample itself, step by step: past full scale the peaks are cut off, so above 100% it distorts. 150–150 louder, 50–50 quieter, 0–100 fade in, 100–0 fade out. Close, then ⌘/Ctrl+Z takes back the last step.</p>
+</dialog>
+<dialog id="opening" class="win" aria-labelledby="openTitle">
+  <div class="winHead"><span id="openTitle">Opening</span></div>
+  <div class="openBody"><div class="well" id="openNow" role="status"></div><div class="well openMeter"><i id="openBar"></i></div></div>
+</dialog>
 <dialog id="welcome">
   <form method="dialog"><button class="close" aria-label="Close">✕</button></form>
   <h2>Welcome to PoopTracker</h2>
@@ -305,30 +368,31 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/autosave.js": "./src/autosave.js?v=431d73bad3",
-    "./src/core/commands.js": "./src/core/commands.js?v=bac3a05fe4",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=f3eb80ca17",
+    "./src/autosave.js": "./src/autosave.js?v=79fa4d2284",
+    "./src/core/commands.js": "./src/core/commands.js?v=8c863a033d",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=ac54af4bad",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
-    "./src/engine/player.js": "./src/engine/player.js?v=e9785b420b",
+    "./src/engine/player.js": "./src/engine/player.js?v=62ec7ee5a0",
     "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
-    "./src/io.js": "./src/io.js?v=6f3fe52c60",
-    "./src/main.js": "./src/main.js?v=5f214fb9b9",
-    "./src/mcp.js": "./src/mcp.js?v=4a6b18c433",
+    "./src/io.js": "./src/io.js?v=f73672962b",
+    "./src/main.js": "./src/main.js?v=823f2dc36a",
+    "./src/mcp.js": "./src/mcp.js?v=2aba96cf72",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=3cdfdedfe7",
-    "./src/ptformat.js": "./src/ptformat.js?v=17fdd75844",
+    "./src/ptformat.js": "./src/ptformat.js?v=46527319b0",
     "./src/ui/bench.js": "./src/ui/bench.js?v=dc17dc929a",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=61598b62a9",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=62c010bc74",
+    "./src/ui/files.js": "./src/ui/files.js?v=c354ce369e",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=2b75beedfd",
+    "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=18bf427176",
-    "./src/ui/screens.js": "./src/ui/screens.js?v=e248a497ff",
+    "./src/ui/screens.js": "./src/ui/screens.js?v=918eddf4a8",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
     "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
@@ -337,6 +401,6 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   }
 }
 </script>
-<script type="module" src="src/main.js?v=5f214fb9b9"></script>
+<script type="module" src="src/main.js?v=823f2dc36a"></script>
 </body>
 </html>

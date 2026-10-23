@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FakeAudioBuffer } from './fake-audio.js';
-import { detectPitch, tuneFor, rateFor, fitToVideo, fitFor, makeVideo } from '../src/core/instrument.js';
+import { detectPitch, tuneFor, rateFor, fitToVideo, fitFor, makeVideo, amplify } from '../src/core/instrument.js';
 
 const SR = 48000;
 // seconds of a signal: f(t) → sample
@@ -66,4 +66,17 @@ test('a video\'s readable end doesn\'t depend on the sample rate it was decoded 
   for (const [length, sampleRate] of [[120000, 48000], [110250, 44100], [110249, 44100]])
     assert.equal(makeVideo('v', [], new FakeAudioBuffer({ length, sampleRate })).dur, 2.5, `${length} at ${sampleRate}`);
   assert.equal(makeVideo('v', [], new FakeAudioBuffer({ length: 110200, sampleRate: 44100 })).dur, 2.498); // really shorter
+});
+
+test('amplify: the gain goes from start to end; past full scale it is cut off after each step, so the order counts', () => {
+  const b = sound(1, () => 0.5), d = b.getChannelData(0);
+  amplify(b, [{ a: 100, b: 0 }]);
+  assert.equal(d[0], 0.5); assert.ok(Math.abs(d[d.length - 1]) < 1e-9); assert.ok(Math.abs(d[d.length >> 1] - 0.25) < 1e-3);
+  const loud = sound(0.1, () => 0.8), quiet = sound(0.1, () => 0.8);
+  amplify(loud, [{ a: 200, b: 200 }, { a: 50, b: 50 }]); // clipped at 1, then halved
+  amplify(quiet, [{ a: 50, b: 50 }, { a: 200, b: 200 }]);
+  assert.equal(loud.getChannelData(0)[10], 0.5);
+  assert.ok(Math.abs(quiet.getChannelData(0)[10] - 0.8) < 1e-6);
+  const neg = sound(0.1, () => -0.9); amplify(neg, [{ a: 200, b: 200 }]);
+  assert.equal(neg.getChannelData(0)[0], -1);
 });

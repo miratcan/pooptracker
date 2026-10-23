@@ -135,3 +135,20 @@ test('at most MAX_HEAVY commands that keep a video alive stay in the history; it
   assert.equal(bench.file, files[4]); // back as far as the history goes: before the 6th video was put on
   assert.equal(song.bpm, 100);
 });
+
+test('amp changes the sample (the video stays as it is) and is undone like any setting; a replaced video starts without it', () => {
+  const I = instruments[1], vd = I.video.buffer.getChannelData(0);
+  vd.fill(0.6);
+  C.exec(() => C.setInstrument(1, { start: 0 })); C.exec(() => C.setInstrument(1, { start: 0.5 })); // sliced again from the filled video
+  C.exec(() => C.setInstrument(1, { amp: [{ a: 200, b: 200 }] }));
+  assert.equal(I.buffer.getChannelData(0)[0], 1); // 1.2, cut off
+  assert.ok(Math.abs(vd[0] - 0.6) < 1e-6);
+  assert.ok(I.peaks);
+  assert.throws(() => C.exec(() => C.setInstrument(1, { amp: [{ a: 300, b: 100 }] })), /amp step 1: '300-100' is invalid/);
+  C.undo();
+  assert.ok(Math.abs(I.buffer.getChannelData(0)[0] - 0.6) < 1e-6);
+  assert.equal(I.peaks, null);
+  C.redo();
+  C.exec(() => C.setInstrumentVideo(1, testInstrument({ dur: 3 }).video));
+  assert.deepEqual(I.amp, []);
+});

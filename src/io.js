@@ -12,9 +12,10 @@ import { parseMidi, midiToSong } from './midi.js';
 import { ctx } from './engine/audio.js';
 
 const once = (el, ev) => new Promise((res, rej) => { el.addEventListener(ev, res, { once: true }); el.addEventListener('error', () => rej(el.error || new Error('video error')), { once: true }); });
-// video file → frames + audio (first MAX_SAMPLE_SEC seconds). progress(text) is told what is happening.
+// video file → frames + audio (first MAX_SAMPLE_SEC seconds). progress(text, done) is told what is happening, done
+// being how much of it is over (0–1).
 export async function decodeVideo(file, progress = () => {}) {
-  progress(`Loading: ${file.name}`);
+  progress(`Loading: ${file.name}`, 0);
   const url = URL.createObjectURL(file);
   const video = document.createElement('video');
   video.muted = true; video.playsInline = true; video.preload = 'auto'; video.src = url;
@@ -48,7 +49,7 @@ export async function decodeVideo(file, progress = () => {}) {
     await once(video, 'seeked');
     cg.drawImage(video, 0, 0, cv.width, cv.height);
     frames.push(await createImageBitmap(cv));
-    if (i % 5 === 0) progress(`${file.name}: extracting frames ${i + 1}/${n}`);
+    progress(`${file.name}: extracting frames ${i + 1}/${n}`, (i + 1) / n);
   }
   URL.revokeObjectURL(url);
   const V = makeVideo(file.name, frames, buffer, file);
@@ -93,7 +94,7 @@ export async function replaceVideo(idx, file, progress, region = null) {
     const span = { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) };
     const hit = round3(Math.min(span.start + detectHit(makeInstrument(V, span).buffer), V.dur));
     // a whole instrument line, as metadata would give, with the instrument's own sound fields: they are kept
-    place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, focus: region.focus ?? [] };
+    place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, amp: [], focus: region.focus ?? [] };
   }
   const cmd = exec(() => setInstrumentVideo(idx, V, place));
   addVideo(V);
@@ -183,14 +184,16 @@ export async function buildSong() {
 // Returns { errors } (each 'file:line  message'), or { nVideos } when it was opened.
 export async function readSong(file, progress) {
   const zip = await PTFormat.unzip(new Uint8Array(await file.arrayBuffer()));
-  return openSongZip(zip, path => decodeVideo(new File([zip.get(path)], path.split('/').pop()), progress));
+  return openSongZip(zip, (path, p) => decodeVideo(new File([zip.get(path)], path.split('/').pop()), p), progress);
 }
-// the same, from a zip that is already open; videoAt(path) gives the decoded video stored at that path
-export async function openSongZip(zip, videoAt) {
+// the same, from a zip that is already open; videoAt(path, progress) gives the decoded video stored at that path.
+// progress(text, done) counts the videos: done is how much of the whole song is read (0–1)
+export async function openSongZip(zip, videoAt, progress = () => {}) {
   const res = PTFormat.parseSong(zip);
   if (res.errors.length) return { errors: res.errors };
-  const vids = new Map();
-  for (const s of res.instruments) if (!vids.has(s.video)) vids.set(s.video, await videoAt(s.video));
+  const paths = [...new Set(res.instruments.map(s => s.video))], vids = new Map();
+  for (const [k, path] of paths.entries())
+    vids.set(path, await videoAt(path, (text, done = 0) => progress(`video ${k + 1}/${paths.length} · ${text}`, (k + done) / paths.length)));
   // the playable length of a video is only known after decoding it
   const fitted = res.instruments.map(s => fitToVideo(s, vids.get(s.video).dur));
   const errors = res.instruments.map((s, k) => fitted[k] ? null : `${s.where}  instrument ${hex2(k + 1)}: region end (${s.end.toFixed(3)}) is past the readable end of the video (${vids.get(s.video).dur.toFixed(3)})`).filter(Boolean);

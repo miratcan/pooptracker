@@ -2,9 +2,9 @@
 // Sliders and waveform drags preview live and become ONE command when released.
 import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
-import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, fitFor, loops } from '../core/instrument.js';
+import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, noteOfHz, fitFor, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
-import { previewNote, syncTest } from '../engine/player.js';
+import { previewNote, syncTest, referenceTone } from '../engine/player.js';
 import { $, ed, run, num, showError, refreshUI, setStatus } from './common.js';
 import { drawCover, coverRect } from './output.js';
 import { pal, alpha } from './palette.js';
@@ -37,6 +37,15 @@ $('#iBase').onchange = e => {
   const n = parseNote(e.target.value);
   if (n < 0 || n > 95) { showError(`base note '${e.target.value}' is invalid (C-0…B-7)`); refreshUI(); } else instCmd({ baseNote: n }, 'base note');
 };
+// Up/Down in the field: a semitone up or down (with Shift an octave), right away
+$('#iBase').onkeydown = e => {
+  const d = { ArrowUp: 1, ArrowDown: -1 }[e.key] * (e.shiftKey ? 12 : 1); const I = curInst();
+  if (!d || !I || e.altKey || e.metaKey || e.ctrlKey) return;
+  e.preventDefault();
+  const typed = parseNote(e.target.value), n = clamp((typed >= 0 && typed <= 95 ? typed : I.baseNote) + d, 0, 95);
+  e.target.value = noteName(n);
+  if (n !== I.baseNote) instCmd({ baseNote: n }, 'base note');
+};
 $('#iFine').onchange = e => {
   const n = +e.target.value;
   if (!Number.isInteger(n) || n < -128 || n > 127) { showError(`finetune '${e.target.value}' is invalid (-128–127, integer)`); refreshUI(); } else instCmd({ fine: n }, 'finetune');
@@ -49,6 +58,48 @@ $('#bTune').onclick = () => {
   instCmd(t, 'tune');
   setStatus(`${hex2(ed.inst)} ${I.name}: ${hz.toFixed(1)} Hz → Base ${noteName(t.baseNote)}, Fine ${t.fine > 0 ? '+' : ''}${t.fine}`);
 };
+// Manual tune: by ear against a reference C-4. Base and Fine change live, closing makes them ONE command.
+// The fine step is 4/128 of a semitone (~3 cents); past ±128 it carries into Base.
+const tuneDlg = $('#tuneDlg'); let tuning = null;
+// the meter: the clip's detected pitch (found once, as Auto finds it) against Base + Fine, in cents off at C-4
+function showTune(I) {
+  $('#tuneNow').textContent = `${hex2(ed.inst)} ${I.name}: Base ${noteName(I.baseNote)}, Fine ${I.fine > 0 ? '+' : ''}${I.fine}`;
+  const meter = $('#tuneNeedle').parentElement, n = tuning.detected;
+  meter.classList.toggle('none', n == null);
+  if (n == null) return void ($('#tuneHeard').textContent = 'No clear pitch detected (a noisy sound like a snare has none): by ear only.');
+  // the needle: the cents off the nearest semitone (so ←→ always move it); the semitones are in the words
+  const c = Math.round((n - I.baseNote - I.fine / 128) * 100), semi = Math.round(c / 100), rest = c - semi * 100;
+  $('#tuneNeedle').style.left = `${50 + rest}%`; $('#tuneNeedle').classList.toggle('ok', !semi && Math.abs(rest) <= 3);
+  const centsTxt = !semi && Math.abs(rest) <= 3 ?`in tune (${rest > 0 ? '+' : ''}${rest} cents)` : `${Math.abs(rest)} cents ${rest > 0 ? 'sharp (→)' : 'flat (←)'}`;
+  // whole octaves apart: the ear hears them as the same note, and pitch detection can land an octave off too
+  const octs = semi && semi % 12 === 0 ? `${Math.abs(semi / 12)} octave${Math.abs(semi) > 12 ? 's' : ''} ${semi > 0 ? 'sharp' : 'flat'}` : null;
+  $('#tuneHeard').textContent = `Detected: ${octs ? `${octs} (same note, octave apart), then ` : semi ? `${Math.abs(semi)} semitone${Math.abs(semi) > 1 ? 's' : ''} ${semi > 0 ? 'sharp (↑)' : 'flat (↓)'}, then ` : ''}${centsTxt}`;
+}
+function tuneBy(semi, fine) {
+  const I = tuning?.I; if (!I) return;
+  let n = I.baseNote + semi, f = I.fine + fine;
+  if (f > 127) { n++; f -= 128; } else if (f < -128) { n--; f += 128; }
+  if (n >= 0 && n <= 95) { I.baseNote = n; I.fine = f; }
+  showTune(I); previewNote(I, ed.ch, 48); referenceTone(48);
+}
+$('#bTuneMan').onclick = () => {
+  const I = curInst(); if (!I) return;
+  const hz = detectPitch(I.buffer, hitPos(I));
+  tuning = { I, idx: ed.inst, before: { baseNote: I.baseNote, fine: I.fine }, detected: hz ? noteOfHz(hz) : null };
+  tuneDlg.showModal(); tuneBy(0, 0);
+};
+tuneDlg.addEventListener('close', () => {
+  const t = tuning; tuning = null; if (!t) return;
+  run(() => setInstrument(t.idx, { baseNote: t.I.baseNote, fine: t.I.fine }, 'manual tune', t.before));
+});
+// the keys, and the on-screen button each one presses down while held
+const TUNE_KEYS = { ArrowUp: [1, 0, 'tUp'], ArrowDown: [-1, 0, 'tDown'], ArrowRight: [0, 4, 'tRight'], ArrowLeft: [0, -4, 'tLeft'], Space: [0, 0, 'tPlay'] };
+tuneDlg.addEventListener('keydown', e => {
+  const k = TUNE_KEYS[e.code]; if (!k || e.altKey || e.metaKey || e.ctrlKey) return;
+  e.preventDefault(); $('#' + k[2]).classList.add('down'); tuneBy(k[0], e.shiftKey ? Math.sign(k[1]) : k[1]);
+});
+tuneDlg.addEventListener('keyup', e => { const k = TUNE_KEYS[e.code]; if (k) $('#' + k[2]).classList.remove('down'); });
+[['tUp', 1, 0], ['tDown', -1, 0], ['tRight', 0, 4], ['tLeft', 0, -4], ['tPlay', 0, 0]].forEach(([id, s, f]) => { $('#' + id).onclick = () => tuneBy(s, f); });
 // Fit: repitched so that, at C-4, its region lasts a whole number of rows (at this tempo)
 $('#bFit').onclick = () => {
   const I = curInst(); if (!I) return;
@@ -56,6 +107,22 @@ $('#bFit').onclick = () => {
   if (!f) return showError(`${hex2(ed.inst)} ${I.name}: it can't be made to fit (it would play outside C-0…B-7)`);
   instCmd({ baseNote: f.baseNote, fine: f.fine }, 'fit');
   setStatus(`${hex2(ed.inst)} ${I.name}: at C-4 its region now lasts ${f.rows} rows (BPM ${song.bpm}, speed ${song.speed}) → Base ${noteName(f.baseNote)}, Fine ${f.fine > 0 ? '+' : ''}${f.fine}`);
+};
+// Amp: FT2's sample editor Volume. Each Apply is one step added to the instrument's amp (a command: Ctrl+Z takes it back)
+const ampDlg = $('#ampDlg');
+const ampTxt = I => I.amp.length ? I.amp.map(s => `${s.a}→${s.b}%`).join(', then ') : 'as loaded';
+const showAmp = I => { $('#ampNow').textContent = `${hex2(ed.inst)} ${I.name}: ${ampTxt(I)}`; };
+$('#bAmp').onclick = () => {
+  const I = curInst(); if (!I) return;
+  $('#ampA').value = $('#ampB').value = 100; showAmp(I);
+  ampDlg.showModal(); $('#ampA').select();
+};
+$('#ampForm').onsubmit = e => {
+  e.preventDefault();
+  const I = curInst(), a = +$('#ampA').value, b = +$('#ampB').value; if (!I) return;
+  if (![a, b].every(x => Number.isInteger(x) && x >= 0 && x <= 200)) return showError(`amp '${$('#ampA').value}–${$('#ampB').value}' is invalid (percent, 0–200 each, integers)`);
+  if (a === 100 && b === 100) return; // changes nothing
+  if (instCmd({ amp: [...I.amp, { a, b }] }, `amp ${a}–${b}%`)) { showAmp(I); setStatus(`${hex2(ed.inst)} ${I.name}: amplified ${a}→${b}% (${I.amp.length} step${I.amp.length > 1 ? 's' : ''}; ⌘/Ctrl+Z takes it back)`); }
 };
 // volume is hex, as everywhere in the tracker (00–40)
 $('#iVol').onchange = e => {
@@ -126,12 +193,14 @@ function drawWave(hoverT) {
   const tx = t => t / dur * W;
   wg.fillStyle = alpha(pal.acc2, .14); wg.fillRect(tx(I.start), TH, tx(I.hit) - tx(I.start), H - TH);
   if (loops(I)) { wg.fillStyle = alpha(pal.green, .1); wg.fillRect(tx(I.loopStart), TH, tx(I.loopEnd) - tx(I.loopStart), H - TH); }
-  const mid = TH + (H - TH) / 2, amp = (H - TH) / 2 - 4, np = V.peaks.length / 2, bd = V.buffer.duration;
+  // the region as it sounds (amplified: I.peaks), the rest as the video has it
+  const mid = TH + (H - TH) / 2, amp = (H - TH) / 2 - 4, bd = V.buffer.duration, id = I.buffer.duration;
   wg.strokeStyle = pal.acc2; wg.beginPath();
   for (let px = 0; px < W; px++) {
     const t = px / W * dur; if (t > bd) break;
-    const i = Math.floor(t / bd * np) * 2;
-    wg.moveTo(px + 0.5, mid - V.peaks[i + 1] * amp); wg.lineTo(px + 0.5, mid - V.peaks[i] * amp + 1);
+    const inI = I.peaks && t >= I.start && t - I.start < id, P = inI ? I.peaks : V.peaks;
+    const i = Math.floor((inI ? (t - I.start) / id : t / bd) * P.length / 2) * 2;
+    wg.moveTo(px + 0.5, mid - P[i + 1] * amp); wg.lineTo(px + 0.5, mid - P[i] * amp + 1);
   }
   wg.stroke();
   wg.fillStyle = alpha(pal.black, .65); wg.fillRect(0, 0, tx(I.start), H); wg.fillRect(tx(I.end), 0, W - tx(I.end), H);

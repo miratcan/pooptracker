@@ -28,6 +28,11 @@ const LOOP_MODES = ['none', 'forward', 'pingpong'];
 // x, y are 0–1 across the frame (0,0 top left); between two keys the point moves in a straight line. No keys: the middle.
 const MAX_FOCUS_KEYS = 1000;
 const focusStr = keys => keys.map(k => `${t3(k.t)}:${k.x.toFixed(3)},${k.y.toFixed(3)}`).join('|');
+// amplify, FT2's sample editor Volume: steps applied to the sample one after the other, each a gain in percent going
+// from a at the region's start to b at its end (150-150 louder, 100-0 a fade out), clipped at full scale after each.
+// It changes the sample itself (the video file stays as it is): 200-200 twice is not 400-400 once.
+const MAX_AMP = 200, MAX_AMP_STEPS = 100;
+const ampStr = steps => steps.map(s => `${s.a}-${s.b}`).join('|');
 
 function format(I, video) {
   const f = [VERSION, 'name=' + esc(I.name)];
@@ -36,6 +41,7 @@ function format(I, video) {
     'vol=' + I.vol.toString(16).toUpperCase().padStart(2, '0'), 'rev=' + I.reverb.toString(16).toUpperCase().padStart(2, '0'),
     'a=' + envStr(I.A), 'd=' + envStr(I.D), 's=' + I.S.toString(16).toUpperCase().padStart(2, '0'), 'r=' + envStr(I.R),
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
+  if (I.amp?.length) f.push('amp=' + ampStr(I.amp));
   if (I.focus?.length) f.push('focus=' + focusStr(I.focus));
   return f.join(';');
 }
@@ -55,6 +61,10 @@ const focus = (k, v) => v.split('|').map(s => {
   return m && unit.test(m[2]) && unit.test(m[3]) ? { t: round3(+m[1]), x: round3(+m[2]), y: round3(+m[3]) }
     : bad(k, v, `'${s}' must be time:x,y with x and y 0–1, e.g. 1.250:0.300,0.450`);
 });
+const amp = (k, v) => v.split('|').map(s => {
+  const m = /^(\d{1,3})-(\d{1,3})$/.exec(s.trim());
+  return m && +m[1] <= MAX_AMP && +m[2] <= MAX_AMP ? { a: +m[1], b: +m[2] } : bad(k, v, `'${s}' must be start-end in percent, 0–${MAX_AMP} each, e.g. 150-150 or 100-0`);
+});
 const PARSE = {
   name: (k, v) => unesc(v),
   video: (k, v) => unesc(v),
@@ -73,10 +83,11 @@ const PARSE = {
   // loop mode; files written before 2026-10-13 have 0 (off) / 1 (on), read as none / forward
   loop: (k, v) => LOOP_MODES.includes(v) ? v : v === '0' ? 'none' : v === '1' ? 'forward' : bad(k, v, 'none, forward or pingpong'),
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
+  amp,
   focus,
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb',
-  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', focus: 'focus' };
+  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', amp: 'amp', focus: 'focus' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
 function parse(line) {
@@ -93,7 +104,7 @@ function parse(line) {
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
   const I = { fine: 0, vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
-    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, focus: [] };
+    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, amp: [], focus: [] };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
   if (e) throw new Error(`${VERSION} line: ${e}`);
@@ -122,12 +133,20 @@ function checkInstrument(I) {
   if (!isInt(I.S, 0, 64)) return `S '${showHex(I.S)}' is invalid (range 00–40)`;
   if (!LOOP_MODES.includes(I.loop)) return `loop '${I.loop}' is invalid (none, forward or pingpong)`;
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
+  const ae = checkAmp(I.amp); if (ae) return ae;
   const fe = checkFocus(I.focus); if (fe) return fe;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
   if (I.hit < I.start || I.hit > I.end) return `hit point (${t3(I.hit)}) must be inside the region (${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))
     return `loop (${t3(I.loopStart)}–${t3(I.loopEnd)}) must be inside the region, with loop start before loop end (region ${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && I.loopStart < I.hit) return `loop start (${t3(I.loopStart)}) can't be before the hit point (${t3(I.hit)})`;
+  return null;
+}
+function checkAmp(steps) {
+  if (!Array.isArray(steps)) return 'amp must be a list of { a, b } steps';
+  if (steps.length > MAX_AMP_STEPS) return `amp has ${steps.length} steps; at most ${MAX_AMP_STEPS}`;
+  for (const [i, s] of steps.entries())
+    if (!s || !isInt(s.a, 0, MAX_AMP) || !isInt(s.b, 0, MAX_AMP)) return `amp step ${i + 1}: '${s?.a}-${s?.b}' is invalid (start-end in percent, 0–${MAX_AMP} each, integers)`;
   return null;
 }
 function checkFocus(keys) {
@@ -463,7 +482,7 @@ function mp4WriteTag(b, value) {
   return out;
 }
 
-export const PTFormat = { VERSION, LOOP_MODES, format, focusStr, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
+export const PTFormat = { VERSION, LOOP_MODES, format, focusStr, ampStr, MAX_AMP, MAX_AMP_STEPS, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
   checkInstrument, checkFocus, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
   cellField, cellStr, mp4ReadTag, mp4WriteTag, field: (k, v) => PARSE[k](k, String(v).trim()) };
 export default PTFormat;

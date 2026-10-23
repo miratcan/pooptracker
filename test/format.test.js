@@ -121,3 +121,13 @@ test('Tune\'s result (base note and finetune) is saved: in the .poop song and in
   const tagged = PTFormat.parse(PTFormat.mp4ReadTag(PTFormat.mp4WriteTag(mp4, PTFormat.format(I))));
   assert.deepEqual([tagged.baseNote, tagged.fine, tagged.loop], [52, 2, 'forward']);
 });
+
+test('amp: the steps are written in order, start-end in percent, and only when there are any', () => {
+  const I = PTFormat.parse(LINE + ';amp=200-200|100-0');
+  assert.deepEqual(I.amp, [{ a: 200, b: 200 }, { a: 100, b: 0 }]);
+  assert.equal(PTFormat.format(I), LINE + ';amp=200-200|100-0');
+  assert.deepEqual(PTFormat.parse(LINE).amp, []);
+  assert.equal(PTFormat.format(PTFormat.parse(LINE)), LINE);
+  assert.throws(() => PTFormat.parse(LINE + ';amp=201-100'), /'amp' value '201-100' is invalid \('201-100' must be start-end in percent, 0–200 each/);
+  assert.throws(() => PTFormat.parse(LINE + ';amp=150'), /must be start-end in percent/);
+});

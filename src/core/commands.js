@@ -100,10 +100,10 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'focus'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'amp', 'focus'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
 // What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
-// (region, hit, loop points, focus, A/V offset) and mean nothing in another one.
+// (region, hit, loop points, focus, A/V offset) and mean nothing in another one; amp changed the old sample, not this one.
 export const SOUND_KEYS = ['name', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
 // another video for an instrument. Without place, it keeps how it sounds and the places are found again as when a
 // video is loaded (the region is the whole video, the hit is detected). place is a whole instrument line: a video
@@ -115,7 +115,7 @@ export function setInstrumentVideo(idx, V, place = null, label = 'replace video'
   if (place) nu = pick(place, INST_KEYS);
   else {
     const hit = round3(Math.min(detectHit(V.buffer), V.dur));
-    nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, focus: [] };
+    nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, amp: [], focus: [] };
   }
   if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) nu.loop = 'none';
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);
@@ -129,7 +129,7 @@ export function setInstrument(idx, fields, label = 'instrument', before) {
   const err = PTFormat.checkInstrument(nu) || (nu.end > I.video.dur ? `region end (${nu.end.toFixed(3)}) is past the end of the video (${I.video.dur.toFixed(3)})` : null);
   if (err) fail(`instrument ${hex2(idx)}: ${err}`);
   if (same(old, pick(nu, keys))) return null;
-  const set = vals => { Object.assign(I, copy(vals)); if ('start' in vals || 'end' in vals) sliceRegion(I); };
+  const set = vals => { Object.assign(I, copy(vals)); if ('start' in vals || 'end' in vals || 'amp' in vals) sliceRegion(I); };
   return { label: `${hex2(idx)} ${label}`, scope: 'instrument', inst: I, apply: () => set(fields), revert: () => set(old) };
 }
 export function addInstrument(I, label) {

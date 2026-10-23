@@ -26,16 +26,27 @@ export const loops = I => I.loop !== 'none' && I.loopEnd > I.loopStart;
 export const videoFrame = (V, t) => V.frames[clamp(Math.floor(t * V.fps), 0, V.frames.length - 1)];
 export function makeInstrument(V, o) {
   const I = Object.assign({ name: '', start: 0, end: V.dur, hit: 0, baseNote: 48, fine: 0, vol: 64, reverb: 0,
-    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0, focus: [] }, o);
-  I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R }; I.focus = I.focus.map(k => ({ ...k }));
+    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0, amp: [], focus: [] }, o);
+  I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R }; I.amp = I.amp.map(s => ({ ...s })); I.focus = I.focus.map(k => ({ ...k }));
   sliceRegion(I);
   return I;
 }
-// cut the region's audio out of the video (the values themselves are checked by the validator)
+// cut the region's audio out of the video (the values themselves are checked by the validator), then amplify it.
+// I.peaks: its waveform as it sounds, amplified
 export function sliceRegion(I) {
   const b = I.video.buffer, sr = b.sampleRate, i0 = Math.round(I.start * sr), i1 = Math.min(b.length, Math.max(i0 + 1, Math.round(I.end * sr)));
   I.buffer = new AudioBuffer({ numberOfChannels: b.numberOfChannels, length: i1 - i0, sampleRate: sr });
   for (let c = 0; c < b.numberOfChannels; c++) I.buffer.copyToChannel(b.getChannelData(c).subarray(i0, i1), c);
+  amplify(I.buffer, I.amp);
+  I.peaks = I.amp.length ? computePeaks(I.buffer, 1200) : null;
+}
+// FT2's sample editor Volume, step by step: the gain goes from a% at the start to b% at the end, and what goes past
+// full scale is cut off (clipped) after each step, so a step above 100% distorts, as it does in FT2
+export function amplify(buf, steps) {
+  for (const { a, b } of steps) for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c), k = (b - a) / 100 / Math.max(1, d.length - 1);
+    for (let i = 0; i < d.length; i++) d[i] = clamp(d[i] * (a / 100 + k * i), -1, 1);
+  }
 }
 // I.buffer holds only the region, so playback positions are relative to I.start
 export const hitPos = I => I.hit - I.start;
@@ -107,8 +118,10 @@ export function detectPitch(buf, from = 0) {
   return found[found.length >> 1];
 }
 // a pitch in Hz → the base note and finetune that play the clip as itself (A-4 = 440 Hz); null outside C-0…B-7
+// a frequency as a (fractional) note number: A-4 = 440 Hz = 57
+export const noteOfHz = hz => 57 + 12 * Math.log2(hz / 440);
 export function tuneFor(hz) {
-  const n = 57 + 12 * Math.log2(hz / 440), baseNote = Math.round(n);
+  const n = noteOfHz(hz), baseNote = Math.round(n);
   return baseNote >= 0 && baseNote <= 95 ? { baseNote, fine: Math.round((n - baseNote) * 128) } : null;
 }
 

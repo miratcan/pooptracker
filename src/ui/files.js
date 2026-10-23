@@ -8,6 +8,7 @@ import { $, ed, run, setStatus, showError, escHtml } from './common.js';
 import { curInst } from './instrumentPanel.js';
 import { activeScreen } from './screens.js';
 import { benchScreen, putOnBench } from './bench.js';
+import { opening } from './opening.js';
 
 export { safeName };
 const progress = text => setStatus(escHtml(text));
@@ -47,7 +48,7 @@ const mb = n => n < 1048576 ? Math.ceil(n / 1024) + ' KB' : (n / 1048576).toFixe
 export async function openSong(file) {
   try {
     setStatus(`Opening: ${escHtml(file.name)}`);
-    const res = await readSong(file, progress);
+    const res = await opening(`Opening ${file.name}`, p => readSong(file, p));
     if (res.errors) {
       const errs = res.errors; console.warn(errs.join('\n'));
       const more = errs.length > 6 ? `<br>… and ${errs.length - 6} more errors (all in the console)` : '';

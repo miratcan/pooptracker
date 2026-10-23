@@ -195,6 +195,24 @@ test('instruments: Tune finds A-4 in a 440 Hz clip; Fit makes its region last a 
   assert.equal(await val(page, '#iBase'), 'A-4');
 });
 
+test('instruments: Manual tune moves Base and Fine with the arrow keys; closing makes it one step Ctrl+Z takes back', { skip }, async t => {
+  const page = await app(t);
+  await loadFixture(page);
+  await page.click('#bTune');
+  await page.click('#bTuneMan');
+  await page.waitFor(() => document.querySelector('#tuneDlg').open);
+  assert.match(await page.eval(() => document.querySelector('#tuneHeard').textContent), /in tune/); // a 440 Hz clip on A-4 after Auto
+  for (const k of ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowRight', 'Shift+ArrowLeft']) await page.key(k);
+  assert.match(await page.eval(() => document.querySelector('#tuneNow').textContent), /Base A#4, Fine \+3$/);
+  assert.match(await page.eval(() => document.querySelector('#tuneHeard').textContent), /1 semitone flat \(↓\), then 2 cents flat/);
+  await page.click('#tLeft'); await page.click('#tLeft');
+  await page.click('#tuneDlg .close');
+  await page.waitFor(() => document.querySelector('#iBase').value === 'A#4'); // kept on the dialog's close event, a moment later
+  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine')], ['A#4', '-5']);
+  await page.key('Mod+KeyZ');
+  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine')], ['A-4', '0']);
+});
+
 test('instruments: Trim cuts the video down to the region, the hit moving with it; Ctrl+Z brings it back', { skip }, async t => {
   const page = await app(t);
   await loadFixture(page);
@@ -245,4 +263,36 @@ test('a video whose sound this browser can\'t read says so: on the bench at once
   await page.click('#bScreenBench');
   await page.setFiles('#bFile', [`${FIXTURES}/vp8.webm`]);
   await page.waitFor(() => /can't read the sound of vp8\.webm/.test(document.querySelector('#status').textContent), SLOW);
+});
+
+test('CapsLock writes a key-off at every press, also on a Mac, where turning it off comes as a lone keyup', { skip }, async t => {
+  const page = await app(t);
+  await page.key('Space'); // edit mode on
+  await page.waitFor(() => document.querySelector('#patBox').classList.contains('editing'));
+  const n = () => page.eval(() => window.pooptracker.song.patterns[0].rows.slice(0, 3).map(r => r[0].n));
+  const caps = types => page.eval(ts => ts.forEach(type => document.querySelector('#pat').dispatchEvent(new KeyboardEvent(type, { code: 'CapsLock', key: 'CapsLock', bubbles: true }))), types);
+  const row2 = (await n())[2];
+  await caps(['keydown', 'keyup']); // it turns on: keydown and keyup, one press
+  await caps(['keyup']); // it turns off (macOS): the keyup alone
+  const [a, b, c] = await n();
+  assert.equal(a, b); assert.notEqual(a, row2);
+  assert.equal(c, row2, 'the keyup after a keydown is not a second press');
+});
+
+test('instruments: Amp adds a step that changes the sample (above 100% it clips); Ctrl+Z takes it back', { skip }, async t => {
+  const page = await app(t);
+  await page.click('#bAmp');
+  await page.waitFor(() => document.querySelector('#ampDlg').open);
+  await page.eval(() => { document.querySelector('#ampA').value = 300; document.querySelector('#ampB').value = 300; });
+  await page.click('#ampGo');
+  assert.deepEqual(await page.eval(() => window.pooptracker.instruments[1].amp), []); // past 200: the field itself refuses it
+  await page.eval(() => { document.querySelector('#ampA').value = 200; document.querySelector('#ampB').value = 200; });
+  await page.click('#ampGo');
+  const peak = () => page.eval(() => Math.max(...window.pooptracker.instruments[1].buffer.getChannelData(0).map(Math.abs)));
+  assert.equal(await peak(), 1);
+  assert.match(await text(page, '#ampNow'), /200→200%/);
+  await page.click('#ampDlg .close');
+  await page.key('Mod+KeyZ');
+  assert.deepEqual(await page.eval(() => window.pooptracker.instruments[1].amp), []);
+  assert.ok(await peak() < 1);
 });

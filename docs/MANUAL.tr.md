@@ -279,6 +279,12 @@ Seviyeler pattern'deki gibi hex'tir (`00`–`40`). Süreler ondalık saniyedir.
 - **Fine:** FT2'deki gibi ince akort: yarım tonun 1/128'i, −128 ile 127 arası. Klibin kendi perdesi Base artı Fine'dır.
 - **Vol:** `00`–`40`, bu enstrümanın en yüksek sesi. Pattern'deki ses sütunu bunun altında çalar: Vol `20` iken
   ses `40` olan nota `20`, ses `20` olan nota `10` seviyesinde çıkar.
+- **Amp:** FT2'nin sample editöründeki Volume: sample'ın kendisini değiştirir. **Start %** ve **End %** bölgenin başındaki
+  ve sonundaki kazanç (`150`–`150` daha yüksek, `50`–`50` daha kısık, `0`–`100` fade in, `100`–`0` fade out); her
+  **Apply** öncekilerin üstüne bir adım daha ekler. Tam ölçeği aşan tepeler kesilir; yani %100'ün üstünde yumuşak bir bas
+  bile bile distorte olur. Dalga formu sonucu gösterir. Video dosyasına dokunulmaz: adımlar enstrümanla saklanır
+  (satırında `amp=`) ve her açılışta yeniden yapılır. Pencereyi kapatınca ⌘/Ctrl+Z son adımı geri alır; başka bir video
+  (Repl.) adımlar olmadan başlar.
 - **Rev:** sesin ne kadarının reverb'e gittiği, `00`–`40` (`00` kuru). Bütün enstrümanlar tek bir salonu paylaşır.
 - **A/V ms:** sesi görüntüsüne göre kaymış bir videoyu düzeltir.
 

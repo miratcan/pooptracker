@@ -53,13 +53,13 @@ export async function restore(progress) {
   const enc = new TextEncoder(), zip = new Map(Object.entries(kept.text).map(([name, t]) => [name, enc.encode(t)]));
   for (const k of files.keys()) zip.set(k, new Uint8Array(0)); // parseSong only checks the path is there
   for (const V of videos) if (!V.file) zip.set('demo/' + V.name, new Uint8Array(0));
-  const res = await openSongZip(zip, async path => {
+  const res = await openSongZip(zip, async (path, p) => {
     const f = path.startsWith('demo/') ? videos.find(V => !V.file && 'demo/' + V.name === path) : files.get(path);
     if (!f) throw new Error(`the video ${path} is gone`);
     if (!(f instanceof Blob)) return f; // a demo video, as the start made it
-    const V = await decodeVideo(f, progress); ids.set(V.file, path);
+    const V = await decodeVideo(f, p); ids.set(V.file, path);
     return V;
-  });
+  }, progress);
   if (res.errors) throw new Error(res.errors.join('\n'));
   return true;
 }

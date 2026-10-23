@@ -267,6 +267,12 @@ Levels are hex, like in the pattern (`00`–`40`). Times are decimal seconds.
 - **Fine:** finetune, as in FT2: 1/128 of a semitone, −128 to 127. The clip's own pitch is Base plus Fine.
 - **Vol:** `00`–`40`, the loudest this instrument gets. The pattern's volume column plays under it: with Vol `20`,
   volume `40` sounds at `20` and volume `20` sounds at `10`.
+- **Amp:** FT2's sample editor Volume: changes the sample itself. **Start %** and **End %** are the gain at the start
+  and the end of the region (`150`–`150` louder, `50`–`50` quieter, `0`–`100` fade in, `100`–`0` fade out); each
+  **Apply** is one more step on top of the earlier ones. Past full scale the peaks are cut off, so above 100% a soft
+  bass turns into distortion, on purpose. The waveform shows the result. The video file is not touched: the steps are
+  kept with the instrument (`amp=` in its line) and done again each time it opens. Close the window, then ⌘/Ctrl+Z takes
+  back the last step; another video (Repl.) starts without them.
 - **Rev:** how much of the sound goes into the reverb, `00`–`40` (`00` is dry). All instruments share one hall.
 - **A/V ms:** fixes a video whose sound is shifted against its picture.
 

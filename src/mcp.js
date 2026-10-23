@@ -10,6 +10,7 @@ import { CmdError, fail, exec, setCells, addPattern, setOrder, setSong, setInstr
 import { NO_SOUND, importVideo, replaceVideo, trimInstrument, buildSong, readSong, instrumentVideo, importMidi } from './io.js';
 import { processRow, newChan } from './engine/player.js';
 import { $, setStatus, escHtml } from './ui/common.js';
+import { opening } from './ui/opening.js';
 
 const hexArg = (v, what) => typeof v === 'string' && /^[0-9A-Fa-f]{2}$/.test(v) ? parseInt(v, 16) : fail(`${what} must be 2-digit hex (e.g. "0C"), got: ${JSON.stringify(v)}`);
 const patArg = v => { const p = hexArg(v, 'pattern'); return song.patterns[p] ? p : fail(`pattern ${hex2(p)} doesn't exist (there are 00–${hex2(song.patterns.length - 1)})`); };
@@ -66,7 +67,7 @@ const MCP_TOOLS = {
       'patterns:', ...song.patterns.map((P, k) => `  ${hex2(k)}: ${P.rows.length} rows, ${P.rows.reduce((a, r) => a + r.filter(c => !same(c, emptyCell())).length, 0)} filled cells`)].join('\n');
   },
   list_instruments() {
-    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}`).join('\n') || 'no instruments';
+    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · amp ${I.amp.length ? PTFormat.ampStr(I.amp) + ' (start-end %, in order)' : 'none'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}`).join('\n') || 'no instruments';
   },
   view_rows(a) {
     const pi = patArg(a.pattern), [r0, r1] = rowRange(a, pi), P = song.patterns[pi];
@@ -231,6 +232,13 @@ const MCP_TOOLS = {
     const cmd = exec(() => setInstrument(i, { baseNote: f.baseNote, fine: f.fine }, 'MCP: fit'));
     return done(cmd, `instrument ${hex2(i)}: at C-4 its region lasts ${f.rows} rows (BPM ${song.bpm}, speed ${song.speed}): base note ${noteName(f.baseNote)}, fine ${f.fine}`);
   },
+  amplify_instrument(a) {
+    const i = instArg(a.instrument), I = instruments[i], [s, e] = [a.start_percent, a.end_percent];
+    if (![s, e].every(x => Number.isInteger(x) && x >= 0 && x <= PTFormat.MAX_AMP)) fail(`start_percent and end_percent must be integers 0–${PTFormat.MAX_AMP}, got: ${JSON.stringify(s)}, ${JSON.stringify(e)}`);
+    if (s === 100 && e === 100) return done(null);
+    const cmd = exec(() => setInstrument(i, { amp: [...I.amp, { a: s, b: e }] }, 'MCP: amp'));
+    return done(cmd, `instrument ${hex2(i)}: amplified ${s}→${e}% (steps now: ${PTFormat.ampStr(I.amp)})`);
+  },
   detect_hit(a) {
     const i = instArg(a.instrument), I = instruments[i], hit = round3(I.start + detectHit(I.buffer));
     const cmd = exec(() => setInstrument(i, { hit }, 'MCP: auto hit'));
@@ -248,7 +256,7 @@ const MCP_TOOLS = {
       : `name, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`) + (noSound ? NO_SOUND : ''));
   },
   async open_song(a) {
-    const f = await fileArg(a.file), r = await readSong(f, progress);
+    const f = await fileArg(a.file), r = await opening(`MCP · opening ${f.name}`, p => readSong(f, p));
     if (r.errors) fail(`couldn't open ${f.name}, nothing changed:\n${r.errors.join('\n')}`);
     setStatus(`MCP · opened ${escHtml(f.name)}`);
     return `ok: opened ${f.name} (${song.patterns.length} patterns, ${instruments.length - 1} instruments, ${r.nVideos} videos). Opening a song can't be undone.`;

@@ -135,6 +135,17 @@ export function previewNote(I, ch, note, fromStart = false) {
   prevVoice[ch] = v; addVoice(ch, v);
   return v;
 }
+// manual tune: a plain tone at `note` to tune the instrument against by ear (a new one cuts the last)
+let refTone = null;
+export function referenceTone(note, dur = 1.5) {
+  ensureAudio();
+  const now = ctx.currentTime + 0.01, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (note - 57) / 12);
+  g.gain.setValueAtTime(0.25, now); g.gain.setValueAtTime(0.25, now + dur - 0.1); g.gain.linearRampToValueAtTime(0, now + dur);
+  o.connect(g); g.connect(master); o.start(now); o.stop(now + dur);
+  if (refTone) { refTone.g.gain.cancelScheduledValues(now); refTone.g.gain.setValueAtTime(0, now); refTone.o.stop(now); }
+  refTone = { o, g };
+}
 // sync test: schedule hits with pre-roll + a metronome click exactly on each hit
 export function syncTest(I, ch) {
   ensureAudio();
