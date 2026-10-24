@@ -110,7 +110,7 @@ Pattern bir ızgaradır. Satırlar zamandır ve aşağı doğru akar. Sütunlar 
 | 1 | Pattern numarası | Düzenlediğin pattern. ◀ ▶ pattern'ler arasında gezer. |
 | 2 | **New / Dup. / Del.** | New: aynı uzunlukta yeni boş bir pattern. Dup.: bunun bir kopyası. Del.: order kullanmıyorsa siler. |
 | 3 | **Length** | Bu pattern'deki satır sayısı, 1–256. |
-| 4 | **+ Chn. / − Chn.** | Sona bir kanal ekler (en çok 10) / imlecin altındaki kanalı siler (sadece boşsa). |
+| 4 | **+ Chn. / − Chn.** | Sona bir kanal ekler (en çok 10) / son kanalı siler (sadece içinde çalan bir şey yoksa: tek başına `===` sayılmaz). |
 | 5 | Kanal başlığı | Tıklayınca kanal susar (mute). Sağ tıklayınca sadece o kanal çalar (solo). Bir daha sağ tıklayınca hepsi geri gelir. |
 | 6 | Satır numarası | Hex olarak (16 satırlık bir pattern'de `00`–`0F`). |
 | 7 | **Nota** | `C-4`, `C#4`… ya da `===` (key-off: nota bırakılır). `...` boş demek. |
@@ -268,15 +268,17 @@ Seviyeler pattern'deki gibi hex'tir (`00`–`40`). Süreler ondalık saniyedir.
 
 **Sample**
 - **Name:** en fazla 16 karakter. Karenin üstünde görünür.
-- **Base:** bu notada klip kendi hızında oynar (genelde `C-4`).
-- **Tune:** klibin vuruştan sonraki perdesini bulur, **Base** ve **Fine**'ı ona göre ayarlar; böylece yazdığın notalar
-  yazdığın gibi duyulur. Klibin kendisi değişmez, içindeki bend de kalır: enstrümanın tek bir perdesi olur. Trampet ya da
-  hi-hat gibi gürültülü seslerin belirgin perdesi yoktur, o zaman hiçbir şey değişmez; kick ya da tom'un vardır.
+- **Tune** (ayrı kutu): taban nota ve ince akort, örneğin `C-4 +0`. Taban notada klip kendi hızında oynar; klibin kendi
+  perdesi Base artı Fine'dır (FT2'deki gibi yarım tonun 1/128'i, −128 ile 127 arası). Bunlar gösterilir, yazılmaz.
+  **Auto** klibin vuruştan sonraki perdesini bulup ikisini ayarlar; böylece yazdığın notalar yazdığın gibi duyulur.
+  Klibin kendisi değişmez, içindeki bend de kalır: enstrümanın tek bir perdesi olur. Trampet ya da hi-hat gibi gürültülü
+  seslerin belirgin perdesi yoktur, o zaman hiçbir şey değişmez; kick ya da tom'un vardır. **Manual** (ya da değere
+  tıklamak) kulakla akort eder: enstrüman ve referans bir `C-4` birlikte çalar; ↑↓ yarım ton, Shift+↑↓ bir oktav, ←→ ince
+  akort.
 - **Fit:** loop'lar için. Klibi hızlandırır ya da yavaşlatır; `C-4`'te çalınınca bölgesi, şarkının şu anki BPM'inde ve
   Speed'inde tam sayıda satır sürer (şu anki uzunluğuna en yakın 2'nin kuvveti: 8, 16, 32…). O kadar satırda bir çalınınca
   dikişsiz tekrar eder. Görüntü ve ses birlikte hızlanıp yavaşlar, perde de onlarla değişir (repitch). **Base** ve
   **Fine**'ı ayarlar; tempoyu değiştirdikten sonra tekrar bas.
-- **Fine:** FT2'deki gibi ince akort: yarım tonun 1/128'i, −128 ile 127 arası. Klibin kendi perdesi Base artı Fine'dır.
 - **Vol:** `00`–`40`, bu enstrümanın en yüksek sesi. Pattern'deki ses sütunu bunun altında çalar: Vol `20` iken
   ses `40` olan nota `20`, ses `20` olan nota `10` seviyesinde çıkar.
 - **Amp:** FT2'nin sample editöründeki Volume: sample'ın kendisini değiştirir. **Start %** ve **End %** bölgenin başındaki
@@ -322,7 +324,7 @@ ile on kanal iki sütun olur.
 | 2 | Etiket | Kanal numarası, enstrüman adı, nota |
 | 3 | Vuruş parlaması | Karenin kenarı her vuruşta parlar |
 | 4 | İstatistikler | Saniyedeki kare, aktif sesler, önbellekteki kareler, ses gecikmesi ve duyulan pozisyon |
-| 5 | Büyümüş bir kare | Kanal 1 `G21` ile çalıyor, bu yüzden karesi kanal susana kadar iki sütun ve bir satır kaplar |
+| 5 | Büyümüş bir kare | Kanal 1'de bir `G21` çaldı, bu yüzden karesi çaldığı sürece iki sütun ve bir satır kaplar |
 
 Bir kareye tıklayınca kanalı susar, sağ tıklayınca solo olur.
 
@@ -384,7 +386,7 @@ Bir efekt bir harf ve iki hex rakamdır, `xy`. Parametre `00` olursa efekt bir �
 | `Fxx` | Speed / BPM | `01`–`1F` speed'i, `20`–`FF` BPM'i ayarlar |
 | `Sxx` | **Video:** zoom / sarsıntı | Karede bir yumruk etkisi |
 | `Ixx` | **Video:** renk ters çevirme | Renkleri ters çeviren bir parlama |
-| `Gxy` | **Video:** büyüme | Kare, ızgaranın `x` sütun ve `y` satırını kaplayacak şekilde sağa ve aşağı büyür, kanal susana kadar. `0` bütün genişlik ya da yükseklik demek, yani `G00` bütün ekranı kaplar. Altında kalan kareler görünmeden çalmaya devam eder. |
+| `Gxy` | **Video:** büyüme | Kare, ızgaranın `x` sütun ve `y` satırını kaplayacak şekilde sağa ve aşağı büyür. `0` bütün genişlik ya da yükseklik demek, yani `G00` bütün ekranı kaplar. `8xx` gibi bir kanal ayarıdır: bir sonraki `G`'ye kadar geçerli kalır (`G11` karenin kendi hücresi), sessizlikten sonraki notalarda da. Bir notanın kendi satırındaysa o notanın pre-roll'undan itibaren geçerlidir. Kanal sustuğu sürece karesi kendi hücresine döner, ki diğerlerini siyahla örtmesin. Altında kalan kareler görünmeden çalmaya devam eder. |
 
 Sadece videoyu etkileyen efektler pattern'de pembe görünür.
 

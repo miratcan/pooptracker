@@ -148,7 +148,7 @@ test('instruments: a video saved with Save brings all its settings, the loop mod
   await loadFixture(page);
   await page.eval(() => { const e = document.querySelector('#iLoop'); e.value = 'forward'; e.dispatchEvent(new Event('change')); });
   await page.click('#bTune');
-  const saved = [await val(page, '#iBase'), await val(page, '#iFine'), await val(page, '#iLoop')];
+  const saved = [await text(page, '#iTune'), await val(page, '#iLoop')];
   // the saved video goes into a new, empty instrument
   await page.eval(async () => {
     const io = await import('/src/io.js'), { instruments } = await import('/src/core/song.js'), { ed } = await import('/src/ui/common.js');
@@ -161,8 +161,8 @@ test('instruments: a video saved with Save brings all its settings, the loop mod
     dt.items.add(new File([window.savedVideo], 'saved.mp4', { type: 'video/mp4' })); input.files = dt.files; input.dispatchEvent(new Event('change'));
   });
   await page.waitFor(() => /video → saved\.mp4/.test(document.querySelector('#status').textContent), 15000);
-  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine'), await val(page, '#iLoop')], saved);
-  assert.deepEqual(saved, ['A-4', '0', 'forward']);
+  assert.deepEqual([await text(page, '#iTune'), await val(page, '#iLoop')], saved);
+  assert.deepEqual(saved, ['A-4 +0', 'forward']);
 });
 
 test('the song is kept: a reload opens it as it was, its own videos and the demo\'s, instead of the demo', { skip }, async t => {
@@ -184,7 +184,7 @@ test('instruments: Tune finds A-4 in a 440 Hz clip; Fit makes its region last a 
   const page = await app(t);
   await loadFixture(page);
   await page.click('#bTune');
-  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine')], ['A-4', '0']);
+  assert.equal(await text(page, '#iTune'), 'A-4 +0');
   await page.click('#bFit');
   const rows = await page.eval(async () => {
     const { instruments, song } = await import('/src/core/song.js'), { rateFor } = await import('/src/core/instrument.js'), { ed } = await import('/src/ui/common.js');
@@ -192,10 +192,10 @@ test('instruments: Tune finds A-4 in a 440 Hz clip; Fit makes its region last a 
   });
   assert.ok(Math.abs(rows - 64) < 0.02, `${rows} rows`); // 6 s at 125 BPM, speed 6: 50 rows now, 64 the nearest power of two
   await page.key('Mod+KeyZ');
-  assert.equal(await val(page, '#iBase'), 'A-4');
+  assert.equal(await text(page, '#iTune'), 'A-4 +0');
 });
 
-test('instruments: Manual tune moves Base and Fine with the arrow keys; closing makes it one step Ctrl+Z takes back', { skip }, async t => {
+test('instruments: Manual tune moves Base and Fine with the arrow keys (Shift+↑↓ an octave); closing makes it one step Ctrl+Z takes back', { skip }, async t => {
   const page = await app(t);
   await loadFixture(page);
   await page.click('#bTune');
@@ -207,10 +207,15 @@ test('instruments: Manual tune moves Base and Fine with the arrow keys; closing 
   assert.match(await page.eval(() => document.querySelector('#tuneHeard').textContent), /1 semitone flat \(↓\), then 2 cents flat/);
   await page.click('#tLeft'); await page.click('#tLeft');
   await page.click('#tuneDlg .close');
-  await page.waitFor(() => document.querySelector('#iBase').value === 'A#4'); // kept on the dialog's close event, a moment later
-  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine')], ['A#4', '-5']);
+  await page.waitFor(() => document.querySelector('#iTune').textContent === 'A#4 -5'); // kept on the dialog's close event, a moment later
   await page.key('Mod+KeyZ');
-  assert.deepEqual([await val(page, '#iBase'), await val(page, '#iFine')], ['A-4', '0']);
+  assert.equal(await text(page, '#iTune'), 'A-4 +0');
+  // Base and Fine are shown, not typed: a click on them opens Manual, where Shift+↑↓ moves an octave
+  await page.click('#iTune');
+  await page.waitFor(() => document.querySelector('#tuneDlg').open);
+  await page.key('Shift+ArrowUp');
+  await page.click('#tuneDlg .close');
+  await page.waitFor(() => document.querySelector('#iTune').textContent === 'A-5 +0');
 });
 
 test('instruments: Trim cuts the video down to the region, the hit moving with it; Ctrl+Z brings it back', { skip }, async t => {
@@ -350,4 +355,15 @@ test('Save writes over the file the song was opened from, also after a reload; Z
   assert.equal(await bpmInFile(), 150);
   await page.click('#bNew');
   await page.waitFor(() => import('/src/autosave.js').then(a => a.keptHandle()).then(h => h === undefined));
+});
+
+test('− Chn. deletes the last channel (as + Chn. adds one at the end), whichever channel the cursor is in', { skip }, async t => {
+  const page = await app(t);
+  const n = () => page.eval(() => window.pooptracker.song.channels.length);
+  assert.equal(await n(), 4);
+  await page.click('#cAdd'); await page.click('#cAdd');
+  assert.equal(await n(), 6);
+  await page.click('#cDel'); await page.click('#cDel'); // the cursor is in channel 1, which has notes
+  assert.equal(await n(), 4);
+  assert.doesNotMatch(await text(page, '#status'), /isn't empty/);
 });

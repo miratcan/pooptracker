@@ -31,6 +31,11 @@ The first public version.
 - Save writes over the song's file (Chrome, Edge: File System Access), the one it was opened from (Load or a drop) or
   last saved as, also after a reload; no dialog, no download. Shift+click or ⌘/Ctrl+Shift+S saves as another file. A
   song replaced as a whole (Zap, a MIDI import) forgets the file. Safari and Firefox still download.
+- Gxy is a channel setting, like 8xx: it holds until the next G (G11 = the tile's own cell), also for notes after a
+  silence, and carries over when playing from the middle of the song. It used to end when the channel went silent. A
+  silent channel still shows its own cell. On a note's own row it holds from the note's pre-roll on (it began at the hit).
+- − Chn. deletes the last channel (it took the one under the cursor); bare key-offs (===) don't keep a channel from
+  being deleted, and Ctrl+Z brings them back.
 - A busy channel lost notes: with a long pre-roll in the song the notes are scheduled far ahead, and drawing at most 8
   voices a channel dropped the newest, not yet played, and silenced it. Only voices that have started are dropped now.
 - Videos load many times faster (a song of 11 clips: 77 s → 12 s): an MP4's frames (H.264, AV1) are decoded once, in

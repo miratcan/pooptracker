@@ -8,15 +8,25 @@
 /* THE palette: every color the app uses, the canvases too (src/ui/palette.js reads these). Nothing else may
    write a color by hand; a new color is a new line here. */
 :root{
-  /* surfaces, dark to light */
-  --black:#000; --bevelLo:#18282d; --well:#000; --bg:#000; --panel:#497582; --panel2:#497582; --line:#18282d;
-  --faint:#3d3d3d; --bevelHi:#77b5c7;
+  /* surfaces, dark to light (Dark Studio: graphite, after the Google Stitch design) */
+  --black:#000; --bevelLo:#0b0c0e; --well:#111216; --bg:#0f1012; --panel:#181a1f; --panel2:#1e2127; --line:#2d313a;
+  --faint:#4a505c; --bevelHi:#2d313a;
   /* ink */
-  --dim:#d5d5d5; --text:#fff; --white:#fff;
-  /* buttons (FT2): black ink on a grey face, a shade darker while held down */
-  --btn:#9e9e9e; --btnDown:#868686; --btnInk:#000;
+  --dim:#8a92a3; --text:#d4d7e0; --white:#fff;
+  /* buttons: soft matte plastic on the metal, lit from above (--btnTop fading into --btn), a lit top edge (--btnHi), a
+     dark rim (--btnLo); held down, sunk in (--btnDown) */
+  --btnTop:#4b5361; --btn:#414854; --btnDown:#323843; --btnInk:#dde1e8; --btnInkDown:#9097a3; --btnHi:#5d6574; --btnLo:#0b0c0e;
+  --btnFace:linear-gradient(180deg,var(--btnTop),var(--btn));
+  --btnUp:inset 0 1px 0 var(--btnHi),0 1px 2px color-mix(in srgb,var(--black) 70%,transparent);
+  --btnSunk:inset 0 2px 4px color-mix(in srgb,var(--black) 85%,transparent),0 1px 0 color-mix(in srgb,var(--white) 4%,transparent);
   /* accents, and their dark tints for backgrounds */
-  --acc:#ffff82; --accDim:#3a3a1e; --acc2:#8adbf3; --acc2Dim:#18282d; --red:#ff5d5d; --redDim:#3a1d1d; --green:#6bd968; --pink:#e58cff;
+  --acc:#ffb000; --accDim:#3a2a05; --acc2:#00e5ff; --acc2Dim:#0d2a30; --red:#ff6b76; --redDim:#2c1619; --green:#3cd070; --pink:#e040fb;
+  /* brushed metal on the panels: hairline streaks (noise stretched sideways, as a motion blur would) under broad
+     diagonal sheens. Pinned to the window, so panels, frames and the labels cut into them show one sheet, no seams */
+  --metalHair:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0025 0.85' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.16 0 0 0 -0.02'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --metalSheen:linear-gradient(105deg, transparent 8%, color-mix(in srgb,var(--white) 5%,transparent) 22%, transparent 34%,
+    transparent 55%, color-mix(in srgb,var(--white) 4%,transparent) 68%, transparent 80%),
+    linear-gradient(180deg, color-mix(in srgb,var(--white) 3%,transparent), color-mix(in srgb,var(--black) 18%,transparent));
 }
 *{box-sizing:border-box}
 /* IBM VGA 8x16, from The Ultimate Oldschool PC Font Pack (VileR, CC BY-SA 4.0); crisp only at 16px steps */
@@ -29,23 +39,25 @@ html,body{height:100%;overscroll-behavior:none} /* no swipe back off the page */
 header{display:flex;flex-wrap:wrap;gap:6px 9px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--bevelLo);box-shadow:0 1px 0 var(--bevelHi);flex:none}
 header h1{font:inherit;margin:0 0 0 auto;color:var(--acc)} /* auto: pushed to the far right */
 /* a group with a name on its frame, its controls in a row; the frame is cut in (FT2): a dark line, then a light one beside it */
-fieldset{display:flex;gap:3px;align-items:center;margin:0;padding:2px 8px 5px;border:1px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);min-width:0}
+fieldset{display:flex;gap:3px;align-items:center;margin:0;padding:2px 8px 5px;border:3px solid var(--bevelLo);box-shadow:1px 1px 0 var(--bevelHi),inset 1px 1px 0 var(--bevelHi);min-width:0}
 fieldset legend{padding:0;background:var(--panel);color:var(--dim);font:8px dos8;text-transform:uppercase}
 fieldset legend label{color:inherit}
-/* a hard bevel, like a DOS program (FT2): flat grey face, a 1px black frame, inside it a 1px white edge top/left and a
-   1px dark edge bottom/right; 3px corners, no blur, no gradient, no hover; held down, the edges swap */
-button{background:var(--btn);color:var(--btnInk);border:1px solid var(--black);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);border-radius:3px;padding:2px 7px;font:inherit;cursor:pointer}
+/* soft plastic keys on the brushed metal: a matte face lit from above, a lit top edge, a dark rim and a soft shadow
+   under it; rounded corners, no hover; held down, it sinks in */
+button{background:var(--btnFace);color:var(--btnInk);border:1px solid var(--btnLo);box-shadow:var(--btnUp);border-radius:5px;padding:2px 7px;font:inherit;cursor:pointer}
 /* a key that is in effect stays down, like a tape deck's: a playing ▶ until Stop, the open screen until the other one */
-button:active,button.down{background:var(--btnDown);box-shadow:inset 1px 1px 0 var(--faint),inset -1px -1px 0 var(--white);padding:3px 6px 1px 8px}
+button:active,button.down{background:var(--btnDown);color:var(--btnInkDown);box-shadow:var(--btnSunk);padding:3px 7px 1px}
 button:disabled{color:var(--faint);cursor:default}
-button:disabled:active{background:var(--btn);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);padding:2px 7px}
+button:disabled:active{background:var(--btnFace);box-shadow:var(--btnUp);padding:2px 7px}
 input{background:var(--well);color:var(--text);border:1px solid var(--line);padding:3px 5px;font:inherit}
-/* a dropdown is a button (same face, frame and bevel) with our own arrow: the browser's can't be moved off the right
+/* a dropdown is a button (same face, rim and shadow) with our own arrow: the browser's can't be moved off the right
    edge (a sharp pixel triangle, like the rest) */
-select{-webkit-appearance:none;appearance:none;color:var(--btnInk);border:1px solid var(--black);box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint);border-radius:3px;padding:2px 22px 2px 7px;font:inherit;cursor:pointer;background-color:var(--btn);background-image:linear-gradient(45deg,transparent 50%,var(--btnInk) 50%),linear-gradient(135deg,var(--btnInk) 50%,transparent 50%);background-size:5px 5px;background-position:right 13px center,right 8px center;background-repeat:no-repeat}
+select{-webkit-appearance:none;appearance:none;color:var(--btnInk);border:1px solid var(--btnLo);box-shadow:var(--btnUp);border-radius:5px;padding:2px 22px 2px 7px;font:inherit;cursor:pointer;background-color:var(--btn);background-image:linear-gradient(45deg,transparent 50%,var(--btnInk) 50%),linear-gradient(135deg,var(--btnInk) 50%,transparent 50%),var(--btnFace);background-size:5px 5px,5px 5px,100% 100%;background-position:right 13px center,right 8px center,0 0;background-repeat:no-repeat}
 /* text fields are sunk in: the reverse of a button's bevel (dark top/left, light bottom/right) */
 input:not([type=checkbox]):not([type=range]){border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo)}
 input[type=number]{width:60px}
+/* a value shown, not typed: a well like an input's; a click opens what changes it */
+.readout,.readout:active{background:var(--well);color:var(--text);border:1px solid;border-color:var(--bevelLo) var(--bevelHi) var(--bevelHi) var(--bevelLo);border-radius:0;box-shadow:none;padding:3px 5px;min-width:9ch;text-align:left}
 /* no spinner arrows: values are typed (or changed with ↑↓ while the field has focus) */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -71,8 +83,8 @@ label{color:var(--dim);display:inline-flex;align-items:center;gap:3px} /* the ga
 /* scroll bars as FT2's: a grey thumb with the button's frame and bevel, in a black well (held: pressed in). Chrome
    ignores these once scrollbar-color is set, so that is only for the browsers without them (Firefox) */
 ::-webkit-scrollbar{width:12px;height:12px;background:var(--well)}
-::-webkit-scrollbar-thumb{background:var(--btn);border:1px solid var(--black);border-radius:3px;box-shadow:inset 1px 1px 0 var(--white),inset -1px -1px 0 var(--faint)}
-::-webkit-scrollbar-thumb:active{background:var(--btnDown);box-shadow:inset 1px 1px 0 var(--faint),inset -1px -1px 0 var(--white)}
+::-webkit-scrollbar-thumb{background:var(--btnFace);border:1px solid var(--btnLo);border-radius:5px;box-shadow:var(--btnUp)}
+::-webkit-scrollbar-thumb:active{background:var(--btnDown);box-shadow:var(--btnSunk)}
 ::-webkit-scrollbar-corner{background:var(--well)}
 @supports not selector(::-webkit-scrollbar){*{scrollbar-color:var(--btn) var(--well)}}
 #ordList{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;margin-bottom:6px;padding:2px}
@@ -103,7 +115,6 @@ label{color:var(--dim);display:inline-flex;align-items:center;gap:3px} /* the ga
 #instList{display:flex;flex-direction:column;gap:4px;flex:1 1 0;min-height:0;overflow:auto;padding:3px}
 .btnRow{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .dim{color:var(--dim)}
-.legend{margin-top:4px}
 .ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #instEd .cardHead{flex-wrap:nowrap}
 #instEd input[type=number]{width:60px}
@@ -141,10 +152,10 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 .tunePad{display:grid;grid-template-columns:repeat(3,28px);grid-template-rows:repeat(3,24px);gap:2px;flex:none}
 .tunePad button,.tunePad button:active,.tunePad button.down{padding:0}
 #tUp{grid-area:1/2}#tLeft{grid-area:2/1}#tPlay{grid-area:2/2}#tRight{grid-area:2/3}#tDown{grid-area:3/2}
-#tuneDlg .tuneHint{margin:0;padding:4px 8px 6px;font-size:11px;color:var(--dim);border-top:1px solid var(--bevelLo)}
+#tuneDlg .tuneHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 .ampBody{padding:8px 8px 0}
 #ampNow{margin-bottom:8px}
-#ampDlg .ampHint{margin:0;padding:4px 8px 6px;font-size:11px;color:var(--dim);border-top:1px solid var(--bevelLo)}
+#ampDlg .ampHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 #opening .openBody{padding:8px}
 #openNow{font:8px/1.6 dos8;color:var(--acc);padding:4px 6px;min-height:3.2em;overflow-wrap:anywhere}
 .openMeter{height:14px;margin-top:6px;padding:1px}
@@ -163,6 +174,8 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 #status a{color:var(--acc)}
 kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:0 4px;color:var(--text)}
 #drop{position:fixed;inset:0;background:color-mix(in srgb,var(--acc2) 15%,transparent);border:3px dashed var(--acc2);display:none;align-items:center;justify-content:center;font:16px dos8;color:var(--white);z-index:20;pointer-events:none}
+/* brushed metal (--metalHair, --metalSheen) on every panel surface */
+header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed,var(--metalSheen) fixed,var(--panel)}
 </style>
 </head>
 <body>
@@ -213,7 +226,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
         <button id="pDel" title="Delete the pattern (if the order doesn't use it)">Del.</button>
         <label>Length<input id="pLen" type="number" min="1" max="256" style="width:52px"></label>
         <button id="cAdd" title="Add a channel at the end (up to 10)" style="margin-left:auto">+ Chn.</button>
-        <button id="cDel" title="Delete the channel under the cursor (if empty)">− Chn.</button>
+        <button id="cDel" title="Delete the last channel, if nothing in it plays (bare key-offs, ===, don't count)">− Chn.</button>
       </div>
       <div id="patBox" class="well"><canvas id="pat" tabindex="0" aria-label="Pattern editor"></canvas></div>
     </div>
@@ -260,13 +273,12 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <label title="A/V offset (ms): fixes a video whose audio track is shifted">A/V ms<input id="iAV" type="number" step="1" style="width:52px"></label>
     </fieldset>
     <fieldset><legend>Tune</legend>
-      <label title="Base note: at this note the clip plays at its original speed (↑↓ a semitone, Shift+↑↓ an octave)">Base<input id="iBase" style="width:48px" title="At this note the clip plays at its original speed (↑↓ a semitone, Shift+↑↓ an octave)"></label>
-      <label title="Finetune, as in FT2: 1/128 of a semitone (-128–127). The clip's own pitch is Base plus this.">Fine<input id="iFine" type="number" min="-128" max="127" step="1" style="width:52px"></label>
+      <button id="iTune" class="readout" title="Base note and finetune. At the base note the clip plays at its original speed; its own pitch is Base plus Fine (1/128 of a semitone, as in FT2). Auto or Manual set them; a click here opens Manual" aria-label="Base note and finetune (opens Manual)"></button>
       <button id="bTune" title="Find the clip's pitch and set Base and Fine to it, so the notes you write sound as written (the clip itself is not changed)">Auto</button>
       <button id="bTuneMan" title="Tune by ear: the instrument and a reference C-4 play together; move Base and Fine until they sound the same">Manual</button>
     </fieldset>
     <fieldset><legend>Region</legend>
-      <input id="iStart" type="number" step="0.001" min="0" title="Region start and end (seconds)" aria-label="Region start (s)"> – <input id="iEnd" type="number" step="0.001" min="0" aria-label="Region end (s)">
+      <input id="iStart" type="number" step="0.001" min="0" title="Region start and end (seconds)" aria-label="Region start (s)"> : <input id="iEnd" type="number" step="0.001" min="0" aria-label="Region end (s)">
       <button id="bTrimInst" title="Cut the video down to the region and throw the rest away (not re-encoded; it plays the same, the song file gets smaller; Ctrl+Z brings it back)">Trim</button>
     </fieldset>
     <fieldset><legend>Hit</legend>
@@ -284,8 +296,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
     </fieldset>
     </div>
-    <div id="waveWrap"><canvas id="wave"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
-    <div class="dim legend ell">Drag: <span style="color:var(--acc)">region</span> · <span style="color:var(--red)">hit</span> · <span style="color:var(--green)">loop</span> · click empty space = hit · dark = outside the region · blue = pre-roll</div>
+    <div id="waveWrap"><canvas id="wave" title="Drag the region (yellow), hit (red) and loop (green) handles; click empty space: the hit goes there. Dark: outside the region; blue: pre-roll"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
   </section>
 </div>
 </div>
@@ -317,7 +328,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <p class="dim">On a Mac the F keys need <kbd>fn</kbd> (unless "Use F1, F2… as standard function keys" is on).</p>
   <p><b>Effects:</b> 3xx tone porta · 4xy vibrato · 8xx pan · 9xx sample offset (xx/256 of the region, no pre-roll) ·
   Axy vol slide · E9x retrig (stutter from the hit) · ECx note cut · EDx note delay · Fxx speed/BPM ·
-  <b style="color:var(--pink)">Video only:</b> Sxx zoom/shake punch · Ixx color-invert flash · Gxy the tile grows over x columns, y rows (rightwards and down; 0 = all, G00 full screen) until the channel goes silent.</p>
+  <b style="color:var(--pink)">Video only:</b> Sxx zoom/shake punch · Ixx color-invert flash · Gxy the tile grows over x columns, y rows (rightwards and down; 0 = all, G00 full screen) and stays so until the next G (G11: its own cell); while the channel is silent it shows its own cell.</p>
   <p><b>What you see:</b> volume × envelope = brightness · pitch = video speed (C-5 twice as fast, C-3 half-speed slow motion) · vibrato makes the video wobble too.</p>
   <p><b>Adding videos:</b> drop a video on the page → new instrument · drop a <code>.poop</code> → open the song.</p>
   <p><b>Bench</b> (<kbd>⌘/Ctrl</kbd>+<kbd>B</kbd>, a long video in, pieces out as instruments): <kbd>Space</kbd> play/pause · <kbd>←→</kbd> 1 s · <kbd>Shift</kbd>+<kbd>←→</kbd> 10 s · <kbd>,</kbd> <kbd>.</kbd> a frame ·
@@ -334,14 +345,14 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
       <p id="tuneHeard"></p>
     </div>
     <div class="tunePad">
-      <button id="tUp" title="A semitone up (↑)" aria-label="A semitone up">↑</button>
+      <button id="tUp" title="A semitone up (↑; Shift+↑ an octave)" aria-label="A semitone up">↑</button>
       <button id="tLeft" title="Finetune down, ~3 cents (←; Shift: 1/128 semitone)" aria-label="Finetune down">←</button>
       <button id="tPlay" title="Play both again (Space)" aria-label="Play again">▶</button>
       <button id="tRight" title="Finetune up, ~3 cents (→; Shift: 1/128 semitone)" aria-label="Finetune up">→</button>
-      <button id="tDown" title="A semitone down (↓)" aria-label="A semitone down">↓</button>
+      <button id="tDown" title="A semitone down (↓; Shift+↓ an octave)" aria-label="A semitone down">↓</button>
     </div>
   </div>
-  <p class="tuneHint">Each key plays the instrument and a reference C-4 together: move it until they sound as one.</p>
+  <p class="tuneHint">Each key plays the instrument and a reference C-4 together: move it until they sound as one. Shift+↑↓ moves an octave.</p>
 </dialog>
 <dialog id="ampDlg" class="win" aria-labelledby="ampTitle">
   <form method="dialog" class="winHead"><span id="ampTitle">Amplify the sample</span><button class="close" aria-label="Close">✕</button></form>
@@ -369,12 +380,12 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 {
   "imports": {
     "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
-    "./src/core/commands.js": "./src/core/commands.js?v=8c863a033d",
+    "./src/core/commands.js": "./src/core/commands.js?v=96bf6b4faf",
     "./src/core/instrument.js": "./src/core/instrument.js?v=ac54af4bad",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
-    "./src/engine/player.js": "./src/engine/player.js?v=62ec7ee5a0",
+    "./src/engine/player.js": "./src/engine/player.js?v=7aa77e8bdb",
     "./src/engine/voice.js": "./src/engine/voice.js?v=0ea7fb10a4",
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=45d9658b67",
@@ -388,13 +399,13 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=5498e24b49",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=2b75beedfd",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=14950eb71a",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=18bf427176",
     "./src/ui/screens.js": "./src/ui/screens.js?v=d4ca41dbe0",
-    "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
+    "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=4a851cc54d",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
     "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
     "./src/util.js": "./src/util.js?v=bffb1cb8ec",

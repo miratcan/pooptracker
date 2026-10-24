@@ -1,6 +1,6 @@
 // The instrument panel: the list of instruments, their settings and the waveform editor.
 // Sliders and waveform drags preview live and become ONE command when released.
-import { clamp, hex2, noteName, parseNote, round3, copy } from '../util.js';
+import { clamp, hex2, noteName, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
 import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, noteOfHz, fitFor, loops } from '../core/instrument.js';
 import { setInstrument, addInstrument, deleteInstrument, moveInstrument } from '../core/commands.js';
@@ -24,7 +24,7 @@ function refreshInstList() {
 }
 export function selectInst(idx) {
   ed.inst = idx; const I = curInst(); if (!I) return;
-  $('#iName').value = I.name; $('#iBase').value = noteName(I.baseNote); $('#iFine').value = I.fine; $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
+  $('#iName').value = I.name; $('#iTune').textContent = tuneTxt(I); $('#iVol').value = hex2(I.vol); $('#iRev').value = hex2(I.reverb);
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
@@ -33,23 +33,9 @@ export function selectInst(idx) {
 }
 const instCmd = (fields, label, before) => run(() => setInstrument(ed.inst, fields, label, before));
 $('#iName').onchange = e => instCmd({ name: e.target.value }, 'name');
-$('#iBase').onchange = e => {
-  const n = parseNote(e.target.value);
-  if (n < 0 || n > 95) { showError(`base note '${e.target.value}' is invalid (C-0…B-7)`); refreshUI(); } else instCmd({ baseNote: n }, 'base note');
-};
-// Up/Down in the field: a semitone up or down (with Shift an octave), right away
-$('#iBase').onkeydown = e => {
-  const d = { ArrowUp: 1, ArrowDown: -1 }[e.key] * (e.shiftKey ? 12 : 1); const I = curInst();
-  if (!d || !I || e.altKey || e.metaKey || e.ctrlKey) return;
-  e.preventDefault();
-  const typed = parseNote(e.target.value), n = clamp((typed >= 0 && typed <= 95 ? typed : I.baseNote) + d, 0, 95);
-  e.target.value = noteName(n);
-  if (n !== I.baseNote) instCmd({ baseNote: n }, 'base note');
-};
-$('#iFine').onchange = e => {
-  const n = +e.target.value;
-  if (!Number.isInteger(n) || n < -128 || n > 127) { showError(`finetune '${e.target.value}' is invalid (-128–127, integer)`); refreshUI(); } else instCmd({ fine: n }, 'finetune');
-};
+// Base and Fine are shown, not typed: Auto, Manual (a click on them opens it) and Fit set them
+const tuneTxt = I => `${noteName(I.baseNote)} ${I.fine >= 0 ? '+' : ''}${I.fine}`;
+$('#iTune').onclick = () => $('#bTuneMan').click();
 // Tune: the pitch heard after the hit becomes Base + Fine (a bend in the clip stays: one pitch for the whole instrument)
 $('#bTune').onclick = () => {
   const I = curInst(); if (!I) return;
@@ -96,7 +82,8 @@ tuneDlg.addEventListener('close', () => {
 const TUNE_KEYS = { ArrowUp: [1, 0, 'tUp'], ArrowDown: [-1, 0, 'tDown'], ArrowRight: [0, 4, 'tRight'], ArrowLeft: [0, -4, 'tLeft'], Space: [0, 0, 'tPlay'] };
 tuneDlg.addEventListener('keydown', e => {
   const k = TUNE_KEYS[e.code]; if (!k || e.altKey || e.metaKey || e.ctrlKey) return;
-  e.preventDefault(); $('#' + k[2]).classList.add('down'); tuneBy(k[0], e.shiftKey ? Math.sign(k[1]) : k[1]);
+  // Shift: ↑↓ an octave, ←→ the smallest finetune step
+  e.preventDefault(); $('#' + k[2]).classList.add('down'); tuneBy(e.shiftKey ? k[0] * 12 : k[0], e.shiftKey ? Math.sign(k[1]) : k[1]);
 });
 tuneDlg.addEventListener('keyup', e => { const k = TUNE_KEYS[e.code]; if (k) $('#' + k[2]).classList.remove('down'); });
 [['tUp', 1, 0], ['tDown', -1, 0], ['tRight', 0, 4], ['tLeft', 0, -4], ['tPlay', 0, 0]].forEach(([id, s, f]) => { $('#' + id).onclick = () => tuneBy(s, f); });

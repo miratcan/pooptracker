@@ -104,7 +104,7 @@ The song plays patterns in the order set in the [order list](#the-order-list).
 | 1 | Pattern number | The pattern you are editing. ◀ ▶ step through the patterns. |
 | 2 | **New / Dup. / Del.** | New: a new empty pattern of the same length. Dup.: a copy of this one. Del.: deletes it, if the order doesn't use it. |
 | 3 | **Length** | Rows in this pattern, 1–256. |
-| 4 | **+ Chn. / − Chn.** | Adds a channel at the end (up to 10) / deletes the channel under the cursor (only if it is empty). |
+| 4 | **+ Chn. / − Chn.** | Adds a channel at the end (up to 10) / deletes the last channel (only if nothing in it plays: bare key-offs, `===`, don't count). |
 | 5 | Channel header | Click it to mute the channel. Right-click it to solo the channel. Right-click again to bring all channels back. |
 | 6 | Row number | In hex (`00`–`0F` in a 16-row pattern). |
 | 7 | **Note** | `C-4`, `C#4`… or `===` (key-off: the note releases). `...` is empty. |
@@ -256,15 +256,16 @@ Levels are hex, like in the pattern (`00`–`40`). Times are decimal seconds.
 
 **Sample**
 - **Name:** up to 16 characters. It is shown on the tile.
-- **Base:** at this note the clip plays at its original speed (usually `C-4`).
-- **Tune:** finds the pitch of the clip after its hit and sets **Base** and **Fine** to it, so the notes you write
-  sound as written. The clip itself is not changed, and a bend in it stays: the instrument gets one pitch. A noisy sound
-  (a snare, a hi-hat) has no clear pitch, and then nothing changes; a kick or a tom has one.
+- **Tune** (its own box): the base note and the finetune, e.g. `C-4 +0`. At the base note the clip plays at its original
+  speed; its own pitch is Base plus Fine (1/128 of a semitone, −128 to 127, as in FT2). They are shown, not typed.
+  **Auto** finds the pitch of the clip after its hit and sets them, so the notes you write sound as written. The clip
+  itself is not changed, and a bend in it stays: the instrument gets one pitch. A noisy sound (a snare, a hi-hat) has no
+  clear pitch, and then nothing changes; a kick or a tom has one. **Manual** (or a click on the value) tunes by ear: the
+  instrument and a reference `C-4` play together; ↑↓ a semitone, Shift+↑↓ an octave, ←→ the finetune.
 - **Fit:** for loops. Speeds the clip up or slows it down so that, played at `C-4`, its region lasts a whole number of
   rows at the current BPM and speed (the power of two nearest to its length now: 8, 16, 32…). Played every that many
   rows, it repeats seamlessly. Picture and sound change speed together, so the pitch moves with them (repitch). It sets
   **Base** and **Fine**; press it again after changing the tempo.
-- **Fine:** finetune, as in FT2: 1/128 of a semitone, −128 to 127. The clip's own pitch is Base plus Fine.
 - **Vol:** `00`–`40`, the loudest this instrument gets. The pattern's volume column plays under it: with Vol `20`,
   volume `40` sounds at `20` and volume `20` sounds at `10`.
 - **Amp:** FT2's sample editor Volume: changes the sample itself. **Start %** and **End %** are the gain at the start
@@ -310,7 +311,7 @@ channels make two columns.
 | 2 | Label | Channel number, instrument name, note |
 | 3 | Hit flash | The tile's border flashes on every hit |
 | 4 | Stats | Frames per second, active voices, cached frames, audio latency, and the position being heard |
-| 5 | A grown tile | Channel 1 plays with `G21`, so its tile covers two columns and one row until the channel goes silent |
+| 5 | A grown tile | Channel 1 played a `G21`, so its tile covers two columns and one row while it sounds |
 
 Click a tile to mute its channel, and right-click it to solo the channel.
 
@@ -369,7 +370,7 @@ An effect is a letter and two hex digits, `xy`. With parameter `00`, an effect r
 | `Fxx` | Speed / BPM | `01`–`1F` sets the speed, `20`–`FF` sets the BPM |
 | `Sxx` | **Video:** zoom / shake | A punch on the tile |
 | `Ixx` | **Video:** invert | A color-invert flash |
-| `Gxy` | **Video:** grow | The tile grows over `x` columns and `y` rows of the grid, rightwards and down, until the channel goes silent. `0` means the whole width or height, so `G00` fills the screen. The tiles it covers keep playing, unseen. |
+| `Gxy` | **Video:** grow | The tile grows over `x` columns and `y` rows of the grid, rightwards and down. `0` means the whole width or height, so `G00` fills the screen. It is a channel setting, like `8xx`: it holds until the next `G` (`G11` is the tile's own cell), also for notes after a silence. On a note's own row it holds from the note's pre-roll on. While the channel is silent its tile is its own cell again, so it doesn't cover the others in black. The tiles it covers keep playing, unseen. |
 
 Video-only effects are drawn in pink in the pattern.
 
