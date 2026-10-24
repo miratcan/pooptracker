@@ -169,7 +169,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <div id="shell">
 <header>
   <fieldset><legend>Module</legend>
-    <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S">Save</button>
+    <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S: over the file it was opened from (Chrome, Edge), else it asks where. Shift+click or ⌘/Ctrl+Shift+S: save as another file">Save</button>
     <input id="songFile" type="file" accept=".poop,.mid,.midi" hidden>
     <input id="tTitle" maxlength="64" style="width:160px" placeholder="song title" aria-label="Song title">
   </fieldset>
@@ -313,7 +313,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   <kbd>Shift</kbd>+<kbd>Backspace</kbd> delete row (pull up) · type hex in the inst/vol/effect columns.</p>
   <p><b>Blocks:</b> <kbd>Alt</kbd>+arrow keys (or <kbd>Shift</kbd>+<kbd>PgUp</kbd>/<kbd>PgDn</kbd>/<kbd>Home</kbd>/<kbd>End</kbd>) or drag with the mouse = select · <kbd>⌘/Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> or <kbd>Alt</kbd>+<kbd>F4</kbd> / <kbd>F3</kbd> / <kbd>F5</kbd> copy / cut / paste (at the cursor; edit mode on or off) ·
   <kbd>Shift</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the channel · <kbd>⌘/Ctrl</kbd>+<kbd>F3</kbd>/<kbd>F4</kbd>/<kbd>F5</kbd> the pattern · <kbd>Del</kbd> delete selection · <kbd>Esc</kbd> drop selection ·
-  <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>⌘/Ctrl</kbd>+<kbd>S</kbd> save the song · <kbd>⌘/Ctrl</kbd>+<kbd>O</kbd> load a song.</p>
+  <kbd>⌘/Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>⌘/Ctrl</kbd>+<kbd>S</kbd> save the song (over its file) · <kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> save as · <kbd>⌘/Ctrl</kbd>+<kbd>O</kbd> load a song.</p>
   <p class="dim">On a Mac the F keys need <kbd>fn</kbd> (unless "Use F1, F2… as standard function keys" is on).</p>
   <p><b>Effects:</b> 3xx tone porta · 4xy vibrato · 8xx pan · 9xx sample offset (xx/256 of the region, no pre-roll) ·
   Axy vol slide · E9x retrig (stutter from the hit) · ECx note cut · EDx note delay · Fxx speed/BPM ·
@@ -368,17 +368,17 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
 <script type="importmap">
 {
   "imports": {
-    "./src/autosave.js": "./src/autosave.js?v=79fa4d2284",
+    "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
     "./src/core/commands.js": "./src/core/commands.js?v=8c863a033d",
     "./src/core/instrument.js": "./src/core/instrument.js?v=ac54af4bad",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
     "./src/engine/player.js": "./src/engine/player.js?v=62ec7ee5a0",
-    "./src/engine/voice.js": "./src/engine/voice.js?v=5670a72365",
+    "./src/engine/voice.js": "./src/engine/voice.js?v=0ea7fb10a4",
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=45d9658b67",
-    "./src/main.js": "./src/main.js?v=823f2dc36a",
+    "./src/main.js": "./src/main.js?v=722ebfda5f",
     "./src/mcp.js": "./src/mcp.js?v=2aba96cf72",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
@@ -387,13 +387,13 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
     "./src/ui/bench.js": "./src/ui/bench.js?v=dc17dc929a",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=c354ce369e",
+    "./src/ui/files.js": "./src/ui/files.js?v=5498e24b49",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=2b75beedfd",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=18bf427176",
-    "./src/ui/screens.js": "./src/ui/screens.js?v=918eddf4a8",
+    "./src/ui/screens.js": "./src/ui/screens.js?v=d4ca41dbe0",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=81fc7cdc1f",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
     "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
@@ -402,6 +402,6 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2p
   }
 }
 </script>
-<script type="module" src="src/main.js?v=823f2dc36a"></script>
+<script type="module" src="src/main.js?v=722ebfda5f"></script>
 </body>
 </html>

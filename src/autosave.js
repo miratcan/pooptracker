@@ -7,7 +7,7 @@ import { song, instruments, videos } from './core/song.js';
 import { onChange } from './core/commands.js';
 import { decodeVideo, openSongZip } from './io.js';
 
-const DB = 'pooptracker', STORE = 'autosave', SONG = 'song', WAIT = 1000; // ms after the last change
+const DB = 'pooptracker', STORE = 'autosave', SONG = 'song', HANDLE = 'handle', WAIT = 1000; // ms after the last change
 const ids = new WeakMap(); // video file → its key in the store
 let nextId = Date.now();
 const idOf = file => { if (!ids.has(file)) ids.set(file, `file:${(nextId++).toString(36)}`); return ids.get(file); };
@@ -41,7 +41,7 @@ export async function save() {
   const tx = d.transaction(STORE, 'readwrite'), st = tx.objectStore(STORE);
   st.put({ text, files: Object.keys(files) }, SONG);
   for (const [k, f] of Object.entries(files)) if (!kept.has(k)) st.put(f, k);
-  for (const k of kept) if (k !== SONG && !(k in files)) st.delete(k);
+  for (const k of kept) if (k !== SONG && k !== HANDLE && !(k in files)) st.delete(k);
   await done(tx);
 }
 
@@ -63,6 +63,14 @@ export async function restore(progress) {
   if (res.errors) throw new Error(res.errors.join('\n'));
   return true;
 }
+
+// the song's file (a FileSystemFileHandle, see ui/files.js), kept beside it so a reload still saves over it; null: none
+export async function keepHandle(handle) {
+  const tx = (await openDb()).transaction(STORE, 'readwrite'), st = tx.objectStore(STORE);
+  if (handle) st.put(handle, HANDLE); else st.delete(HANDLE);
+  await done(tx);
+}
+export async function keptHandle() { return result((await openDb()).transaction(STORE).objectStore(STORE).get(HANDLE)); }
 
 // from now on, every change is kept a moment after it settles, and right away when the page goes away
 export function keep() {

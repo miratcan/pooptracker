@@ -28,6 +28,11 @@ The first public version.
 - Amp (FT2's sample editor Volume): Start % and End % (0–200) amplify, fade in or fade out the sample itself, step by
   step; past full scale it clips, on purpose. Kept as `amp=` steps in the instrument line (the video file is untouched),
   MCP amplify_instrument. Opening a song now shows how far it has got in a window in the middle, not only in the status bar.
+- Save writes over the song's file (Chrome, Edge: File System Access), the one it was opened from (Load or a drop) or
+  last saved as, also after a reload; no dialog, no download. Shift+click or ⌘/Ctrl+Shift+S saves as another file. A
+  song replaced as a whole (Zap, a MIDI import) forgets the file. Safari and Firefox still download.
+- A busy channel lost notes: with a long pre-roll in the song the notes are scheduled far ahead, and drawing at most 8
+  voices a channel dropped the newest, not yet played, and silenced it. Only voices that have started are dropped now.
 - Videos load many times faster (a song of 11 clips: 77 s → 12 s): an MP4's frames (H.264, AV1) are decoded once, in
   order, with WebCodecs, instead of seeking to each one (a seek decodes again from the keyframe before it; a 4K AV1 clip
   took a quarter of a second a frame). The frames are the ones a seek shows, also where a piece's edit list starts in the

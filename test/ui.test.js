@@ -320,3 +320,34 @@ test('frames decoded in order (WebCodecs) are the frames a seek shows: a whole v
   });
   assert.deepEqual(res, { whole: [], 'h264 piece': [], 'av1 piece': [] });
 });
+
+test('Save writes over the file the song was opened from, also after a reload; Zap forgets the file', { skip: cdp }, async t => {
+  const page = await app(t);
+  await page.click('#bNew'); // Zap: the demo's instruments have no video file and can't be saved
+  await page.setFiles('#file', [`${FIXTURES}/av.mp4`]);
+  await page.waitFor(() => /av\.mp4 loaded/.test(document.querySelector('#status').textContent), 15000);
+  // a file with a handle, as Load or a drop gives one in Chrome (here from the page's private file system)
+  await page.eval(async () => {
+    const { buildSong } = await import('/src/io.js'), { openSong } = await import('/src/ui/files.js');
+    const h = await (await navigator.storage.getDirectory()).getFileHandle('test.poop', { create: true });
+    const w = await h.createWritable(); await w.write(await buildSong()); await w.close();
+    await openSong(await h.getFile(), h);
+  });
+  assert.match(await text(page, '#status'), /Opened: test\.poop.*Save writes over it/);
+  const bpmInFile = () => page.eval(async () => {
+    const PT = (await import('/src/ptformat.js')).default, h = await (await navigator.storage.getDirectory()).getFileHandle('test.poop');
+    const zip = await PT.unzip(new Uint8Array(await (await h.getFile()).arrayBuffer()));
+    return +/bpm=(\d+)/.exec(new TextDecoder().decode(zip.get('song.txt')))[1];
+  });
+  const setBpm = bpm => page.eval(async b => { const c = await import('/src/core/commands.js'); c.exec(() => c.setSong({ bpm: b }, 'bpm')); }, bpm);
+  const save = async () => { await page.key('Mod+KeyS'); await page.waitFor(() => /^Saved over test\.poop/.test(document.querySelector('#status').textContent), 15000); };
+  await setBpm(140); await save();
+  assert.equal(await bpmInFile(), 140);
+  await sleep(1500); // the song is kept a moment after the last change
+  await page.reload();
+  await page.waitFor(() => /back where you left off/.test(document.querySelector('#status').textContent), SLOW);
+  await setBpm(150); await save();
+  assert.equal(await bpmInFile(), 150);
+  await page.click('#bNew');
+  await page.waitFor(() => import('/src/autosave.js').then(a => a.keptHandle()).then(h => h === undefined));
+});

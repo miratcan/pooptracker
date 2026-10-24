@@ -399,6 +399,11 @@ Sadece videoyu etkileyen efektler pattern'de pembe görünür.
 orijinal videoları tutan bir zip'tir ([ZEN-PLAIN-TEXT](ZEN.md)). **Load** (⌘/Ctrl+O) ya da dosyayı sayfaya bırakmak
 onu açar. Anlamsız bir dosya reddedilir ve durum çubuğu sorunun nerede olduğunu söyler ([ZEN-EXPLICIT](ZEN.md)).
 
+Chrome ve Edge'de **Save**, şarkıyı açtığın dosyanın üstüne yazar: diyalog da indirme de olmaz (tarayıcı izni bir kere
+sorar). Sayfa yenilense de aynı dosyaya yazar. Henüz bir dosyası olmayan şarkıda (Zap'ten sonra, MIDI'den gelen) nereye
+kaydedileceği sorulur, o dosya da artık şarkının dosyası olur. Başka bir dosyaya kaydetmek için Shift+tık ya da
+⌘/Ctrl+Shift+S. Safari ve Firefox'ta Save, eskisi gibi dosyayı indirir.
+
 ### Enstrüman videoları
 
 Enstrüman listesinin altındaki **Save**, enstrümanın videosunu ayarları içinde olacak şekilde yazar (MP4/MOV

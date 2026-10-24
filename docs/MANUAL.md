@@ -385,6 +385,11 @@ Video-only effects are drawn in pink in the pattern.
 the page opens it. A file that doesn't make sense is refused, and the status bar says where the problem is
 ([ZEN-EXPLICIT](ZEN.md)).
 
+In Chrome and Edge, **Save** writes over the file the song was opened from: no dialog and no download (the browser
+asks for permission once). It still does after a reload. A song with no file yet (after Zap, from a MIDI file) asks
+where to save, and that file is the song's from then on. Shift+click or ⌘/Ctrl+Shift+S saves it as another file. In
+Safari and Firefox, Save downloads the file as before.
+
 ### Instrument videos
 
 **Save** under the instrument list writes the instrument's video with its settings inside (MP4/MOV metadata). If you

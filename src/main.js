@@ -17,7 +17,7 @@ import { refreshSongPanel, followOrd } from './ui/songPanel.js';
 import { refreshInstrumentPanel } from './ui/instrumentPanel.js';
 import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
-import './ui/files.js';
+import { setSongFile } from './ui/files.js';
 import './ui/bug.js';
 import { askManual } from './ui/welcome.js';
 import { opening } from './ui/opening.js';
@@ -47,6 +47,7 @@ setGlobalKeys({
   'Mod+KeyB': () => showScreen(activeScreen() === benchScreen ? patternScreen : benchScreen),
   // the browser's own Save / Open would save the page itself, not the song
   'Mod+KeyS': () => $('#bSave').click(),
+  'Mod+Shift+KeyS': () => $('#bSave').dispatchEvent(new MouseEvent('click', { shiftKey: true })),
   'Mod+KeyO': () => $('#bOpen').click(),
 });
 $('#bScreenPat').onclick = () => showScreen(patternScreen);
@@ -87,8 +88,10 @@ async function boot() {
   await loadDemo(ctx.sampleRate);
   // the song from last time, if there is one, opens in place of the demo
   let back = false;
-  try { back = await opening('Opening the song from last time', autosave.restore); }
+  let handle = null;
+  try { handle = await autosave.keptHandle(); back = await opening('Opening the song from last time', autosave.restore); }
   catch (err) { console.warn("Couldn't open the song from last time:", err); }
+  if (back && handle) setSongFile(handle); // the song's file, as before the reload
   autosave.keep();
   requestAnimationFrame(loop);
   startMcp();
