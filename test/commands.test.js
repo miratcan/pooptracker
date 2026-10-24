@@ -39,6 +39,17 @@ test('a channel with notes in it is not deleted', () => {
   C.undo(); assert.equal(song.patterns[0].rows[0].length, 4);
 });
 
+test('a channel holding only bare key-offs (===) is deleted, and Ctrl+Z brings them back; one with an effect on it is not', () => {
+  const KEYOFF = 97;
+  C.exec(() => C.setCells([{ pat: 0, row: 4, ch: 3, n: KEYOFF }, { pat: 0, row: 9, ch: 3, n: KEYOFF }]));
+  C.exec(() => C.deleteChannel(3));
+  assert.equal(song.channels.length, 3);
+  C.undo();
+  assert.deepEqual([4, 9, 0].map(r => song.patterns[0].rows[r][3].n), [KEYOFF, KEYOFF, -1]);
+  C.exec(() => C.setCells([{ pat: 0, row: 9, ch: 3, f: 15, p: 0x80 }])); // F80: a tempo change, on the key-off
+  assert.throws(() => C.exec(() => C.deleteChannel(3)), /channel 4 isn't empty: pattern 00 row 09/);
+});
+
 test('the guard can refuse structural changes (e.g. while recording)', () => {
   C.setGuard(a => a === 'channels' ? 'busy' : null);
   try { assert.throws(() => C.exec(() => C.addChannel()), /busy/); }

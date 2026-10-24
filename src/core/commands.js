@@ -8,7 +8,7 @@
 //   how:   undefined (applied) | 'undo' | 'redo' | 'open' (a whole song was loaded; not undoable)
 // The engine and the screens react to these; nothing else needs to tell them what changed.
 import PTFormat from '../ptformat.js';
-import { MAX_CH, hex2, copy, same, round3 } from '../util.js';
+import { MAX_CH, KEYOFF, hex2, copy, same, round3 } from '../util.js';
 import { song, instruments, videos, bench, nch, emptyCell, isEmptyCell, newPattern } from './song.js';
 import { sliceRegion, detectHit } from './instrument.js';
 
@@ -163,16 +163,19 @@ export function addChannel() {
     apply: () => { song.channels.push(ch); song.patterns.forEach(P => P.rows.forEach(r => r.push(emptyCell()))); },
     revert: () => { song.channels.pop(); song.patterns.forEach(P => P.rows.forEach(r => r.pop())); } };
 }
+// a channel goes only when nothing in it plays: a bare key-off (===, no instrument, volume or effect) doesn't count, it
+// only ends a note there; Ctrl+Z brings its cells back as they were
+const silent = c => isEmptyCell({ ...c, n: c.n === KEYOFF ? -1 : c.n });
 export function deleteChannel(ch) {
   if (nch() <= 1) fail('a song needs at least 1 channel');
   guarded('channels');
   const used = [];
-  song.patterns.forEach((P, pi) => P.rows.forEach((r, ri) => { if (!isEmptyCell(r[ch])) used.push(`pattern ${hex2(pi)} row ${hex2(ri)}`); }));
+  song.patterns.forEach((P, pi) => P.rows.forEach((r, ri) => { if (!silent(r[ch])) used.push(`pattern ${hex2(pi)} row ${hex2(ri)}`); }));
   if (used.length) fail(`channel ${ch + 1} isn't empty: ${used.slice(0, 3).join(', ')}${used.length > 3 ? ` and ${used.length - 3} more` : ''}. Delete these notes first.`);
-  const C = song.channels[ch];
+  const C = song.channels[ch], cells = song.patterns.map(P => P.rows.map(r => r[ch]));
   return { label: `delete channel ${ch + 1}`, scope: 'channels',
     apply: () => { song.channels.splice(ch, 1); song.patterns.forEach(P => P.rows.forEach(r => r.splice(ch, 1))); },
-    revert: () => { song.channels.splice(ch, 0, C); song.patterns.forEach(P => P.rows.forEach(r => r.splice(ch, 0, emptyCell()))); } };
+    revert: () => { song.channels.splice(ch, 0, C); song.patterns.forEach((P, pi) => P.rows.forEach((r, ri) => r.splice(ch, 0, cells[pi][ri]))); } };
 }
 // a fresh, empty song: 4 channels, one empty 64-row pattern, no instruments. One command → Ctrl+Z brings it all back
 export function newSong() {

@@ -18,7 +18,8 @@ $('#pAdd').onclick = () => run(() => addPattern(newPattern(song.patterns[ed.pat]
 $('#pNew').onclick = () => run(() => addPattern(clonePattern(song.patterns[ed.pat]), `copy of pattern ${hex2(ed.pat)}`));
 $('#pDel').onclick = () => run(() => deletePattern(ed.pat));
 $('#cAdd').onclick = () => run(() => addChannel());
-$('#cDel').onclick = () => run(() => deleteChannel(ed.ch));
+// − Chn. takes the last channel, as + Chn. adds one at the end (FT2 too); only an empty one goes
+$('#cDel').onclick = () => run(() => deleteChannel(nch() - 1));
 $('#pLen').onchange = e => run(() => setPatternLength(ed.pat, num(e.target)));
 
 // order list: ed.ord = selected position; every edit is one setOrder command
