@@ -147,20 +147,42 @@ test('the instrument\'s volume is the ceiling of the sound: Vol 20 plays volume 
   assert.deepEqual([picture(0), picture(1), picture(2)], [1, 0.5, 1]);
 });
 
-test('Gxy grows the tile until the channel goes silent: later notes keep it, a note after silence is its own size again', () => {
+test('Gxy is a channel setting, like 8xx: it stays until the next G, also through silence; a silent channel shows its own cell', () => {
   const I = clip({ loop: 'forward', loopStart: 1.2, loopEnd: 1.8, R: { v: 100, u: 'ms' } });
   const G = p => ({ f: FX.G, p });
   openTestSong({ instruments: [I], patterns: [testPattern(64, {
     0: { 0: note(1, G(0x22)) }, 4: { 0: note() }, 8: { 0: G(0x00) }, 12: { 0: { n: 97 } }, 20: { 0: note() }, // grown, kept, full screen, silence
     27: { 0: G(0x12) }, 28: { 0: note() }, // a G before the note (the channel is already silent) applies to it
+    32: { 0: note(1, G(0x11)) }, // back to its own cell
   })] });
-  const { list: [a, b, c, d] } = play(4);
+  const { list: [a, b, c, d, e] } = play(5);
   assert.equal(a.spanAt(a.hitT + 0.001), 0x22);
   assert.equal(b.spanAt(b.hitT + 0.001), 0x22);
   assert.equal(b.spanAt(a.hitT + 8 * ROW + 0.001), 0x00);
-  assert.equal(b.spanAt(b.relT + 0.2), null); // released and faded out
-  assert.equal(c.spanAt(c.hitT + 0.001), null);
+  assert.equal(b.spanAt(b.relT + 0.2), null); // released and faded out: silent, so its own cell
+  assert.equal(c.spanAt(c.hitT + 0.001), 0x00); // after the silence the G00 still holds: nothing changed it
   assert.equal(d.spanAt(d.hitT + 0.001), 0x12);
+  assert.equal(e.spanAt(e.hitT + 0.001), 0x11);
+});
+
+test('a G on a note\'s own row holds from the start of its pre-roll; a G on its own changes the playing note from its row on', () => {
+  const G = p => ({ f: FX.G, p });
+  // a 2 s clip with its hit at 1 s: its pre-roll is a second; the channel is silent by then, so it gets all of it
+  openTestSong({ instruments: [clip()], patterns: [testPattern(64, { 0: { 0: note(1, G(0x22)) }, 40: { 0: note(1, G(0x00)) }, 44: { 0: G(0x12) } })] });
+  const { list } = play(7), v = list[1];
+  assert.ok(v.start < v.hitT - 0.9); // a full pre-roll
+  assert.equal(v.spanAt(v.start + 0.01), 0x00); // not the 22 of the note before
+  assert.equal(v.spanAt(v.hitT + 3 * ROW), 0x00);
+  assert.equal(v.spanAt(v.hitT + 4 * ROW + 0.001), 0x12);
+});
+
+test('starting mid-song, a G written earlier holds, like the tempo and the volumes', () => {
+  const G = p => ({ f: FX.G, p });
+  openTestSong({ instruments: [clip()], patterns: [testPattern(16, { 0: { 0: note(1, G(0x22)) } }), testPattern(16, { 0: { 0: note() } })] });
+  ctx.currentTime = 0; startPlay('song', null, 1);
+  for (let t = 0; t < 2; t += 0.05) { ctx.currentTime = t; schedule(); }
+  const v = voices[0][0];
+  assert.equal(v.spanAt(v.hitT + 0.001), 0x22);
 });
 
 test('Gxy covers cells rightwards and down as far as the grid goes; 0 = the whole width or height', () => {
