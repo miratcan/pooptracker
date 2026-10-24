@@ -163,8 +163,11 @@ export function voicesAt(ch, now) {
   const list = voices[ch];
   for (let i = list.length - 1; i >= 0; i--) {
     const v = list[i];
-    if ((v.cutT != null && v.cutT < now - 0.05) || (v.done && i < list.length - 1 && v.silentFrom() < now - 0.05) || list.length > 8) { if (v.cutT == null) v.kill(); list.splice(i, 1); }
+    if ((v.cutT != null && v.cutT < now - 0.05) || (v.done && i < list.length - 1 && v.silentFrom() < now - 0.05)) { if (v.cutT == null) v.kill(); list.splice(i, 1); }
   }
+  // too many to draw: the oldest go, never one that hasn't started. The notes are scheduled up to a long pre-roll
+  // ahead, so a busy channel holds more than 8; dropping from the end silenced notes that hadn't played yet
+  while (list.length > 8 && list[0].start <= now) { const v = list.shift(); if (v.cutT == null) v.kill(); }
   return list;
 }
 // the channel's video effects (Sxx punch, Ixx invert) at time `now`; older than 2 s are dropped

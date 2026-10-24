@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ctx, openTestSong, testInstrument, testPattern } from './helpers.js';
 import { FX, spanCells } from '../src/util.js';
 import { player, startPlay, stopPlay, schedule, previewNote } from '../src/engine/player.js';
-import { voices } from '../src/engine/voice.js';
+import { voices, voicesAt } from '../src/engine/voice.js';
 import { revBus } from '../src/engine/audio.js';
 
 const ROW = 2.5 / 125 * 6; // 125 BPM, speed 6
@@ -169,4 +169,20 @@ test('Gxy covers cells rightwards and down as far as the grid goes; 0 = the whol
   assert.deepEqual(spanCells(9, 0x22, 2, 5), { c0: 1, r0: 4, c1: 2, r1: 5 }); // the last tile can't grow
   assert.deepEqual(spanCells(5, 0x00, 2, 5), { c0: 0, r0: 0, c1: 2, r1: 5 }); // G00: the full screen
   assert.deepEqual(spanCells(3, 0x02, 2, 5), { c0: 0, r0: 1, c1: 2, r1: 3 }); // the whole width, 2 rows
+});
+
+test('a busy channel never loses a note scheduled ahead: drawing drops only voices that have started', () => {
+  // a 1 s pre-roll in the song schedules notes far ahead; a note on every row then fills a channel's list past 8
+  const rows = Object.fromEntries(Array.from({ length: 64 }, (_, r) => [r, { 0: note(2) }]));
+  rows[0][1] = note(1);
+  openTestSong({ instruments: [clip(), testInstrument({ dur: 0.3, hit: 0.01, loopStart: 0.01 })], patterns: [testPattern(64, rows)] });
+  ctx.currentTime = 0; startPlay('song');
+  const seen = new Set();
+  for (let t = 0; t < 6; t += 1 / 60) {
+    ctx.currentTime = t; schedule();
+    voices[0].forEach(v => seen.add(v));
+    voicesAt(0, t - 0.2); // the picture runs behind the audio clock by the output latency
+  }
+  assert.ok(seen.size > 40);
+  assert.deepEqual([...seen].filter(v => v.cutT === 0).map(v => +v.hitT.toFixed(3)), []); // killed: none
 });
