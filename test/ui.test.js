@@ -22,6 +22,14 @@ async function app(t, opts) {
 }
 const isDown = (page, sel) => page.eval(s => document.querySelector(s).classList.contains('down'), sel);
 const text = (page, sel) => page.eval(s => document.querySelector(s).textContent, sel);
+// Zap asks what to empty: all, tracks or instruments
+// (the dialog's close event comes a task later: wait for the status it sets)
+const zap = async (page, what) => {
+  await page.click('#bNew');
+  await page.eval(() => { document.querySelector('#status').textContent = ''; });
+  await page.click(`#zapDlg button[value="${what}"]`);
+  await page.waitFor(() => /^Zapped/.test(document.querySelector('#status').textContent));
+};
 const val = (page, sel) => page.eval(s => document.querySelector(s).value, sel);
 const instNames = page => page.eval(() => [...document.querySelectorAll('#instList .inst')].map(e => e.textContent.trim()));
 const video = (page, prop) => page.eval(p => document.querySelector('#bVideo')[p], prop);
@@ -328,7 +336,7 @@ test('frames decoded in order (WebCodecs) are the frames a seek shows: a whole v
 
 test('Save writes over the file the song was opened from, also after a reload; Zap forgets the file', { skip: cdp }, async t => {
   const page = await app(t);
-  await page.click('#bNew'); // Zap: the demo's instruments have no video file and can't be saved
+  await zap(page, 'all'); // the demo's instruments have no video file and can't be saved
   await page.setFiles('#file', [`${FIXTURES}/av.mp4`]);
   await page.waitFor(() => /av\.mp4 loaded/.test(document.querySelector('#status').textContent), 15000);
   // a file with a handle, as Load or a drop gives one in Chrome (here from the page's private file system)
@@ -353,8 +361,26 @@ test('Save writes over the file the song was opened from, also after a reload; Z
   await page.waitFor(() => /back where you left off/.test(document.querySelector('#status').textContent), SLOW);
   await setBpm(150); await save();
   assert.equal(await bpmInFile(), 150);
-  await page.click('#bNew');
+  await zap(page, 'all');
   await page.waitFor(() => import('/src/autosave.js').then(a => a.keptHandle()).then(h => h === undefined));
+});
+
+test('Zap opens a dialog: Tracks keeps the instruments, Instruments keeps the notes, closing it zaps nothing', { skip }, async t => {
+  const page = await app(t);
+  const state = () => page.eval(() => { const { song, instruments } = window.pooptracker; return { insts: instruments.length, notes: song.patterns.flatMap(P => P.rows.flat()).filter(c => c.n >= 0).length }; });
+  const before = await state();
+  assert.ok(before.insts > 1 && before.notes > 0);
+  await page.click('#bNew');
+  assert.equal(await page.eval(() => document.querySelector('#zapDlg').open), true);
+  await page.click('#zapDlg .close'); // (as Esc: CDP's synthetic Escape doesn't cancel a dialog)
+  await page.waitFor(() => !document.querySelector('#zapDlg').open);
+  assert.deepEqual(await state(), before);
+  await zap(page, 'instruments');
+  assert.deepEqual(await state(), { insts: 1, notes: before.notes });
+  await page.key('Mod+KeyZ');
+  await zap(page, 'tracks');
+  assert.deepEqual(await state(), { insts: before.insts, notes: 0 });
+  assert.match(await text(page, '#status'), /Zapped: the tracks are empty/);
 });
 
 test('− Chn. deletes the last channel (as + Chn. adds one at the end), whichever channel the cursor is in', { skip }, async t => {

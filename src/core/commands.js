@@ -178,14 +178,26 @@ export function deleteChannel(ch) {
     revert: () => { song.channels.splice(ch, 0, C); song.patterns.forEach((P, pi) => P.rows.forEach((r, ri) => r.splice(ch, 0, cells[pi][ri]))); } };
 }
 // a fresh, empty song: 4 channels, one empty 64-row pattern, no instruments. One command → Ctrl+Z brings it all back
-export function newSong() {
+// Zap, as FT2's: what = 'all' (an empty song), 'tracks' (patterns, order and song settings; the instruments stay) or
+// 'instruments' (all of them; the notes stay, without instrument numbers, as nothing is left for them to point at)
+export const ZAP = ['all', 'tracks', 'instruments'];
+export function newSong(what = 'all') {
+  if (!ZAP.includes(what)) fail(`zap '${what}' is invalid (${ZAP.join(', ')})`);
   guarded('newSong');
   const keep = { title: song.title, bpm: song.bpm, speed: song.speed, rowsPerBeat: song.rowsPerBeat, channels: song.channels, patterns: song.patterns, order: song.order };
   const oldInst = instruments.slice(), oldVideos = videos.slice();
   const set = (S, insts, vids) => { Object.assign(song, S); instruments.length = 0; instruments.push(...insts); videos.length = 0; videos.push(...vids); };
   const fresh = { title: '', bpm: 125, speed: 6, rowsPerBeat: 4, channels: Array.from({ length: 4 }, () => ({ name: '', pan: 0x80 })), order: [0] };
-  return { label: 'new song', scope: 'all', resetEditor: true, heavy: true,
-    apply: () => { set({ ...fresh, patterns: [] }, [null], []); song.patterns = [newPattern(64)]; },
+  if (what === 'instruments') {
+    const cells = [];
+    song.patterns.forEach(P => P.rows.forEach(r => r.forEach((c, ch) => { if (c.i > 0) cells.push({ r, ch, c }); })));
+    return { label: 'zap instruments', scope: 'all', heavy: true,
+      apply: () => { set({}, [null], []); cells.forEach(x => x.r[x.ch] = { ...x.c, i: 0 }); },
+      revert: () => { set({}, oldInst, oldVideos); cells.forEach(x => x.r[x.ch] = x.c); } };
+  }
+  const insts = what === 'all' ? [null] : oldInst, vids = what === 'all' ? [] : oldVideos;
+  return { label: what === 'all' ? 'new song' : 'zap tracks', scope: 'all', resetEditor: true, heavy: true,
+    apply: () => { set({ ...fresh, patterns: [] }, insts, vids); song.patterns = [newPattern(64)]; },
     revert: () => set(keep, oldInst, oldVideos) };
 }
 

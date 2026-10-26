@@ -128,7 +128,14 @@ $('#iNew').onclick = async () => {
   catch (err) { if (!(err instanceof CmdError)) console.error(err); showError(`Couldn't add an instrument: ${err.message}`); }
 };
 $('#bSave').onclick = e => saveSong(e.shiftKey);
-$('#bNew').onclick = () => { if (run(() => newSong())) setStatus('Zapped: a new empty song. Ctrl+Z brings the previous one back.'); };
+// Zap asks what to empty, as FT2's does: all, the tracks or the instruments
+const ZAPPED = { all: 'a new empty song', tracks: 'the tracks are empty, the instruments stay', instruments: 'no instruments, the notes stay' };
+const zapDlg = $('#zapDlg');
+$('#bNew').onclick = () => { zapDlg.returnValue = ''; zapDlg.showModal(); };
+zapDlg.addEventListener('close', () => {
+  const what = zapDlg.returnValue;
+  if (ZAPPED[what] && run(() => newSong(what))) setStatus(`Zapped: ${ZAPPED[what]}. Ctrl+Z brings it back.`);
+});
 // Load: where the browser has an open dialog with a file handle (Chrome/Edge), so that Save can write back to the file
 $('#bOpen').onclick = async () => {
   if (!window.showOpenFilePicker) return $('#songFile').click();

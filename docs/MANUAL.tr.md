@@ -77,7 +77,7 @@ PoopTracker hiçbir zaman "emin misin?" diye sormaz. Şarkıyı değiştiren ya 
 
 | # | Kontrol | Ne yapar |
 |---|---------|----------|
-| 1 | **Zap** | Şarkıyı boşaltır: pattern'ler, order ve enstrümanlar. ⌘/Ctrl+Z geri getirir. |
+| 1 | **Zap** | FT2'deki gibi neyin boşaltılacağını sorar: **All** (pattern'ler, order, şarkı ayarları ve enstrümanlar), **Tracks** (pattern'ler, order ve şarkı ayarları; enstrümanlar kalır) ya da **Instruments** (notalar kalır, enstrüman numaraları silinir). Esc hiçbir şeyi boşaltmaz; ⌘/Ctrl+Z boşaltılanı geri getirir. |
 | 2 | **Load** | Bir `.poop` şarkısı açar ya da bir MIDI dosyası (`.mid`) içe aktarır. Kısayol: ⌘/Ctrl+O. Dosyayı sayfaya bırakmak da olur. |
 | 3 | **Save** | Şarkıyı videolarıyla birlikte tek bir `.poop` dosyası olarak kaydeder. Kısayol: ⌘/Ctrl+S. |
 | 4 | Başlık | Şarkının adı. Kaydederken ve video kaydı alırken dosya adı olarak da kullanılır. |

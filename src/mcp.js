@@ -176,9 +176,12 @@ const MCP_TOOLS = {
     const cmd = exec(() => setInstrument(idx, f, 'MCP: set_instrument'));
     return done(cmd, `instrument ${hex2(idx)}: ${Object.keys(f).join(', ')}`);
   },
-  new_song() {
-    exec(() => newSong());
-    return done(true, 'a new empty song: 4 channels, one empty 64-row pattern, no instruments');
+  new_song(a) {
+    const what = a?.zap ?? 'all';
+    exec(() => newSong(what));
+    return done(true, { all: 'a new empty song: 4 channels, one empty 64-row pattern, no instruments',
+      tracks: 'the tracks zapped: 4 channels, one empty 64-row pattern, default song settings; the instruments stay',
+      instruments: 'the instruments zapped; the notes stay, without instrument numbers' }[what]);
   },
   add_channel() {
     exec(() => addChannel());

@@ -82,6 +82,24 @@ test('a new song is one command: undo brings everything back', () => {
   assert.equal(song.patterns[0].rows[0][0].n, 48);
 });
 
+test('Zap tracks keeps the instruments; Zap instruments keeps the notes without their instrument numbers', () => {
+  C.exec(() => C.setCells([{ pat: 0, row: 0, ch: 0, n: 48, i: 2 }]));
+  C.exec(() => C.setSong({ bpm: 140 }, 'bpm'));
+  C.exec(() => C.newSong('tracks'));
+  assert.equal(instruments.length, 3);
+  assert.equal(song.bpm, 125);
+  assert.equal(song.patterns[0].rows[0][0].n, -1);
+  C.undo();
+  C.exec(() => C.newSong('instruments'));
+  assert.equal(instruments.length, 1);
+  assert.equal(song.bpm, 140);
+  assert.deepEqual([song.patterns[0].rows[0][0].n, song.patterns[0].rows[0][0].i], [48, 0]);
+  C.undo();
+  assert.equal(instruments.length, 3);
+  assert.equal(song.patterns[0].rows[0][0].i, 2);
+  assert.throws(() => C.exec(() => C.newSong('song')), /zap 'song' is invalid/);
+});
+
 test('opening a song clears the history', () => {
   C.exec(() => C.setCells([{ pat: 0, row: 0, ch: 0, n: 48, i: 1 }]));
   openTestSong({ patterns: [testPattern(16)] });

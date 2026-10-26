@@ -72,7 +72,7 @@ with **⌘/Ctrl+Shift+Z** ([ZEN-NO-CONFIRMATION](ZEN.md)).
 
 | # | Control | What it does |
 |---|---------|--------------|
-| 1 | **Zap** | Empties the song: patterns, order and instruments. ⌘/Ctrl+Z brings it back. |
+| 1 | **Zap** | Asks what to empty, as FT2's: **All** (patterns, order, song settings and instruments), **Tracks** (patterns, order and song settings; the instruments stay) or **Instruments** (the notes stay, without instrument numbers). Esc empties nothing; ⌘/Ctrl+Z brings back what was zapped. |
 | 2 | **Load** | Opens a `.poop` song or imports a MIDI file (`.mid`). Shortcut: ⌘/Ctrl+O. You can also drop the file on the page. |
 | 3 | **Save** | Saves the song and its videos as one `.poop` file. Shortcut: ⌘/Ctrl+S. |
 | 4 | Title | The song's title. It is also used as the file name when you save or record. |

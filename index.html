@@ -156,6 +156,8 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 .ampBody{padding:8px 8px 0}
 #ampNow{margin-bottom:8px}
 #ampDlg .ampHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
+.zapBody{padding:8px;gap:6px}
+#zapDlg .zapHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 #opening .openBody{padding:8px}
 #openNow{font:8px/1.6 dos8;color:var(--acc);padding:4px 6px;min-height:3.2em;overflow-wrap:anywhere}
 .openMeter{height:14px;margin-top:6px;padding:1px}
@@ -182,7 +184,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 <div id="shell">
 <header>
   <fieldset><legend>Module</legend>
-    <button id="bNew" title="Zap: empty new song, clears patterns, order and instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S: over the file it was opened from (Chrome, Edge), else it asks where. Shift+click or ⌘/Ctrl+Shift+S: save as another file">Save</button>
+    <button id="bNew" title="Zap: empty the song, all of it, its tracks or its instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S: over the file it was opened from (Chrome, Edge), else it asks where. Shift+click or ⌘/Ctrl+Shift+S: save as another file">Save</button>
     <input id="songFile" type="file" accept=".poop,.mid,.midi" hidden>
     <input id="tTitle" maxlength="64" style="width:160px" placeholder="song title" aria-label="Song title">
   </fieldset>
@@ -364,6 +366,15 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   </form>
   <p class="ampHint">It changes the sample itself, step by step: past full scale the peaks are cut off, so above 100% it distorts. 150–150 louder, 50–50 quieter, 0–100 fade in, 100–0 fade out. Close, then ⌘/Ctrl+Z takes back the last step.</p>
 </dialog>
+<dialog id="zapDlg" class="win" aria-labelledby="zapTitle">
+  <form method="dialog" class="winHead"><span id="zapTitle">Zap</span><button class="close" aria-label="Close">✕</button></form>
+  <form method="dialog" class="row zapBody">
+    <button value="all" title="An empty song: patterns, order, song settings and instruments">All</button>
+    <button value="tracks" title="Patterns, order and song settings; the instruments stay">Tracks</button>
+    <button value="instruments" title="All the instruments; the notes stay, without instrument numbers">Instruments</button>
+  </form>
+  <p class="zapHint">⌘/Ctrl+Z brings back what was zapped. Esc: nothing.</p>
+</dialog>
 <dialog id="opening" class="win" aria-labelledby="openTitle">
   <div class="winHead"><span id="openTitle">Opening</span></div>
   <div class="openBody"><div class="well" id="openNow" role="status"></div><div class="well openMeter"><i id="openBar"></i></div></div>
@@ -380,7 +391,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 {
   "imports": {
     "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
-    "./src/core/commands.js": "./src/core/commands.js?v=96bf6b4faf",
+    "./src/core/commands.js": "./src/core/commands.js?v=0c01605850",
     "./src/core/instrument.js": "./src/core/instrument.js?v=ac54af4bad",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
@@ -390,7 +401,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=45d9658b67",
     "./src/main.js": "./src/main.js?v=722ebfda5f",
-    "./src/mcp.js": "./src/mcp.js?v=2aba96cf72",
+    "./src/mcp.js": "./src/mcp.js?v=ee44b399e2",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=bb3ce25546",
@@ -398,7 +409,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/bench.js": "./src/ui/bench.js?v=dc17dc929a",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
-    "./src/ui/files.js": "./src/ui/files.js?v=5498e24b49",
+    "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=14950eb71a",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",

@@ -17,6 +17,8 @@ The first public version.
   only "delete" key and pulling rows up surprised everyone. Shift+Backspace pulls the rows below the cursor up.
 - Enter plays the song from its start; Shift+Enter from the pattern being edited (tempo, instruments and volumes set
   earlier carry over); ⌘/Ctrl+Enter loops the pattern. Playing a pattern from the cursor row is gone.
+- Zap asks what to empty, as FT2's: All, Tracks (the instruments stay) or Instruments (the notes stay, without
+  instrument numbers). MCP `new_song` takes the same choice as `zap`.
 - ⌘/Ctrl+S saves the song and ⌘/Ctrl+O loads one (the browser would otherwise save the page itself).
 - The song is kept in the browser as it changes: a reload, a closed tab or a swipe back opens it again instead of the
   demo (Zap starts an empty one, Ctrl+Z brings it back). Swiping sideways no longer leaves the page.
