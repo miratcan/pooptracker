@@ -242,7 +242,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   </div>
   <div id="bView">
     <video id="bVideo" playsinline hidden title="Click: the focus, the point the instrument's tiles keep in view · Backspace: back to the middle"></video><canvas id="bFocus"></canvas>
-    <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument, <kbd>Shift</kbd>+<kbd>Enter</kbd> into the selected one.<br><span class="dim">MP4, MOV, WebM or MKV (from YouTube: <code>yt-dlp &lt;url&gt;</code>).</span></div>
+    <div id="bEmpty">Put a long video here: <b>Load</b>, or drop it on the page.<br>Mark a piece with <kbd>I</kbd> and <kbd>O</kbd>, <kbd>Enter</kbd> cuts it into a new instrument, <kbd>Shift</kbd>+<kbd>Enter</kbd> into the selected one.<br><span class="dim">MP4, MOV, WebM or MKV (from YouTube: <code>yt-dlp -S vcodec:h264,acodec:aac --embed-metadata &lt;url&gt;</code>: the pieces then know their link).</span></div>
   </div>
   <canvas id="bTime" class="well" aria-label="Timeline: click to go there, drag to mark a piece, wheel to zoom" title="Click: go there · drag: mark a piece · drag a handle: move that end · wheel / pinch: zoom · Shift+wheel: move along · = - 0 keys"></canvas>
   <div class="row" id="bBar">
@@ -296,6 +296,9 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
       <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D<input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
       <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S<input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
+    </fieldset>
+    <fieldset><legend>Source</legend>
+      <input id="iSrc" style="width:150px" spellcheck="false" placeholder="link or text" aria-label="Source" title="Where the video comes from: a link (a YouTube one with ?t= for the second the piece starts at) or any text. It travels with the video. A piece cut on the bench from a video downloaded with yt-dlp --embed-metadata gets it by itself"><button id="bSrc" title="Open the source link in a new tab">Open</button>
     </fieldset>
     </div>
     <div id="waveWrap"><canvas id="wave" title="Drag the region (yellow), hit (red) and loop (green) handles; click empty space: the hit goes there. Dark: outside the region; blue: pre-roll"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
@@ -391,26 +394,26 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 {
   "imports": {
     "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
-    "./src/core/commands.js": "./src/core/commands.js?v=0c01605850",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=ac54af4bad",
+    "./src/core/commands.js": "./src/core/commands.js?v=ec4f8d806a",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=ed27e28192",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
     "./src/engine/player.js": "./src/engine/player.js?v=7aa77e8bdb",
     "./src/engine/voice.js": "./src/engine/voice.js?v=0ea7fb10a4",
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
-    "./src/io.js": "./src/io.js?v=45d9658b67",
+    "./src/io.js": "./src/io.js?v=0cad28bb27",
     "./src/main.js": "./src/main.js?v=722ebfda5f",
-    "./src/mcp.js": "./src/mcp.js?v=ee44b399e2",
+    "./src/mcp.js": "./src/mcp.js?v=6b338ed893",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
-    "./src/mp4cut.js": "./src/mp4cut.js?v=bb3ce25546",
-    "./src/ptformat.js": "./src/ptformat.js?v=46527319b0",
-    "./src/ui/bench.js": "./src/ui/bench.js?v=dc17dc929a",
+    "./src/mp4cut.js": "./src/mp4cut.js?v=e114c82bfe",
+    "./src/ptformat.js": "./src/ptformat.js?v=1baee3c7b5",
+    "./src/ui/bench.js": "./src/ui/bench.js?v=ada1cb79cf",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=14950eb71a",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=ca39a901e6",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
@@ -420,7 +423,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
     "./src/ui/welcome.js": "./src/ui/welcome.js?v=89dc040bf9",
     "./src/util.js": "./src/util.js?v=bffb1cb8ec",
-    "./src/webm.js": "./src/webm.js?v=ea9d076299"
+    "./src/webm.js": "./src/webm.js?v=4187c9e85a"
   }
 }
 </script>

@@ -11,7 +11,8 @@ const bad = () => fail('the WebM/MKV file is damaged');
 const ID = { EBML: 0x1A45DFA3, Segment: 0x18538067, Info: 0x1549A966, TimestampScale: 0x2AD7B1, Tracks: 0x1654AE6B, TrackEntry: 0xAE,
   TrackNumber: 0xD7, TrackType: 0x83, CodecID: 0x86, CodecPrivate: 0x63A2, DefaultDuration: 0x23E383, Video: 0xE0, PixelWidth: 0xB0,
   PixelHeight: 0xBA, Audio: 0xE1, SamplingFrequency: 0xB5, Channels: 0x9F, ContentEncodings: 0x6D80, Cluster: 0x1F43B675, Timestamp: 0xE7,
-  SimpleBlock: 0xA3, BlockGroup: 0xA0, Block: 0xA1, BlockDuration: 0x9B, ReferenceBlock: 0xFB };
+  SimpleBlock: 0xA3, BlockGroup: 0xA0, Block: 0xA1, BlockDuration: 0x9B, ReferenceBlock: 0xFB, Tags: 0x1254C367, Tag: 0x7373,
+  SimpleTag: 0x67C8, TagName: 0x45A3, TagString: 0x4487 };
 // the elements that sit next to clusters in a segment: where a cluster of unknown size ends
 const TOP = new Set([ID.Cluster, 0x1C53BB6B, 0x1254C367, 0x1043A770, 0x1941A469, ID.Info, ID.Tracks, 0x114D9B74]);
 
@@ -60,7 +61,7 @@ async function layout(read, size) {
   for (let o = seg.body; o < segEnd;) {
     const h = await read(o, Math.min(64, segEnd - o)); if (h.length < 2) break;
     const e = element(h, 0, o);
-    if (e.id === ID.Info || e.id === ID.Tracks) { const end = e.end ?? bad(); out[e.id === ID.Info ? 'info' : 'tracks'] = { b: await read(e.at, end - e.at), e: { ...e, body: e.body - e.at, end: end - e.at } }; }
+    if (e.id === ID.Info || e.id === ID.Tracks || e.id === ID.Tags) { const end = e.end ?? bad(); out[{ [ID.Info]: 'info', [ID.Tracks]: 'tracks', [ID.Tags]: 'tags' }[e.id]] = { b: await read(e.at, end - e.at), e: { ...e, body: e.body - e.at, end: end - e.at } }; }
     if (e.id === ID.Cluster) {
       // its timestamp is among its first elements (after a CRC-32 at most)
       let tsEl = null; for (let p = e.body - o; !tsEl && p + 2 < h.length;) { const k = element(h, p); if (k.id === ID.Timestamp) tsEl = k; else if (k.end === null) break; else p = k.end; }
@@ -155,7 +156,22 @@ function trak(id, kind, scale, w, h, entry, hasCtts) {
         box('stbl', full('stsd', 0, 0, be32(1), entry), ...(hasCtts ? [full('ctts', 1, 0, be32(0))] : [])))));
 }
 
-// a WebM/MKV as the cutter sees an MP4: { b (a moov), mvhd, movieScale, tracks, ftyp }, with the packets around [t0, t1]
+// a text from a video's metadata as the link it comes from: only an http(s) link counts (a comment can be anything)
+export const asLink = s => typeof s === 'string' && /^https?:\/\/\S+$/.test(s.trim()) && s.trim().length <= 400 ? s.trim() : null;
+// the link the file says it comes from (its PURL tag, else its COMMENT; yt-dlp --embed-metadata writes both), or null
+function tagLink(L) {
+  if (!L.tags) return null;
+  const { b, e } = L.tags, found = {};
+  for (const tag of children(b, e.body, e.end).filter(x => x.id === ID.Tag))
+    for (const st of children(b, tag.body, tag.end).filter(x => x.id === ID.SimpleTag)) {
+      const name = kid(b, st, ID.TagName), value = kid(b, st, ID.TagString);
+      if (name && value) found[str(b, name).toUpperCase()] ??= str(b, value);
+    }
+  return asLink(found.PURL) ?? asLink(found.COMMENT);
+}
+export const webmLink = async (read, size) => tagLink(await layout(read, size));
+
+// a WebM/MKV as the cutter sees an MP4: { b (a moov), mvhd, movieScale, tracks, ftyp, link }, with the packets around [t0, t1]
 export async function indexWebm(read, size, t0, t1) {
   const L = await layout(read, size), { b: ib, e: ie } = L.info, ts = kid(ib, ie, ID.TimestampScale);
   const unit = (ts ? uint(ib, ts) : 1e6) / 1e9, scale = Math.round(1 / unit); // seconds per timestamp unit; MP4 counts in whole units
@@ -203,5 +219,5 @@ export async function indexWebm(read, size, t0, t1) {
     Object.assign(T, { trak: x, stbl, stsd: find(stbl, 'stsd') });
   });
   const brands = ['isom', 'iso6', 'mp41', ...(vt.codec === 'V_AV1' ? ['av01'] : [])];
-  return { b, mvhd: top.find(x => x.type === 'mvhd'), movieScale, tracks, ftyp: box('ftyp', enc.encode('isom'), be32(0x200), ...brands.map(s => enc.encode(s))) };
+  return { b, mvhd: top.find(x => x.type === 'mvhd'), movieScale, tracks, ftyp: box('ftyp', enc.encode('isom'), be32(0x200), ...brands.map(s => enc.encode(s))), link: tagLink(L) };
 }

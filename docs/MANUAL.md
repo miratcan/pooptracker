@@ -249,6 +249,7 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 | 17 | Pre-roll | The blue part before the hit. It plays *before* the note's row, so the hit lands on the row. |
 | 18 | Filmstrip and waveform | The frames and the sound of the region. Dark parts are outside the region. |
 | 19 | Hit frame | The frame at the hit. Click it to set the **focus**, the point a tile keeps in view when it crops the video. Alt+click resets the focus to the middle. |
+| 20 | Source | See [below](#instrument-settings) |
 
 ### Instrument settings
 
@@ -296,6 +297,12 @@ A, D and R each have a unit. **tick** follows the tempo. **ms** stays fixed.
 
 The picture follows the sound: the tile's brightness is the volume × the envelope.
 
+**Source:** where the video comes from: a link, or any text (`own recording`). It is kept with the instrument (`src=`
+in its line), so it goes wherever the video goes: into the song, and into the video's metadata with **Save**. **Open**
+opens the link. A piece cut on the [workbench](#the-workbench) from a video that knows its link gets it by itself, a
+YouTube link with the second the piece starts at (`&t=128`). Another video (Load, Repl.) brings its own source, or
+none.
+
 ---
 
 ## The output
@@ -327,8 +334,15 @@ download. You put the video on the bench, mark a piece, and cut it into an instr
 video, so it is fast and keeps the quality. Whatever you don't cut is thrown away: the bench is never saved.
 
 It cuts MP4, MOV, WebM and MKV. A piece keeps its video's codecs, so a YouTube download is best fetched as H.264 and
-AAC: `yt-dlp -S vcodec:h264,acodec:aac <url>`. yt-dlp's default (AV1 or VP9 with Opus) plays in PoopTracker and
-VLC, but QuickTime can't open the instruments made from it.
+AAC, with its link inside:
+
+```
+yt-dlp -S vcodec:h264,acodec:aac --embed-metadata <url>
+```
+
+yt-dlp's default (AV1 or VP9 with Opus) plays in PoopTracker and VLC, but QuickTime can't open the instruments made
+from it. With `--embed-metadata` every piece you cut knows where it comes from: its **Source** is the video's link at
+the second the piece starts.
 
 ![The workbench with a marked piece, numbered](manual/bench.png)
 

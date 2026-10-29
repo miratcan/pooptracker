@@ -100,22 +100,24 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'amp', 'focus'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'amp', 'focus', 'source'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
 // What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
-// (region, hit, loop points, focus, A/V offset) and mean nothing in another one; amp changed the old sample, not this one.
+// (region, hit, loop points, focus, A/V offset) and mean nothing in another one; amp changed the old sample, not this one;
+// the source is where the old video came from.
 export const SOUND_KEYS = ['name', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
 // another video for an instrument. Without place, it keeps how it sounds and the places are found again as when a
 // video is loaded (the region is the whole video, the hit is detected). place is a whole instrument line: a video
-// saved with its settings brings all of them (its loop mode too); a caller that keeps the sound puts it in place
-export function setInstrumentVideo(idx, V, place = null, label = 'replace video') {
+// saved with its settings brings all of them (its loop mode too); a caller that keeps the sound puts it in place.
+// source: where the new video comes from, when place doesn't say
+export function setInstrumentVideo(idx, V, place = null, label = 'replace video', source = '') {
   const I = instruments[idx]; if (!I) fail(`instrument ${hex2(idx)} doesn't exist`);
   const oldVideo = I.video, old = pick(I, INST_KEYS);
   let nu;
   if (place) nu = pick(place, INST_KEYS);
   else {
     const hit = round3(Math.min(detectHit(V.buffer), V.dur));
-    nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, amp: [], focus: [] };
+    nu = { ...pick(I, SOUND_KEYS), start: 0, end: V.dur, hit, loopStart: hit, loopEnd: V.dur, avOffset: 0, amp: [], focus: [], source };
   }
   if (nu.loop !== 'none' && nu.loopStart >= nu.loopEnd) nu.loop = 'none';
   const err = PTFormat.checkInstrument(nu); if (err) fail(`instrument ${hex2(idx)}: ${err}`);

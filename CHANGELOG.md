@@ -11,6 +11,10 @@ The first public version.
   Gxy (the tile grows over x columns and y rows, over the tiles next to it, until the channel goes silent) for video.
 - Songs are `.poop` files: plain-text song and patterns plus the original videos, in one zip.
 - An instrument can be saved into its own video's metadata (MP4/MOV, key `pooptracker`, format `TURD1`).
+- An instrument says where its video comes from: `src=` in its line (a link or any text; Source in the instrument
+  panel, MCP `set_instrument source`). A piece cut on the bench or by MCP from a video that carries its link (yt-dlp
+  `--embed-metadata`: the MP4 comment, Matroska's PURL/COMMENT) gets it by itself, a YouTube one with `t=` set to the
+  second the piece starts at. An older PoopTracker refuses a line with `src=` (unknown field).
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
 - Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's

@@ -7,7 +7,7 @@
 // The source is read in pieces (read(offset, length) → Uint8Array): an hour-long video is never loaded whole.
 // A WebM/MKV is read by webm.js, which describes it the way an MP4 is described here; the piece is an MP4 either way.
 import { u32, u64, fourcc, be32, box, boxes as scan } from './mp4.js';
-import { indexWebm } from './webm.js';
+import { indexWebm, webmLink, asLink } from './webm.js';
 
 const fail = msg => { throw new Error(msg); };
 const notMp4 = () => fail('the video is not MP4/MOV, WebM or MKV (only those can be cut)');
@@ -154,15 +154,41 @@ export async function indexMp4(read, size) {
   const b = await read(moovBox.start, moovBox.size), moov = { body: moovBox.body - moovBox.start, end: moovBox.size, start: 0 };
   const mvhd = need(b, moov, 'mvhd'), movieScale = u32(b, mvhd.body + (b[mvhd.body] ? 20 : 12));
   const tracks = boxes(b, moov).filter(x => x.type === 'trak').map(x => readTrack(b, x, movieScale));
-  return { b, mvhd, movieScale, tracks, ftyp: ftypBox ? await read(ftypBox.start, ftypBox.size) : new Uint8Array(0) };
+  return { b, mvhd, movieScale, tracks, ftyp: ftypBox ? await read(ftypBox.start, ftypBox.size) : new Uint8Array(0), link: mp4Link(b, moov) };
 }
 const isMatroska = async read => u32(await read(0, 4), 0) === 0x1A45DFA3;
 
-// cut [t0, t1] (seconds) out of an MP4/MOV or a WebM/MKV → { bytes, start, end }: the new MP4, and where the selection is
-// inside it (start is 0; end is the selection's length, shorter when the video ends first)
+// ── where a video comes from: the page link a downloader wrote into it (yt-dlp --embed-metadata: the MP4 comment,
+// ©cmt in moov/udta/meta/ilst; Matroska's PURL or COMMENT tag, in webm.js). Only an http(s) link counts.
+function mp4Link(b, moov) {
+  for (const udta of boxes(b, moov).filter(x => x.type === 'udta'))
+    for (const meta of boxes(b, udta).filter(x => x.type === 'meta')) {
+      const full = fourcc(b, meta.body + 4) !== 'hdlr', ilst = scan(b, meta.body + (full ? 4 : 0), meta.end, notMp4).find(x => x.type === 'ilst');
+      const cmt = ilst && boxes(b, ilst).find(x => x.type === '\u00A9cmt'), data = cmt && kid(b, cmt, 'data');
+      if (data) return asLink(new TextDecoder().decode(b.subarray(data.body + 8, data.end)));
+    }
+  return null;
+}
+// the link to the second t of the video: YouTube's own t parameter; other links as they are
+export function linkAt(link, t) {
+  try {
+    const u = new URL(link);
+    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(u.hostname)) { u.searchParams.set('t', Math.floor(t)); return u.href; }
+  } catch {}
+  return link;
+}
+// the link of a whole video, or null (also for a file that isn't MP4/MOV, WebM or MKV)
+export async function videoLink(read, size) {
+  try { return await isMatroska(read) ? await webmLink(read, size) : (await indexMp4(read, size)).link; } catch { return null; }
+}
+
+// cut [t0, t1] (seconds) out of an MP4/MOV or a WebM/MKV → { bytes, start, end, source }: the new MP4, where the
+// selection is inside it (start is 0; end is the selection's length, shorter when the video ends first), and the link to
+// where it starts in the video it came from ('' when the video has none)
 export async function cutVideo(read, size, t0, t1) {
   if (!(t1 > t0)) fail('the piece is empty: its end must be after its start');
-  return cutIndex(await isMatroska(read) ? await indexWebm(read, size, t0, t1) : await indexMp4(read, size), read, t0, t1);
+  const index = await isMatroska(read) ? await indexWebm(read, size, t0, t1) : await indexMp4(read, size);
+  return { ...await cutIndex(index, read, t0, t1), source: index.link ? linkAt(index.link, t0) : '' };
 }
 // only the sound of pieces of one video, as audio-only MP4s a browser can decode (the workbench's waveform and loop):
 // none of the picture is read. An MP4/MOV is indexed once, here; a WebM/MKV per piece (its index is made around the

@@ -67,7 +67,7 @@ const MCP_TOOLS = {
       'patterns:', ...song.patterns.map((P, k) => `  ${hex2(k)}: ${P.rows.length} rows, ${P.rows.reduce((a, r) => a + r.filter(c => !same(c, emptyCell())).length, 0)} filled cells`)].join('\n');
   },
   list_instruments() {
-    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · amp ${I.amp.length ? PTFormat.ampStr(I.amp) + ' (start-end %, in order)' : 'none'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}`).join('\n') || 'no instruments';
+    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · amp ${I.amp.length ? PTFormat.ampStr(I.amp) + ' (start-end %, in order)' : 'none'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}${I.source ? ` · source ${I.source}` : ''}`).join('\n') || 'no instruments';
   },
   view_rows(a) {
     const pi = patArg(a.pattern), [r0, r1] = rowRange(a, pi), P = song.patterns[pi];
@@ -166,10 +166,10 @@ const MCP_TOOLS = {
   },
   set_instrument(a) {
     const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', reverb: 'rev', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le', fine: 'fine',
-      region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus' };
+      region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus', source: 'src' };
     for (const [k, key] of Object.entries(map)) if (k in a) {
       if (k === 'loop' && !PTFormat.LOOP_MODES.includes(a.loop)) fail(`loop must be none, forward or pingpong (got '${a.loop}')`);
-      try { f[{ name: 'name', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus' }[key]] = k === 'loop' ? a.loop : k === 'name' ? String(a.name) : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
+      try { f[{ name: 'name', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus', src: 'source' }[key]] = k === 'loop' ? a.loop : k === 'name' || k === 'source' ? String(a[k]).trim() : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
       catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); } // drop the parser's line prefix, whatever its wording
     }
     if (!Object.keys(f).length) fail(`nothing to change (${Object.keys(map).join(', ')})`);

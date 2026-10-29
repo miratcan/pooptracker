@@ -118,7 +118,7 @@ test('the focus is an instrument setting: set, checked and undone like the other
 });
 
 test('a replaced video keeps how the instrument sounds; region and hit are found again in it', () => {
-  C.exec(() => C.setInstrument(1, { name: 'kick', baseNote: 50, vol: 32, R: { v: 9, u: 't' }, start: 0.2, end: 1.8, hit: 1.5, loopStart: 1.6, loopEnd: 1.8, loop: 'forward', focus: [{ t: 0, x: 0.2, y: 0.3 }], avOffset: 40 }));
+  C.exec(() => C.setInstrument(1, { name: 'kick', baseNote: 50, vol: 32, R: { v: 9, u: 't' }, start: 0.2, end: 1.8, hit: 1.5, loopStart: 1.6, loopEnd: 1.8, loop: 'forward', focus: [{ t: 0, x: 0.2, y: 0.3 }], avOffset: 40, source: 'https://example.com/old' }));
   const other = testInstrument({ dur: 3 }), d = other.video.buffer.getChannelData(0), sr = other.video.buffer.sampleRate;
   for (let i = Math.round(0.7 * sr); i < Math.round(0.8 * sr); i++) d[i] = 0.8; // a hit at 0.700 s
   C.exec(() => C.setInstrumentVideo(1, other.video));
@@ -126,8 +126,12 @@ test('a replaced video keeps how the instrument sounds; region and hit are found
   assert.equal(I.video, other.video);
   assert.deepEqual([I.name, I.baseNote, I.vol, I.R, I.loop], ['kick', 50, 32, { v: 9, u: 't' }, 'forward']);
   assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.loopEnd, I.avOffset, I.focus], [0, 3, 0.7, 0.7, 3, 0, []]);
+  assert.equal(I.source, ''); // the old video's source isn't this one's
   C.undo();
-  assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.avOffset], [0.2, 1.8, 1.5, 1.6, 40]);
+  assert.deepEqual([I.start, I.end, I.hit, I.loopStart, I.avOffset, I.source], [0.2, 1.8, 1.5, 1.6, 40, 'https://example.com/old']);
+  C.exec(() => C.setInstrumentVideo(1, other.video, null, undefined, 'https://example.com/new'));
+  assert.equal(I.source, 'https://example.com/new');
+  C.undo();
 });
 
 test('a video that carries its own instrument (saved with Save) brings all of it, the loop mode too', () => {

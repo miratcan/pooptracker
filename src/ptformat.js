@@ -32,6 +32,7 @@ const focusStr = keys => keys.map(k => `${t3(k.t)}:${k.x.toFixed(3)},${k.y.toFix
 // from a at the region's start to b at its end (150-150 louder, 100-0 a fade out), clipped at full scale after each.
 // It changes the sample itself (the video file stays as it is): 200-200 twice is not 400-400 once.
 const MAX_AMP = 200, MAX_AMP_STEPS = 100;
+const MAX_SOURCE = 500;
 const ampStr = steps => steps.map(s => `${s.a}-${s.b}`).join('|');
 
 function format(I, video) {
@@ -43,6 +44,7 @@ function format(I, video) {
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
   if (I.amp?.length) f.push('amp=' + ampStr(I.amp));
   if (I.focus?.length) f.push('focus=' + focusStr(I.focus));
+  if (I.source) f.push('src=' + esc(I.source));
   return f.join(';');
 }
 
@@ -85,9 +87,11 @@ const PARSE = {
   av: (k, v) => /^-?\d+$/.test(v) ? +v : bad(k, v, 'milliseconds, integer'),
   amp,
   focus,
+  // where the video comes from: a link (a YouTube one with the second the piece starts at) or any text
+  src: (k, v) => unesc(v),
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb',
-  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', amp: 'amp', focus: 'focus' };
+  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', amp: 'amp', focus: 'focus', src: 'source' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
 function parse(line) {
@@ -104,7 +108,7 @@ function parse(line) {
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
   const I = { fine: 0, vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
-    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, amp: [], focus: [] };
+    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, amp: [], focus: [], source: '' };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
   if (e) throw new Error(`${VERSION} line: ${e}`);
@@ -135,6 +139,7 @@ function checkInstrument(I) {
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
   const ae = checkAmp(I.amp); if (ae) return ae;
   const fe = checkFocus(I.focus); if (fe) return fe;
+  if (typeof I.source !== 'string' || I.source.length > MAX_SOURCE || /[\r\n]/.test(I.source)) return `source must be at most ${MAX_SOURCE} characters, on one line`;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
   if (I.hit < I.start || I.hit > I.end) return `hit point (${t3(I.hit)}) must be inside the region (${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))

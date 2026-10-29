@@ -22,7 +22,7 @@ const focusArg = { type: 'string', description: 'where the picture looks: the po
 const obj = (props, required = []) => ({ type: 'object', properties: props, required, additionalProperties: false });
 const TOOLS = [
   ['get_song', 'Song summary: title, bpm, speed, rowsPerBeat, channels, order and the pattern list. Call this first.', obj({})],
-  ['list_instruments', 'Instrument list: number, name, base note, volume, reverb, region in the video, hit point, ADSR, loop.', obj({})],
+  ['list_instruments', 'Instrument list: number, name, base note, volume, reverb, region in the video, hit point, ADSR, loop, amp, focus, source.', obj({})],
   ['view_rows', 'Row view: shows a pattern row by row, like the tracker screen (each cell: note instrument volume effect).',
     obj({ pattern: hex('pattern number'), ...range }, ['pattern'])],
   ['view_channel', 'Channel view: the filled rows of one channel as a list, with instrument names. Use this to read a channel from top to bottom.',
@@ -54,7 +54,7 @@ const TOOLS = [
       loop: { type: 'string', enum: ['none', 'forward', 'pingpong'], description: 'none: plays once · forward: loop start → end, again · pingpong: start → end → start… (the video plays backward too)' }, loop_start: { type: 'number', description: 'seconds, time in the video' }, loop_end: { type: 'number', description: 'seconds, time in the video' },
       region_start: { type: 'number', description: 'seconds: where the instrument starts in the video' }, region_end: { type: 'number', description: 'seconds: where it ends' },
       hit: { type: 'number', description: 'seconds: the hit point, the moment that lands exactly on the row' }, av_offset: { type: 'integer', description: 'milliseconds: shifts the picture against the sound, for a video whose audio track is off' },
-      focus: focusArg }, ['instrument'])],
+      focus: focusArg, source: { type: 'string', description: 'where the video comes from: a link (a YouTube one with ?t= for the second the piece starts at) or any text; "" clears it. A piece cut from a video downloaded with yt-dlp --embed-metadata gets it by itself' } }, ['instrument'])],
   ['tune_instrument', 'Find the pitch of an instrument (after its hit) and set its base note and finetune to it, so written notes sound as written. The clip is not changed; a bend in it stays (one pitch per instrument). Fails on a sound with no clear pitch (a snare, a hi-hat, noise); a kick or a tom has one.', obj({ instrument: hex('instrument number') }, ['instrument'])],
   ['fit_instrument', 'Repitch an instrument (like Renoise\'s beat sync, repitch mode) so that, played at C-4, its whole region lasts a whole number of rows at the current BPM and speed (so it repeats seamlessly when played every that many rows): sets its base note and finetune; picture and sound speed up or slow down together. For drum loops. Without rows, the power of two nearest to its length now. Do it again after a tempo change.', obj({ instrument: hex('instrument number'), rows: { type: 'integer', minimum: 1, maximum: 256, description: 'how many rows it should last' } }, ['instrument'])],
   ['amplify_instrument', 'Amplify an instrument\'s sample, as FT2\'s sample editor Volume: the gain goes from start_percent at the region\'s start to end_percent at its end (150/150 louder, 50/50 quieter, 0/100 fade in, 100/0 fade out). It changes the sample itself: what goes past full scale is cut off (clipped), so above 100 it distorts, on purpose. Each call is one more step on top of the earlier ones (list_instruments shows them); the video file is not changed.',
@@ -163,7 +163,7 @@ async function cutPiece(p, size, args) {
     const read = async (o, n) => { const b = new Uint8Array(n); await fd.read(b, 0, n, o); return b; };
     const piece = await cutVideo(read, size, start, end);
     const base = path.basename(p).replace(/\.[^.]+$/, '');
-    args.region = { start: piece.start, end: piece.end, name: `${base.slice(0, 8)} ${Math.floor(start / 60)}:${String(Math.floor(start % 60)).padStart(2, '0')}` };
+    args.region = { start: piece.start, end: piece.end, source: piece.source, name: `${base.slice(0, 8)} ${Math.floor(start / 60)}:${String(Math.floor(start % 60)).padStart(2, '0')}` };
     return { name: `${base} ${start.toFixed(3)}.mp4`, data: Buffer.from(piece.bytes).toString('base64') };
   } finally { await fd.close(); }
 }

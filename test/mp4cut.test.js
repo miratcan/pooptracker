@@ -11,13 +11,15 @@
 // click.mp4: the same picture, with silence and one 2 ms click at exactly 2.000 s (where a piece's sound starts):
 //   ffmpeg -f lavfi -i testsrc2=size=96x54:rate=30:duration=6 -f lavfi -i "aevalsrc='if(between(t,2,2.002),0.9,0)':s=48000:d=6" \
 //     -c:v libx264 -g 30 -bf 2 -pix_fmt yuv420p -c:a aac -b:a 64k -shortest click.mp4
+// link.mp4, link.webm: bigscale.mp4 and vp8.webm with the link yt-dlp --embed-metadata writes (-c copy):
+//   -metadata comment=https://www.youtube.com/watch?v=jNQXAC9IVRw (MP4); -metadata PURL=… -metadata COMMENT=… (WebM)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cutVideo, soundCutter, reader } from '../src/mp4cut.js';
+import { cutVideo, soundCutter, reader, videoLink, linkAt } from '../src/mp4cut.js';
 import { boxes, box, u32, fourcc, be32 } from '../src/mp4.js';
 import PTFormat from '../src/ptformat.js';
 
@@ -144,4 +146,17 @@ test('a piece keeps the sound\'s sample groups (AAC\'s roll): without them Safar
   const n = u32(b, find(b, stbl, 'stsz').body + 8), entries = u32(b, sbgp.body + 8);
   let counted = 0; for (let e = 0; e < entries; e++) counted += u32(b, sbgp.body + 12 + 8 * e);
   assert.equal(counted, n); // every sample of the piece is in its group, as in the source
+});
+
+test('the link a downloader wrote into the video goes with its pieces, a YouTube one with the second the piece starts at', async () => {
+  const fixture = name => new Uint8Array(readFileSync(new URL(`./fixtures/${name}`, import.meta.url))), link = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
+  const mp4 = fixture('link.mp4'), webm = fixture('link.webm');
+  assert.equal(await videoLink(reader(mp4), mp4.length), link);
+  assert.equal(await videoLink(reader(webm), webm.length), link);
+  assert.equal((await cut(2.6, 3.2, mp4)).source, link + '&t=2');
+  assert.equal((await cut(2.6, 3.2)).source, ''); // no link in it
+  assert.equal(await videoLink(reader(SRC), SRC.length), null);
+  assert.equal(await videoLink(reader(new Uint8Array(12)), 12), null); // not a video: no link, no error
+  assert.equal(linkAt('https://youtu.be/jNQXAC9IVRw?t=99', 61.9), 'https://youtu.be/jNQXAC9IVRw?t=61');
+  assert.equal(linkAt('https://example.com/v.mp4', 5), 'https://example.com/v.mp4');
 });

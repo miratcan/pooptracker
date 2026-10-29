@@ -28,6 +28,7 @@ export function selectInst(idx) {
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
+  $('#iSrc').value = I.source; $('#bSrc').disabled = !isLink(I.source);
   $('#iLoop').value = I.loop; $('#iLS').disabled = $('#iLE').disabled = I.loop === 'none'; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
   refreshInstList(); drawWave(null);
 }
@@ -136,6 +137,9 @@ $('#iStart').onchange = e => instCmd({ start: round3(num(e.target)) }, 'region s
 $('#iEnd').onchange = e => instCmd({ end: round3(num(e.target)) }, 'region end');
 $('#iHit').onchange = e => instCmd({ hit: round3(num(e.target)) }, 'hit point');
 $('#iAV').onchange = e => instCmd({ avOffset: num(e.target) }, 'A/V offset');
+const isLink = s => /^https?:\/\/\S+$/.test(s);
+$('#iSrc').onchange = e => instCmd({ source: e.target.value.trim() }, 'source');
+$('#bSrc').onclick = () => { const I = curInst(); if (I && isLink(I.source)) window.open(I.source, '_blank', 'noopener'); };
 $('#iLoop').onchange = e => {
   const I = curInst(), mode = e.target.value;
   // turning loop on: if the old loop points don't fit (inside the region, starting at or after the hit), start with hit → region end

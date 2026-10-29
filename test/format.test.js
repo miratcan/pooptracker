@@ -131,3 +131,12 @@ test('amp: the steps are written in order, start-end in percent, and only when t
   assert.throws(() => PTFormat.parse(LINE + ';amp=201-100'), /'amp' value '201-100' is invalid \('201-100' must be start-end in percent, 0–200 each/);
   assert.throws(() => PTFormat.parse(LINE + ';amp=150'), /must be start-end in percent/);
 });
+
+test('src: where the video comes from, written only when there is one; a link keeps its ; and = through the line', () => {
+  const link = 'https://www.youtube.com/watch?v=jNQXAC9IVRw&t=5;x', I = PTFormat.parse(`${LINE};src=${link.replace(/=/g, '%3D').replace(/;/g, '%3B')}`);
+  assert.equal(I.source, link);
+  assert.equal(PTFormat.parse(PTFormat.format(I)).source, link);
+  assert.equal(PTFormat.parse(LINE).source, '');
+  assert.ok(!PTFormat.format(PTFormat.parse(LINE)).includes('src='));
+  assert.equal(PTFormat.checkInstrument({ ...I, source: 'a\nb' }), 'source must be at most 500 characters, on one line');
+});

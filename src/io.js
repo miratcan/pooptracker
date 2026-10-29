@@ -6,7 +6,7 @@ import PTFormat from './ptformat.js';
 import { FPS, FRAME_SHORT, MAX_SAMPLE_SEC, hex2, round3 } from './util.js';
 import { song, instruments, videos } from './core/song.js';
 import { makeVideo, makeInstrument, detectHit, normalizeVideoAudio, focusAt, fitToVideo } from './core/instrument.js';
-import { cutVideo, reader } from './mp4cut.js';
+import { cutVideo, reader, videoLink } from './mp4cut.js';
 import { decodeFrames } from './frames.js';
 import { exec, addInstrument, setInstrumentVideo, addVideo, replaceSong, importSong, pick, INST_KEYS } from './core/commands.js';
 import { parseMidi, midiToSong } from './midi.js';
@@ -64,7 +64,8 @@ export async function decodeVideo(file, progress = () => {}) {
 // a video → a new instrument (one command). A video saved by PoopTracker carries its instrument in its
 // metadata; otherwise the hit is detected. A piece cut on the workbench comes with its region
 // ({ start, end, name }: the selection inside the piece) and its hit is looked for there. region.focus (also without a
-// piece) is where the picture looks.
+// piece) is where the picture looks. The source is where the video comes from: region.source for a piece, else the
+// link a downloader wrote into the video (yt-dlp --embed-metadata).
 // Returns { idx, I, fromMetadata }.
 export async function importVideo(file, progress, region = null) {
   let line = null;
@@ -77,14 +78,16 @@ export async function importVideo(file, progress, region = null) {
   const name = region?.name ?? file.name.replace(/\.[^.]+$/, '').slice(0, 16);
   const span = region?.end != null ? { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) } : {};
   const hit = s ? 0 : round3(Math.min((span.start ?? 0) + detectHit(makeInstrument(V, span).buffer), V.dur));
-  const I = makeInstrument(V, s || { name, ...span, hit, loopStart: hit, focus: region?.focus ?? [] });
+  const source = s ? null : region?.end != null ? region.source ?? '' : await videoLink(reader(file), file.size) ?? '';
+  const I = makeInstrument(V, s || { name, ...span, hit, loopStart: hit, focus: region?.focus ?? [], source });
   exec(() => addInstrument(I, `load ${file.name}`));
   addVideo(V);
   return { idx: instruments.indexOf(I), I, fromMetadata: !!s, noSound: !!V.noSound };
 }
 // another video for an instrument (one command): it keeps how it sounds; region, hit and loop points are found
 // again in the new video (or read from its metadata, when it was saved by PoopTracker). A piece cut on the workbench
-// comes with its region ({ start, end, focus }: the selection inside the piece), and its hit is looked for there.
+// comes with its region ({ start, end, focus, source }: the selection inside the piece, where it comes from), and its hit
+// is looked for there.
 // Returns { cmd, fromMetadata }.
 export async function replaceVideo(idx, file, progress, region = null) {
   let line = null;
@@ -98,9 +101,10 @@ export async function replaceVideo(idx, file, progress, region = null) {
     const span = { start: round3(region.start), end: round3(Math.min(region.end, V.dur)) };
     const hit = round3(Math.min(span.start + detectHit(makeInstrument(V, span).buffer), V.dur));
     // a whole instrument line, as metadata would give, with the instrument's own sound fields: they are kept
-    place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, amp: [], focus: region.focus ?? [] };
+    place = { ...pick(instruments[idx], INST_KEYS), ...span, hit, loopStart: hit, loopEnd: span.end, avOffset: 0, amp: [], focus: region.focus ?? [], source: region.source ?? '' };
   }
-  const cmd = exec(() => setInstrumentVideo(idx, V, place));
+  const source = place ? '' : await videoLink(reader(file), file.size) ?? '';
+  const cmd = exec(() => setInstrumentVideo(idx, V, place, undefined, source));
   addVideo(V);
   return { cmd, fromMetadata: !!line, noSound: !!V.noSound };
 }

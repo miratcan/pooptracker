@@ -207,7 +207,7 @@ async function cut(replace = false) {
     const piece = await cutVideo(reader(file), file.size, s[0], s[1]);
     const base = file.name.replace(/\.[^.]+$/, ''), at = fmt(s[0]).replace(/\.\d+$/, '');
     const out = new File([piece.bytes], `${base} ${at.replace(/:/g, '.')}.mp4`, { type: 'video/mp4' });
-    const region = { start: piece.start, end: piece.end, focus: bench.focus ? [{ t: 0, ...bench.focus }] : [] }, progress = t => setStatus(escHtml(t));
+    const region = { start: piece.start, end: piece.end, focus: bench.focus ? [{ t: 0, ...bench.focus }] : [], source: piece.source }, progress = t => setStatus(escHtml(t));
     const size = piece.bytes.length < 1048576 ? Math.ceil(piece.bytes.length / 1024) + ' KB' : (piece.bytes.length / 1048576).toFixed(1) + ' MB';
     if (replace) {
       const { noSound } = await replaceVideo(idx, out, progress, region), I = instruments[idx];

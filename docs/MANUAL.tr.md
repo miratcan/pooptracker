@@ -260,6 +260,7 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | 17 | Pre-roll | Vuruştan önceki mavi kısım. Notanın satırından *önce* çalar, böylece vuruş satıra denk gelir. |
 | 18 | Film şeridi ve dalga formu | Bölgenin kareleri ve sesi. Koyu kısımlar bölgenin dışında kalır. |
 | 19 | Vuruş karesi | Vuruş anındaki kare. Tıklayınca **odak** belirlenir: bir kare videoyu kırparken görünür tuttuğu nokta. Alt+tıklama odağı ortaya döndürür. |
+| 20 | Source | Bkz. [aşağısı](#enstruman-ayarlari) |
 
 <a id="enstruman-ayarlari"></a>
 ### Enstrüman ayarları
@@ -308,6 +309,12 @@ A, D ve R'nin her birinin bir birimi var. **tick** tempoyu takip eder. **ms** sa
 
 Görüntü sesi takip eder: karenin parlaklığı ses × zarftır.
 
+**Source:** videonun nereden geldiği: bir link ya da herhangi bir metin (`own recording`). Enstrümanla birlikte
+saklanır (satırında `src=`), yani video nereye giderse o da gider: şarkıya, **Save** ile de videonun metadata'sına.
+**Open** linki açar. Linkini bilen bir videodan [tezgâhta](#tezgah) kesilen parça onu kendiliğinden alır; YouTube
+linki parçanın başladığı saniyeyle gelir (`&t=128`). Başka bir video (Load, Repl.) kendi kaynağını getirir ya da hiç
+getirmez.
+
 ---
 
 <a id="cikti"></a>
@@ -341,8 +348,15 @@ yeniden encode etmez, bu yüzden hızlıdır ve kaliteyi korur. Kesmediğin her 
 kaydedilmez.
 
 MP4, MOV, WebM ve MKV keser. Parça videosunun codec'lerini korur, bu yüzden YouTube'dan bir videoyu H.264 ve AAC
-olarak indirmek en iyisi: `yt-dlp -S vcodec:h264,acodec:aac <url>`. yt-dlp'nin varsayılanı (Opus ile AV1 ya da VP9)
-PoopTracker'da ve VLC'de çalar, ama ondan yapılan enstrümanları QuickTime açamaz.
+olarak, linki içinde indirmek en iyisi:
+
+```
+yt-dlp -S vcodec:h264,acodec:aac --embed-metadata <url>
+```
+
+yt-dlp'nin varsayılanı (Opus ile AV1 ya da VP9) PoopTracker'da ve VLC'de çalar, ama ondan yapılan enstrümanları
+QuickTime açamaz. `--embed-metadata` ile kestiğin her parça nereden geldiğini bilir: **Source**'u, videonun linkinin
+parçanın başladığı saniyesidir.
 
 ![İşaretli bir parçayla tezgâh, numaralı](manual/bench.png)
 
