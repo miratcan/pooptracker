@@ -326,7 +326,9 @@ The workbench (**Bench** in the header, or **⌘/Ctrl+B**) is for long videos: a
 download. You put the video on the bench, mark a piece, and cut it into an instrument. The cut doesn't re-encode the
 video, so it is fast and keeps the quality. Whatever you don't cut is thrown away: the bench is never saved.
 
-It cuts MP4, MOV, WebM and MKV. A video from YouTube: `yt-dlp <url>`.
+It cuts MP4, MOV, WebM and MKV. A piece keeps its video's codecs, so a YouTube download is best fetched as H.264 and
+AAC: `yt-dlp -S vcodec:h264,acodec:aac <url>`. yt-dlp's default (AV1 or VP9 with Opus) plays in PoopTracker and
+VLC, but QuickTime can't open the instruments made from it.
 
 ![The workbench with a marked piece, numbered](manual/bench.png)
 

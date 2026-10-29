@@ -340,7 +340,9 @@ indirilmiş bir video. Videoyu tezgâha koyarsın, bir parça işaretlersin ve o
 yeniden encode etmez, bu yüzden hızlıdır ve kaliteyi korur. Kesmediğin her şey atılır: tezgâh hiçbir zaman
 kaydedilmez.
 
-MP4, MOV, WebM ve MKV keser. YouTube'dan bir video için: `yt-dlp <url>`.
+MP4, MOV, WebM ve MKV keser. Parça videosunun codec'lerini korur, bu yüzden YouTube'dan bir videoyu H.264 ve AAC
+olarak indirmek en iyisi: `yt-dlp -S vcodec:h264,acodec:aac <url>`. yt-dlp'nin varsayılanı (Opus ile AV1 ya da VP9)
+PoopTracker'da ve VLC'de çalar, ama ondan yapılan enstrümanları QuickTime açamaz.
 
 ![İşaretli bir parçayla tezgâh, numaralı](manual/bench.png)
 
