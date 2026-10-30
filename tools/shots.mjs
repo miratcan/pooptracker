@@ -107,7 +107,7 @@ const SHOTS = {
     { n: 1, at: 'header', side: 'br' }, { n: 2, at: '#ordCol', side: 'bl' }, { n: 3, at: '#patCol', side: 'br' }, { n: 4, at: '#instCard', side: 'tr' },
     { n: 5, at: '#instEd', side: 'br' }, { n: 6, at: '#outCard', side: 'br' }, { n: 7, at: { in: '#statusBar', x: 760, y: 0, w: 30, h: 26 }, side: 'inside' }].map(m => ({ ...m, box: true })) }),
   header: async () => ({ clip: ['header', 'header + .shotRoom'], pad: 0, marks: [
-    '#bNew', '#bOpen', '#bSave', '#tTitle', '#bSong', '#bPat', '#bStop', '#bRec', '#tBpm', '#tSpd', '#tOct', '#tStep', '#tFollow', '#bScreenPat', '#bScreenBench']
+    '#bNew', '#bOpen', '#bSave', '#tTitle', '#bSong', '#bPat', '#bStop', '#bRec', '#tBpm', '#tSpd', '#tOct', '#tStep', '#tFollow', '#bScreenPat', '#bScreenBench', '#bRecover']
     .map((at, i) => ({ n: i + 1, at, side: 'bottom' })) }),
   pattern: async page => {
     await page.click('#pat'); await page.key('Space'); // edit mode: the red frame

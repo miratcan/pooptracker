@@ -129,8 +129,11 @@ function demoPattern() {
   return P;
 }
 
+// the demo's videos, as the start made them: a kept song that uses them takes them from here
+export const demoVideos = [];
 export async function loadDemo(sampleRate) {
   const insts = [];
   for (const d of DEMOS) insts.push(await genInstrument(d, sampleRate));
+  demoVideos.splice(0, Infinity, ...insts.map(I => I.video));
   replaceSong({ patterns: [demoPattern()], order: [0] }, insts, insts.map(I => I.video));
 }

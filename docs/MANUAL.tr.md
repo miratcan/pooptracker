@@ -36,7 +36,8 @@ Arayüz İngilizce olduğu için düğme ve alan adları burada da ekranda gör�
 1. Chrome'da https://miratcan.github.io/pooptracker/ adresini aç. Kurulacak bir şey yok. (Kendi bilgisayarında
    çalıştırmak yalnızca [MCP](#mcp) için gerekli.)
 2. Hazır bir demo ritim (Kick, Snare, HiHat) yüklü gelir. Çalmak için **Enter**, durdurmak için **Space**. Sen
-   çalıştıkça parçan tarayıcıda saklanır: PoopTracker'ı bir dahaki açışında demo yerine o gelir.
+   çalıştıkça parçan tarayıcıda saklanır. PoopTracker'ı bir dahaki açışında boş bir şarkıyla başlar; bıraktığın
+   şarkıyı [**Recover**](#recover) açar.
 3. Kısa bir videoyu (birkaç saniyelik, içinde net bir ses olan) sayfanın herhangi bir yerine bırak. Yeni bir
    enstrüman olur.
 4. Pattern'e tıkla, edit modunu açmak için **Space**'e bas (pattern kırmızı çerçeve alır) ve klavyeden nota çal:
@@ -92,6 +93,7 @@ PoopTracker hiçbir zaman "emin misin?" diye sormaz. Şarkıyı değiştiren ya 
 | 13 | **Follow** | Çalarken pattern ve order listesi müzikle birlikte kayar (⌘/Ctrl+F). |
 | 14 | **Pattern** | Pattern ekranı. |
 | 15 | **Bench** | [Tezgâh](#tezgah). ⌘/Ctrl+B iki ekran arasında geçiş yapar. |
+| 16 | **Recover** | Tarayıcıda saklanan [son şarkıların](#recover): birini yeniden aç. |
 
 Üst bardaki bir alandan fareye dokunmadan çıkmak için **Esc**'e bas. Tuşlar o zaman pattern'e döner.
 
@@ -445,6 +447,20 @@ Chrome ve Edge'de **Save**, şarkıyı açtığın dosyanın üstüne yazar: diy
 sorar). Sayfa yenilense de aynı dosyaya yazar. Henüz bir dosyası olmayan şarkıda (Zap'ten sonra, MIDI'den gelen) nereye
 kaydedileceği sorulur, o dosya da artık şarkının dosyası olur. Başka bir dosyaya kaydetmek için Shift+tık ya da
 ⌘/Ctrl+Shift+S. Safari ve Firefox'ta Save, eskisi gibi dosyayı indirir.
+
+<a id="recover"></a>
+### Recover: tarayıcıda saklanan şarkılar
+
+Üzerinde çalıştığın her şarkı, kaydetmene gerek kalmadan tarayıcıda saklanır: sekmeyi kapatmak ya da sayfayı yenilemek
+onu kaybettirmez. Her ziyaret kendi şarkısını saklar, yani yeni bir şarkıya başlamak sonuncunun üstüne yazmaz.
+PoopTracker boş bir şarkıyla açılır (ilk ziyarette demoyla), durum çubuğu da en son çalıştığın şarkının adını söyler.
+
+**Recover** son 10 şarkıyı, en yenisi üstte ve en son ne zaman değiştiğiyle listeler. Açmak için birine tıkla. Elindeki
+şarkı olduğu gibi saklanmaya devam eder; açtığın şarkı da listedeki kendi yerinde sürer. Hiçbir şey değiştirmeyen bir
+ziyaret bir şey saklamaz. Chrome ve Edge'de **Save**, geri açılan şarkının açıldığı dosyanın üstüne yazmaya devam eder.
+
+Şarkılar yalnızca bu tarayıcıda durur: başka bir tarayıcıda ya da bilgisayarda yoktur, sitenin verilerini silmek de
+onları siler. Birini kalıcı tutmak için `.poop` olarak kaydet.
 
 ### Enstrüman videoları
 

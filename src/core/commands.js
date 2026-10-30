@@ -183,13 +183,14 @@ export function deleteChannel(ch) {
 // Zap, as FT2's: what = 'all' (an empty song), 'tracks' (patterns, order and song settings; the instruments stay) or
 // 'instruments' (all of them; the notes stay, without instrument numbers, as nothing is left for them to point at)
 export const ZAP = ['all', 'tracks', 'instruments'];
+// a new song's fields: one empty pattern of 64 rows, four channels
+export const emptySong = () => ({ title: '', bpm: 125, speed: 6, rowsPerBeat: 4, channels: Array.from({ length: 4 }, () => ({ name: '', pan: 0x80 })), patterns: [newPattern(64)], order: [0] });
 export function newSong(what = 'all') {
   if (!ZAP.includes(what)) fail(`zap '${what}' is invalid (${ZAP.join(', ')})`);
   guarded('newSong');
   const keep = { title: song.title, bpm: song.bpm, speed: song.speed, rowsPerBeat: song.rowsPerBeat, channels: song.channels, patterns: song.patterns, order: song.order };
   const oldInst = instruments.slice(), oldVideos = videos.slice();
   const set = (S, insts, vids) => { Object.assign(song, S); instruments.length = 0; instruments.push(...insts); videos.length = 0; videos.push(...vids); };
-  const fresh = { title: '', bpm: 125, speed: 6, rowsPerBeat: 4, channels: Array.from({ length: 4 }, () => ({ name: '', pan: 0x80 })), order: [0] };
   if (what === 'instruments') {
     const cells = [];
     song.patterns.forEach(P => P.rows.forEach(r => r.forEach((c, ch) => { if (c.i > 0) cells.push({ r, ch, c }); })));
@@ -199,7 +200,7 @@ export function newSong(what = 'all') {
   }
   const insts = what === 'all' ? [null] : oldInst, vids = what === 'all' ? [] : oldVideos;
   return { label: what === 'all' ? 'new song' : 'zap tracks', scope: 'all', resetEditor: true, heavy: true,
-    apply: () => { set({ ...fresh, patterns: [] }, insts, vids); song.patterns = [newPattern(64)]; },
+    apply: () => set(emptySong(), insts, vids),
     revert: () => set(keep, oldInst, oldVideos) };
 }
 

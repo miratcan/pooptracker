@@ -157,7 +157,10 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 #ampNow{margin-bottom:8px}
 #ampDlg .ampHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 .zapBody{padding:8px;gap:6px}
-#zapDlg .zapHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
+#recList{display:flex;flex-direction:column;gap:2px;margin:8px;padding:3px;max-height:min(50vh,340px);overflow:auto}
+#recList p{margin:0;padding:4px}
+.recItem{display:flex;justify-content:space-between;gap:12px;text-align:left}
+#zapDlg .zapHint,#recDlg .zapHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 #opening .openBody{padding:8px}
 #libDlg{width:min(620px,calc(100vw - 32px))}
 .libBody{padding:8px;display:flex;flex-direction:column;gap:6px}
@@ -207,7 +210,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 <div id="shell">
 <header>
   <fieldset><legend>Module</legend>
-    <button id="bNew" title="Zap: empty the song, all of it, its tracks or its instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S: over the file it was opened from (Chrome, Edge), else it asks where. Shift+click or ⌘/Ctrl+Shift+S: save as another file">Save</button>
+    <button id="bNew" title="Zap: empty the song, all of it, its tracks or its instruments (Ctrl+Z brings it back)">Zap</button><button id="bOpen" title="Load a .poop song file or import a MIDI file (.mid), ⌘/Ctrl+O (or drop it on the page)">Load</button><button id="bSave" title="Save the song with its videos as one .poop file, ⌘/Ctrl+S: over the file it was opened from (Chrome, Edge), else it asks where. Shift+click or ⌘/Ctrl+Shift+S: save as another file">Save</button><button id="bRecover" title="The last songs you worked on, kept in this browser: open one again">Recover</button>
     <input id="songFile" type="file" accept=".poop,.mid,.midi" hidden>
     <input id="tTitle" maxlength="64" style="width:160px" placeholder="song title" aria-label="Song title">
   </fieldset>
@@ -421,6 +424,11 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     <p class="dim">Yours could be here: <a href="https://github.com/miratcan/pooptracker-instruments" target="_blank" rel="noopener">pooptracker-instruments ↗</a></p>
   </div>
 </dialog>
+<dialog id="recDlg" class="win" aria-labelledby="recTitle">
+  <form method="dialog" class="winHead"><span id="recTitle">Recover</span><button class="close" aria-label="Close">✕</button></form>
+  <div id="recList" class="well"></div>
+  <p class="zapHint">Your last songs, kept in this browser as you worked on them. Opening one keeps the song you have now (if you changed it) for next time.</p>
+</dialog>
 <dialog id="opening" class="win" aria-labelledby="openTitle">
   <div class="winHead"><span id="openTitle">Opening</span></div>
   <div class="openBody"><div class="well" id="openNow" role="status"></div><div class="well openMeter"><i id="openBar"></i></div></div>
@@ -438,17 +446,17 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 <script type="importmap">
 {
   "imports": {
-    "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
-    "./src/core/commands.js": "./src/core/commands.js?v=34bff0abfb",
+    "./src/autosave.js": "./src/autosave.js?v=27eaa32c80",
+    "./src/core/commands.js": "./src/core/commands.js?v=e31e424040",
     "./src/core/instrument.js": "./src/core/instrument.js?v=46b286c212",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
-    "./src/demo.js": "./src/demo.js?v=7118276168",
+    "./src/demo.js": "./src/demo.js?v=d8b0e97f0b",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
     "./src/engine/player.js": "./src/engine/player.js?v=7aa77e8bdb",
     "./src/engine/voice.js": "./src/engine/voice.js?v=0ea7fb10a4",
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=8d4397fa56",
-    "./src/main.js": "./src/main.js?v=0c51e73db6",
+    "./src/main.js": "./src/main.js?v=7e3f8a992d",
     "./src/mcp.js": "./src/mcp.js?v=f15126e74b",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
@@ -464,6 +472,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
     "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=e8f8603e24",
+    "./src/ui/recover.js": "./src/ui/recover.js?v=624eaae091",
     "./src/ui/screens.js": "./src/ui/screens.js?v=d4ca41dbe0",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=4a851cc54d",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
@@ -473,6 +482,6 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   }
 }
 </script>
-<script type="module" src="src/main.js?v=0c51e73db6"></script>
+<script type="module" src="src/main.js?v=7e3f8a992d"></script>
 </body>
 </html>

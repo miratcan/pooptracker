@@ -5,11 +5,11 @@
 // See docs/ARCHITECTURE.md.
 import { instruments, song, videos, nch } from './core/song.js';
 import * as commands from './core/commands.js';
-import { onChange, undo, redo } from './core/commands.js';
+import { onChange, undo, redo, replaceSong, emptySong } from './core/commands.js';
 import { initAudio, ensureAudio, visualTime, ctx } from './engine/audio.js';
 import { player } from './engine/player.js';
 import * as engine from './engine/player.js';
-import { $, ed, view, setStatus, refreshUI, onRefresh, clampEditor } from './ui/common.js';
+import { $, ed, view, setStatus, refreshUI, onRefresh, clampEditor, escHtml } from './ui/common.js';
 import { showScreen, setGlobalKeys, activeScreen } from './ui/screens.js';
 import { drawOutput, sizeOut, fitOut, updateStats } from './ui/output.js';
 import { patternScreen, setupPat, drawPattern, focusPattern } from './ui/patternEditor.js';
@@ -17,11 +17,10 @@ import { refreshSongPanel, followOrd } from './ui/songPanel.js';
 import { refreshInstrumentPanel } from './ui/instrumentPanel.js';
 import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
-import { setSongFile } from './ui/files.js';
 import './ui/bug.js';
 import './ui/library.js';
+import { songName, ago } from './ui/recover.js';
 import { askManual } from './ui/welcome.js';
-import { opening } from './ui/opening.js';
 import { startMcp } from './mcp.js';
 import { loadDemo } from './demo.js';
 import * as autosave from './autosave.js';
@@ -87,16 +86,14 @@ async function boot() {
   setupPat(); fitOut();
   setStatus('Making demo instruments…');
   await loadDemo(ctx.sampleRate);
-  // the song from last time, if there is one, opens in place of the demo
-  let back = false;
-  let handle = null;
-  try { handle = await autosave.keptHandle(); back = await opening('Opening the song from last time', autosave.restore); }
-  catch (err) { console.warn("Couldn't open the song from last time:", err); }
-  if (back && handle) setSongFile(handle); // the song's file, as before the reload
+  // a returning visitor starts with an empty song; the kept ones wait under Recover
+  let last = null;
+  try { [last] = await autosave.recent(); } catch (err) { console.warn("Couldn't read the kept songs:", err); }
+  if (last) replaceSong(emptySong(), [], []);
   autosave.keep();
   requestAnimationFrame(loop);
   startMcp();
-  setStatus(back ? 'Ready: back where you left off. <b>Zap</b> starts an empty song (Ctrl+Z brings this one back).'
+  setStatus(last ? `Ready: a new empty song. Your last one (${escHtml(songName(last))}, ${ago(last.at)}) is under <b>Recover</b>.`
     : 'Ready: <b>Enter</b> plays, <b>Space</b> stops / turns on edit mode, the note keys jam. Drag and drop to load your own video.');
   focusPattern();
   askManual();

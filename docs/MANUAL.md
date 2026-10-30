@@ -33,7 +33,8 @@ If you only want to start making noise, read [Quick start](#quick-start) and kee
 1. Open https://miratcan.github.io/pooptracker/ in Chrome. There is nothing to install. (Running it on your own
    computer is only needed for [MCP](#mcp).)
 2. A demo beat (Kick, Snare, HiHat) is already loaded. Press **Enter** to play it and **Space** to stop. Your song
-   is kept in the browser as you work: the next time you open PoopTracker, it is there instead of the demo.
+   is kept in the browser as you work. The next time you open PoopTracker, it starts with an empty song, and
+   [**Recover**](#recover) opens the one you left.
 3. Drop a short video (a few seconds, with a clear sound in it) anywhere on the page. It becomes a new instrument.
 4. Click the pattern, press **Space** to turn on edit mode (the pattern gets a red frame), and play notes on the
    keyboard: `Z S X D C V…` is one octave and `Q 2 W 3 E R…` is the octave above it. Each key writes a note with
@@ -87,6 +88,7 @@ with **⌘/Ctrl+Shift+Z** ([ZEN-NO-CONFIRMATION](ZEN.md)).
 | 13 | **Follow** | While playing, the pattern and the order list scroll with the music (⌘/Ctrl+F). |
 | 14 | **Pattern** | The pattern screen. |
 | 15 | **Bench** | The [workbench](#the-workbench). ⌘/Ctrl+B switches between the two screens. |
+| 16 | **Recover** | Your [last songs](#recover), kept in the browser: open one again. |
 
 To leave a header field without the mouse, press **Esc**. The keys then go back to the pattern.
 
@@ -430,6 +432,20 @@ In Chrome and Edge, **Save** writes over the file the song was opened from: no d
 asks for permission once). It still does after a reload. A song with no file yet (after Zap, from a MIDI file) asks
 where to save, and that file is the song's from then on. Shift+click or ⌘/Ctrl+Shift+S saves it as another file. In
 Safari and Firefox, Save downloads the file as before.
+
+<a id="recover"></a>
+### Recover: the songs kept in the browser
+
+Every song you work on is kept in the browser as you go, without saving: a closed tab or a reload doesn't lose it.
+Each visit keeps its own song, so starting a new one never writes over the last. PoopTracker starts with an empty
+song (the demo on your first visit), and the status bar names the last one you worked on.
+
+**Recover** lists the last 10, newest first, with when you last changed them. Click one to open it. The song you had
+stays kept as it was, and the one you opened goes on in its own place in the list. A visit that changes nothing
+keeps nothing. In Chrome and Edge, **Save** still writes over the file a recovered song was opened from.
+
+The songs live in this browser only: another browser or another computer doesn't have them, and clearing the
+site's data removes them. Save a `.poop` to keep one for good.
 
 ### Instrument videos
 

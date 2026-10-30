@@ -20,6 +20,9 @@ The first public version.
 - The library (Lib. under the instrument list): ready instruments shared in the pooptracker-instruments repository,
   listed by folder, found by name, tag or folder, heard before they are added (Add) or made the selected instrument's
   video (Repl.), with all their settings.
+- Recover (in the header): the last 10 songs kept in the browser, each visit's on its own, newest first. The start
+  no longer opens the last song by itself (decoding its videos took up to a minute): it starts empty (the demo on a
+  first visit) and says which song Recover has. The one kept song of before is the first in the list.
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
 - Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's

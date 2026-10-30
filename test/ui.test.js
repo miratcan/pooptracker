@@ -176,19 +176,56 @@ test('instruments: a video saved with Save brings all its settings, the loop mod
   assert.deepEqual(saved, ['A-4 +0', 'forward']);
 });
 
-test('the song is kept: a reload opens it as it was, its own videos and the demo\'s, instead of the demo', { skip }, async t => {
+// Recover lists the kept songs: the one clicked opens (done when the status says so)
+async function recover(page, k = 0) {
+  await page.click('#bRecover');
+  await page.waitFor(() => document.querySelectorAll('#recList .recItem').length > 0);
+  await page.eval(k => document.querySelectorAll('#recList .recItem')[k].click(), k);
+  await page.waitFor(() => /^Recovered/.test(document.querySelector('#status').textContent), SLOW);
+}
+// a reload, done when the new page is ready and its status matches re (the demo is made first: slow on a busy machine)
+async function reload(page, re) {
+  await page.reload();
+  await page.waitFor(re => new RegExp(re).test(document.querySelector('#status').textContent), 20000, re.source);
+}
+const recList = page => page.eval(() => [...document.querySelectorAll('#recList .recItem span:first-child')].map(e => e.textContent));
+const setTitle = (page, title) => page.eval(async t => { const c = await import('/src/core/commands.js'); c.exec(() => c.setSong({ title: t }, 'title')); }, title);
+
+test('the song is kept: a reload starts empty, and Recover opens it as it was, its own videos and the demo\'s', { skip }, async t => {
   const page = await app(t);
   await page.click('#instList .inst:nth-child(2)');
   await page.eval(() => { const e = document.querySelector('#iVol'); e.value = '20'; e.dispatchEvent(new Event('change')); });
   await loadFixture(page);
-  await page.eval(async () => { const c = await import('/src/core/commands.js'); c.exec(() => c.setSong({ title: 'kept' }, 'title')); });
+  await setTitle(page, 'kept');
   await sleep(1500); // kept a moment after the last change
-  await page.reload();
-  await page.waitFor(() => /back where you left off/.test(document.querySelector('#status').textContent), SLOW);
+  await reload(page, /Your last one \(kept, just now\) is under Recover/);
+  assert.deepEqual(await page.eval(() => [pooptracker.song.title, pooptracker.instruments.length]), ['', 1]);
+  await recover(page);
   assert.deepEqual(await instNames(page), ['01 Kick', '02 Snare', '03 HiHat']);
   await page.click('#instList .inst:nth-child(2)');
   assert.equal(await val(page, '#iVol'), '20');
   assert.deepEqual(await page.eval(() => [pooptracker.song.title, pooptracker.instruments[2].video.name, !!pooptracker.instruments[1].video.file]), ['kept', 'av.mp4', false]);
+});
+
+test('Recover: every visit keeps its own song, one that changes nothing keeps none; a recovered song goes on in its own place', { skip }, async t => {
+  const page = await app(t);
+  await setTitle(page, 'one'); await sleep(1500);
+  await reload(page, /under Recover/);
+  await setTitle(page, 'two'); await sleep(1500);
+  await reload(page, /under Recover/);
+  await reload(page, /Your last one \(two/);
+  await page.click('#bRecover');
+  await page.waitFor(() => document.querySelectorAll('#recList .recItem').length > 0);
+  assert.deepEqual(await recList(page), ['two', 'one']);
+  await page.eval(() => document.querySelector('#recDlg').close());
+  await recover(page, 1);
+  assert.equal(await page.eval(() => pooptracker.song.title), 'one');
+  await setTitle(page, 'one more'); await sleep(1500);
+  await page.click('#bRecover');
+  await page.waitFor(() => document.querySelectorAll('#recList .recItem').length > 0);
+  assert.deepEqual(await recList(page), ['two']); // the open one is not in the list, and 'one' is now 'one more'
+  await page.eval(() => document.querySelector('#recDlg').close());
+  await reload(page, /Your last one \(one more/);
 });
 
 test('instruments: Tune finds A-4 in a 440 Hz clip; Fit makes its region last a power of two rows at C-4', { skip }, async t => {
@@ -360,8 +397,9 @@ test('Save writes over the file the song was opened from, also after a reload; Z
   await setBpm(140); await save();
   assert.equal(await bpmInFile(), 140);
   await sleep(1500); // the song is kept a moment after the last change
-  await page.reload();
-  await page.waitFor(() => /back where you left off/.test(document.querySelector('#status').textContent), SLOW);
+  await reload(page, /under Recover/);
+  await recover(page);
+  assert.match(await text(page, '#status'), /Save writes over test\.poop/);
   await setBpm(150); await save();
   assert.equal(await bpmInFile(), 150);
   await zap(page, 'all');

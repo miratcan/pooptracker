@@ -24,7 +24,7 @@ src/
     player.js       rows → voices, ahead of time; effects; key preview, sync test
   frames.js       a video's frames by decoding it in order (WebCodecs, MP4 H.264/AV1); io.js seeks where it can't
   io.js           files ⇄ song: decode videos, import / replace, read / build .poop, save to video
-  autosave.js     keeps the song in the browser (IndexedDB) as it changes; the next start opens it instead of the demo
+  autosave.js     keeps the song in the browser (IndexedDB) as it changes, each visit's on its own; Recover opens one
   mcp.js          the MCP tools, run inside the tab [ZEN-AI-PARITY]
   ui/             screens and panels
     common.js       editor state (cursor, selection…), status bar, run(), refreshUI()
