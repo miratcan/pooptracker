@@ -10,7 +10,11 @@
     "click",
     "hit"
    ],
-   "source": "https://example.com/click"
+   "source": "https://example.com/click",
+   "focus": [
+    0,
+    0.5
+   ]
   },
   {
    "path": "vocal/tone.mp4",

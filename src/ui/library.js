@@ -10,11 +10,12 @@ import { instruments } from '../core/song.js';
 import { CmdError } from '../core/commands.js';
 import { importVideo, replaceVideo, NO_SOUND } from '../io.js';
 import { $, ed, setStatus } from './common.js';
+import { coverRect } from './output.js';
 
 const REPO = 'miratcan/pooptracker-instruments', FORMAT = 1;
 const CUSTOM = new URLSearchParams(location.search).get('library');
 const dlg = $('#libDlg'), list = $('#libList'), find = $('#libFind'), prev = $('#libPrev'), wait = $('#libPrevNow');
-let lib = null;    // { base, items: [{ path, name, length, bytes, tags?, source? }] }
+let lib = null;    // { base, items: [{ path, name, length, bytes, tags?, focus?: [x, y], source? }] }
 let shown = [];    // the items the search lets through, in list order
 let sel = null;    // the selected item
 let busy = false;
@@ -88,6 +89,15 @@ function pick(item) {
 }
 function waiting(text, err = false) { wait.hidden = !text; wait.textContent = text ?? ''; wait.classList.toggle('err', err); }
 prev.addEventListener('loadeddata', () => waiting(null));
+// the preview crops the video as a tile does: around where the picture looks at the hit (the middle without a focus).
+// coverRect says which part of the frame shows; object-position puts that part in the box
+prev.addEventListener('loadedmetadata', () => {
+  const vw = prev.videoWidth, vh = prev.videoHeight, f = sel?.focus;
+  if (!vw || !vh) return;
+  const r = coverRect(vw, vh, prev.clientWidth / prev.clientHeight, f ? { x: f[0], y: f[1] } : undefined);
+  const pct = (o, slack) => slack > 0.5 ? `${(o / slack * 100).toFixed(1)}%` : '50%';
+  prev.style.objectPosition = `${pct(r.x, vw - r.w)} ${pct(r.y, vh - r.h)}`;
+});
 prev.addEventListener('error', () => { if (prev.getAttribute('src')) waiting("⚠ the video couldn't be loaded", true); });
 function side() {
   const info = $('#libInfo'); info.replaceChildren();

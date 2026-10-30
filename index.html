@@ -315,17 +315,17 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
       <select id="iLoop" aria-label="Loop mode" title="none: plays once · forward: loop start → end, again and again · pingpong: start → end → start…"><option value="none">none</option><option value="forward">forward</option><option value="pingpong">pingpong</option></select>
       <input id="iLS" type="number" step="0.001" min="0" aria-label="Loop start (s)"> – <input id="iLE" type="number" step="0.001" min="0" aria-label="Loop end (s)">
     </fieldset>
-    <fieldset title="Envelope (ADSR)"><legend>Env.</legend>
-      <label title="Attack: how long the note takes to rise from silence to full volume. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">A<input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
-      <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D<input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
-      <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S<input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
-      <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
-    </fieldset>
     <fieldset><legend>Tags</legend>
       <input id="iTags" style="width:150px" spellcheck="false" placeholder="snare hit" aria-label="Tags" title="What the sound is, to find it by: words split by spaces (snare hit crash; a # in front is fine). Lowercase letters and digits, words joined by dashes (big-room). They travel with the video">
     </fieldset>
     <fieldset><legend>Source</legend>
       <input id="iSrc" style="width:150px" spellcheck="false" placeholder="link or text" aria-label="Source" title="Where the video comes from: a link (a YouTube one with ?t= for the second the piece starts at) or any text. It travels with the video. A piece cut on the bench from a video downloaded with yt-dlp --embed-metadata gets it by itself"><button id="bSrc" title="Open the source link in a new tab">Open</button>
+    </fieldset>
+    <fieldset title="Envelope (ADSR)"><legend>Env.</legend>
+      <label title="Attack: how long the note takes to rise from silence to full volume. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">A<input id="iA" type="number" min="0" style="width:56px"></label><select id="iAu" aria-label="A unit"><option value="t">tick</option><option value="ms">ms</option></select>
+      <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D<input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
+      <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S<input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
+      <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
     </fieldset>
     </div>
     <div id="waveWrap"><canvas id="wave" title="Drag the region (yellow), hit (red) and loop (green) handles; click empty space: the hit goes there. Dark: outside the region; blue: pre-roll"></canvas><canvas id="framePrev" width="320" height="180" title="Click: the focus, the point the tiles keep in view (the frame shows what a one-channel tile sees) · Alt+click: back to the middle"></canvas></div>
@@ -457,7 +457,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=5ec77526ba",
-    "./src/ui/library.js": "./src/ui/library.js?v=4c83c95e68",
+    "./src/ui/library.js": "./src/ui/library.js?v=61e6426def",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",

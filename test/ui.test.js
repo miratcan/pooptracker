@@ -425,6 +425,7 @@ test('the library lists its instruments by folder, finds them, adds one with its
   await page.click('#libList .libItem');
   assert.equal(await text(page, '#libPrevNow'), 'Loading…'); // over the black picture until the video is in
   await page.waitFor(() => document.querySelector('#libPrevNow').hidden, 8000);
+  assert.equal(await page.eval(() => document.querySelector('#libPrev').style.objectPosition), '0% 50%'); // cropped around its focus (left edge)
   assert.match(await text(page, '#libInfo'), /^41 KB\s*from: https:\/\/example\.com\/click/);
   const n = await page.eval(async () => (await import('/src/core/song.js')).instruments.length);
   await page.click('#libAdd');
