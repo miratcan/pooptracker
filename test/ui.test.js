@@ -3,6 +3,9 @@
 // the Mac app. Skipped when that browser isn't there; the tests that need CDP are skipped in Safari.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { copyFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Browser as Chrome, FIXTURES, chromePath, sleep } from './browser.js';
 import { SafariBrowser, safariPath } from './safari.js';
 
@@ -392,4 +395,19 @@ test('− Chn. deletes the last channel (as + Chn. adds one at the end), whichev
   await page.click('#cDel'); await page.click('#cDel'); // the cursor is in channel 1, which has notes
   assert.equal(await n(), 4);
   assert.doesNotMatch(await text(page, '#status'), /isn't empty/);
+});
+
+// Saving an instrument over its own video: Chrome empties the chosen file as soon as it is picked, before the video is
+// read to be written into it. A video kept as a reference to the file couldn't be read any more (NotReadableError)
+test('a loaded video is kept in memory: its file can change on disk and the instrument is still saved', { skip: cdp }, async t => {
+  const page = await app(t), file = join(mkdtempSync(join(tmpdir(), 'pooptracker-')), 'clip.mp4');
+  copyFileSync(`${FIXTURES}/av.mp4`, file);
+  await page.setFiles('#file', [file]);
+  await page.waitFor(() => /video → clip\.mp4/.test(document.querySelector('#status').textContent), 15000);
+  writeFileSync(file, '');
+  const size = await page.eval(async () => {
+    const { instrumentVideo } = await import('/src/io.js'), { instruments } = await import('/src/core/song.js'), { ed } = await import('/src/ui/common.js');
+    return (await instrumentVideo(instruments[ed.inst])).size;
+  });
+  assert.ok(size > 60000, `${size} bytes`);
 });

@@ -61,6 +61,11 @@ export async function decodeVideo(file, progress = () => {}) {
   return V;
 }
 
+// An instrument's video is kept in memory, never as a reference to the file on disk: that file can change after it is
+// loaded, and then the browser can't read it any more (NotReadableError). Saving an instrument over its own video does
+// exactly that: Chrome empties the chosen file as soon as it is picked, before the video is read to be written into it.
+const inMemory = async file => new File([await file.arrayBuffer()], file.name, { type: file.type, lastModified: file.lastModified });
+
 // a video → a new instrument (one command). A video saved by PoopTracker carries its instrument in its
 // metadata; otherwise the hit is detected. A piece cut on the workbench comes with its region
 // ({ start, end, name }: the selection inside the piece) and its hit is looked for there. region.focus (also without a
@@ -68,6 +73,7 @@ export async function decodeVideo(file, progress = () => {}) {
 // link a downloader wrote into the video (yt-dlp --embed-metadata).
 // Returns { idx, I, fromMetadata }.
 export async function importVideo(file, progress, region = null) {
+  file = await inMemory(file);
   let line = null;
   try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
   const tag = line == null ? null : PTFormat.parse(line);
@@ -90,6 +96,7 @@ export async function importVideo(file, progress, region = null) {
 // is looked for there.
 // Returns { cmd, fromMetadata }.
 export async function replaceVideo(idx, file, progress, region = null) {
+  file = await inMemory(file);
   let line = null;
   if (!region) try { line = PTFormat.mp4ReadTag(new Uint8Array(await file.arrayBuffer())); } catch {} // not an MP4/MOV: no metadata
   const tag = line == null ? null : PTFormat.parse(line);
