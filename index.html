@@ -257,7 +257,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   <section class="card" id="instCard">
     <h2>Instruments</h2>
     <div id="instList" class="well"></div>
-    <div class="btnRow"><button id="iNew" title="Add an empty instrument at the end of the list; Load then gives it a video">New</button><button id="bLoad" title="Load a video into the selected instrument: it keeps how it sounds (name, base note, finetune, volume, reverb, envelope, loop mode); region and hit are found in the new video. A video saved with Save brings all its own settings instead. Or drop the video on the instrument in the list.">Load</button><input id="file" type="file" accept="video/*" hidden>
+    <div class="btnRow"><button id="iNew" title="Add an empty instrument at the end of the list; Load then gives it a video">New</button><button id="bLoad" title="Load a video into the selected instrument: it keeps how it sounds (name, tags, base note, finetune, volume, reverb, envelope, loop mode); region and hit are found in the new video. A video saved with Save brings all its own settings instead. Or drop the video on the instrument in the list.">Load</button><input id="file" type="file" accept="video/*" hidden>
       <button id="bVidSave" title="Save the video with this instrument's settings (hit, loop, ADSR…) in its metadata; dropped on the tracker, it arrives as a ready instrument. The video isn't re-encoded. MP4/MOV only.">Save</button>
       <button id="bSplit" title="Duplicate: a new instrument from the same video with the same settings; then change its region">Dup.</button>
       <button id="iUp" title="Move up" aria-label="Move instrument up">↑</button><button id="iDown" title="Move down" aria-label="Move instrument down">↓</button>
@@ -296,6 +296,9 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
       <label title="Decay: how long it then takes to fall from full volume to the sustain level (S). Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">D<input id="iD" type="number" min="0" style="width:56px"></label><select id="iDu" aria-label="D unit"><option value="t">tick</option><option value="ms">ms</option></select>
       <label title="Sustain: the level the note stays at after the decay, until its key-off (===) or until you let go of the key. Hex 00–40 like Vol (40 = full).">S<input id="iS" maxlength="2" style="width:34px" spellcheck="false"></label>
       <label title="Release: how long the note takes to fade to silence after its key-off (===) or after you let go of the key. Its unit: tick follows the tempo (1 tick = 2.5/BPM s), ms stays fixed.">R<input id="iR" type="number" min="0" style="width:56px"></label><select id="iRu" aria-label="R unit"><option value="t">tick</option><option value="ms">ms</option></select>
+    </fieldset>
+    <fieldset><legend>Tags</legend>
+      <input id="iTags" style="width:150px" spellcheck="false" placeholder="snare hit" aria-label="Tags" title="What the sound is, to find it by: words split by spaces (snare hit crash; a # in front is fine). Lowercase letters and digits, words joined by dashes (big-room). They travel with the video">
     </fieldset>
     <fieldset><legend>Source</legend>
       <input id="iSrc" style="width:150px" spellcheck="false" placeholder="link or text" aria-label="Source" title="Where the video comes from: a link (a YouTube one with ?t= for the second the piece starts at) or any text. It travels with the video. A piece cut on the bench from a video downloaded with yt-dlp --embed-metadata gets it by itself"><button id="bSrc" title="Open the source link in a new tab">Open</button>
@@ -394,8 +397,8 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 {
   "imports": {
     "./src/autosave.js": "./src/autosave.js?v=a129a531b9",
-    "./src/core/commands.js": "./src/core/commands.js?v=ec4f8d806a",
-    "./src/core/instrument.js": "./src/core/instrument.js?v=ed27e28192",
+    "./src/core/commands.js": "./src/core/commands.js?v=34bff0abfb",
+    "./src/core/instrument.js": "./src/core/instrument.js?v=46b286c212",
     "./src/core/song.js": "./src/core/song.js?v=6eaf9b5a3d",
     "./src/demo.js": "./src/demo.js?v=7118276168",
     "./src/engine/audio.js": "./src/engine/audio.js?v=67c45774a2",
@@ -404,16 +407,16 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=8d4397fa56",
     "./src/main.js": "./src/main.js?v=722ebfda5f",
-    "./src/mcp.js": "./src/mcp.js?v=6b338ed893",
+    "./src/mcp.js": "./src/mcp.js?v=f15126e74b",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
     "./src/mp4cut.js": "./src/mp4cut.js?v=e114c82bfe",
-    "./src/ptformat.js": "./src/ptformat.js?v=1baee3c7b5",
+    "./src/ptformat.js": "./src/ptformat.js?v=dc89fede4b",
     "./src/ui/bench.js": "./src/ui/bench.js?v=ada1cb79cf",
     "./src/ui/bug.js": "./src/ui/bug.js?v=d6d26b5cd5",
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
-    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=ca39a901e6",
+    "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=5ec77526ba",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",

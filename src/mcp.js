@@ -16,6 +16,8 @@ const hexArg = (v, what) => typeof v === 'string' && /^[0-9A-Fa-f]{2}$/.test(v) 
 const patArg = v => { const p = hexArg(v, 'pattern'); return song.patterns[p] ? p : fail(`pattern ${hex2(p)} doesn't exist (there are 00–${hex2(song.patterns.length - 1)})`); };
 const rowArg = (v, pi, what = 'row') => { const r = hexArg(v, what), N = song.patterns[pi].rows.length; return r < N ? r : fail(`${what} ${hex2(r)} doesn't exist (pattern ${hex2(pi)}: 00–${hex2(N - 1)})`); };
 const chArg = v => Number.isInteger(v) && v >= 1 && v <= nch() ? v - 1 : fail(`channel must be an integer 1–${nch()} (the song has ${nch()} channels), got: ${JSON.stringify(v)}`);
+// tags: a list as given (checked with the instrument), or a text read as the panel reads it ('#snare hit')
+const checkedTags = v => Array.isArray(v) ? v.map(String) : PTFormat.tagsFrom(v ?? '');
 const instArg = v => { const i = hexArg(v, 'instrument'); return instruments[i] && i > 0 ? i : fail(`instrument ${hex2(i)} doesn't exist (there are 01–${hex2(instruments.length - 1)})`); };
 const fieldArg = (kind, v) => { try { return PTFormat.cellField(kind, v); } catch (e) { fail(e.message); } };
 const chList = v => v == null ? [...Array(nch()).keys()] : Array.isArray(v) && v.length ? v.map(chArg) : fail('channels must be a list of channels, e.g. [1, 3]');
@@ -67,7 +69,7 @@ const MCP_TOOLS = {
       'patterns:', ...song.patterns.map((P, k) => `  ${hex2(k)}: ${P.rows.length} rows, ${P.rows.reduce((a, r) => a + r.filter(c => !same(c, emptyCell())).length, 0)} filled cells`)].join('\n');
   },
   list_instruments() {
-    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · amp ${I.amp.length ? PTFormat.ampStr(I.amp) + ' (start-end %, in order)' : 'none'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}${I.source ? ` · source ${I.source}` : ''}`).join('\n') || 'no instruments';
+    return instruments.slice(1).map((I, k) => `${hex2(k + 1)} ${I.name || '(unnamed)'} · base ${noteName(I.baseNote)} · volume ${hex2(I.vol)} · reverb ${hex2(I.reverb)} · region ${fmtTime(I.start)}–${fmtTime(I.end)} s · hit ${fmtTime(I.hit)} s · a=${envTxt(I.A)} d=${envTxt(I.D)} s=${hex2(I.S)} r=${envTxt(I.R)} · ${I.loop !== 'none' ? `${I.loop} loop ${fmtTime(I.loopStart)}–${fmtTime(I.loopEnd)} s` : 'no loop'} · amp ${I.amp.length ? PTFormat.ampStr(I.amp) + ' (start-end %, in order)' : 'none'} · focus ${I.focus.length ? PTFormat.focusStr(I.focus) : 'middle'}${I.tags.length ? ` · tags ${I.tags.join(' ')}` : ''}${I.source ? ` · source ${I.source}` : ''}`).join('\n') || 'no instruments';
   },
   view_rows(a) {
     const pi = patArg(a.pattern), [r0, r1] = rowRange(a, pi), P = song.patterns[pi];
@@ -166,10 +168,10 @@ const MCP_TOOLS = {
   },
   set_instrument(a) {
     const idx = instArg(a.instrument), f = {}, map = { name: 'name', base_note: 'base', volume: 'vol', reverb: 'rev', attack: 'a', decay: 'd', sustain: 's', release: 'r', loop: 'loop', loop_start: 'ls', loop_end: 'le', fine: 'fine',
-      region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus', source: 'src' };
+      region_start: 'start', region_end: 'end', hit: 'hit', av_offset: 'av', focus: 'focus', source: 'src', tags: 'tags' };
     for (const [k, key] of Object.entries(map)) if (k in a) {
       if (k === 'loop' && !PTFormat.LOOP_MODES.includes(a.loop)) fail(`loop must be none, forward or pingpong (got '${a.loop}')`);
-      try { f[{ name: 'name', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus', src: 'source' }[key]] = k === 'loop' ? a.loop : k === 'name' || k === 'source' ? String(a[k]).trim() : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
+      try { f[{ name: 'name', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb', a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', start: 'start', end: 'end', hit: 'hit', av: 'avOffset', focus: 'focus', src: 'source', tags: 'tags' }[key]] = k === 'loop' ? a.loop : k === 'tags' ? checkedTags(a.tags) : k === 'name' || k === 'source' ? String(a[k]).trim() : k === 'focus' && a.focus === '' ? [] : PTFormat.field(key, a[k]); }
       catch (e) { fail(e.message.replace(/^TURD1\b[^:]*:\s*/, '')); } // drop the parser's line prefix, whatever its wording
     }
     if (!Object.keys(f).length) fail(`nothing to change (${Object.keys(map).join(', ')})`);
@@ -256,7 +258,7 @@ const MCP_TOOLS = {
     const i = instArg(a.instrument), focus = focusArg(a), f = await fileArg(a.file);
     const { fromMetadata, noSound } = await replaceVideo(i, f, progress, a.region ? { ...a.region, focus } : null), I = instruments[i];
     return done(true, `instrument ${hex2(i)}: video → ${f.name}; ` + (fromMetadata ? 'all its settings from the video\'s metadata (it was saved by PoopTracker)'
-      : `name, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`) + (noSound ? NO_SOUND : ''));
+      : `name, tags, base note, finetune, volume, reverb, envelope and loop mode kept; region = ${a.region ? 'the piece' : 'the whole video'} (${I.start.toFixed(3)}–${I.end.toFixed(3)} s), hit found automatically at ${I.hit.toFixed(3)} s`) + (noSound ? NO_SOUND : ''));
   },
   async open_song(a) {
     const f = await fileArg(a.file), r = await opening(`MCP · opening ${f.name}`, p => readSong(f, p));

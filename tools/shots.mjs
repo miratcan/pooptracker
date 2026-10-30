@@ -146,7 +146,7 @@ const SHOTS = {
       { n: 15, at: { in: '#wave', x: x.start * w.w, y: 0, w: 2, h: 8 }, side: 'left' }, { n: 16, at: { in: '#wave', x: x.hit * w.w, y: 80, w: 2, h: 20 }, side: 'right' },
       { n: 17, at: { in: '#wave', x: (x.start * w.w + x.hit * w.w) / 2, y: 95, w: 2, h: 20 }, side: 'inside' },
       { n: 18, at: { in: '#wave', x: w.w * 0.7, y: 10, w: 2, h: 30 }, side: 'inside' }, { n: 19, at: '#framePrev', side: 'inside' },
-      { n: 20, at: 'legend:Source', side: 'legend' }] };
+      { n: 20, at: 'legend:Source', side: 'legend' }, { n: 21, at: 'legend:Tags', side: 'legend' }] };
   },
   // channel 1 plays with G21, as the manual says: its tile covers the top row. The label and the hit flash are drawn on
   // the canvas, so they are pointed at by place, in tile 3 (bottom left)

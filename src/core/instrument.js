@@ -26,8 +26,8 @@ export const loops = I => I.loop !== 'none' && I.loopEnd > I.loopStart;
 export const videoFrame = (V, t) => V.frames[clamp(Math.floor(t * V.fps), 0, V.frames.length - 1)];
 export function makeInstrument(V, o) {
   const I = Object.assign({ name: '', start: 0, end: V.dur, hit: 0, baseNote: 48, fine: 0, vol: 64, reverb: 0,
-    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0, amp: [], focus: [], source: '' }, o);
-  I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R }; I.amp = I.amp.map(s => ({ ...s })); I.focus = I.focus.map(k => ({ ...k }));
+    A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 5, u: 't' }, loop: 'none', loopStart: 0, loopEnd: V.dur, avOffset: 0, amp: [], focus: [], source: '', tags: [] }, o);
+  I.video = V; I.A = { ...I.A }; I.D = { ...I.D }; I.R = { ...I.R }; I.amp = I.amp.map(s => ({ ...s })); I.focus = I.focus.map(k => ({ ...k })); I.tags = [...I.tags];
   sliceRegion(I);
   return I;
 }

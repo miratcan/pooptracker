@@ -1,5 +1,6 @@
 // The instrument panel: the list of instruments, their settings and the waveform editor.
 // Sliders and waveform drags preview live and become ONE command when released.
+import PTFormat from '../ptformat.js';
 import { clamp, hex2, noteName, round3, copy } from '../util.js';
 import { song, instruments } from '../core/song.js';
 import { makeInstrument, videoFrame, frameAt, focusAt, hitPos, sliceRegion, tickDur, detectHit, detectPitch, tuneFor, noteOfHz, fitFor, loops } from '../core/instrument.js';
@@ -28,7 +29,7 @@ export function selectInst(idx) {
   ['A', 'D', 'R'].forEach(p => { $('#i' + p).value = I[p].v; $('#i' + p + 'u').value = I[p].u; }); $('#iS').value = hex2(I.S);
   $('#iStart').value = I.start.toFixed(3); $('#iEnd').value = I.end.toFixed(3);
   $('#iHit').value = I.hit.toFixed(3); $('#iAV').value = I.avOffset;
-  $('#iSrc').value = I.source; $('#bSrc').disabled = !isLink(I.source);
+  $('#iTags').value = I.tags.join(' '); $('#iSrc').value = I.source; $('#bSrc').disabled = !isLink(I.source);
   $('#iLoop').value = I.loop; $('#iLS').disabled = $('#iLE').disabled = I.loop === 'none'; $('#iLS').value = I.loopStart.toFixed(3); $('#iLE').value = I.loopEnd.toFixed(3);
   refreshInstList(); drawWave(null);
 }
@@ -138,6 +139,7 @@ $('#iEnd').onchange = e => instCmd({ end: round3(num(e.target)) }, 'region end')
 $('#iHit').onchange = e => instCmd({ hit: round3(num(e.target)) }, 'hit point');
 $('#iAV').onchange = e => instCmd({ avOffset: num(e.target) }, 'A/V offset');
 const isLink = s => /^https?:\/\/\S+$/.test(s);
+$('#iTags').onchange = e => instCmd({ tags: PTFormat.tagsFrom(e.target.value) }, 'tags');
 $('#iSrc').onchange = e => instCmd({ source: e.target.value.trim() }, 'source');
 $('#bSrc').onclick = () => { const I = curInst(); if (I && isLink(I.source)) window.open(I.source, '_blank', 'noopener'); };
 $('#iLoop').onchange = e => {

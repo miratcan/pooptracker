@@ -140,3 +140,15 @@ test('src: where the video comes from, written only when there is one; a link ke
   assert.ok(!PTFormat.format(PTFormat.parse(LINE)).includes('src='));
   assert.equal(PTFormat.checkInstrument({ ...I, source: 'a\nb' }), 'source must be at most 500 characters, on one line');
 });
+
+test('tags: optional, written joined by |, checked; tagsFrom reads them as people type them', () => {
+  assert.deepEqual(PTFormat.parse(LINE).tags, []);
+  assert.ok(!PTFormat.format(PTFormat.parse(LINE)).includes('tags='));
+  const I = PTFormat.parse(LINE + ';tags=snare|hit|büyük-oda');
+  assert.deepEqual(I.tags, ['snare', 'hit', 'büyük-oda']);
+  assert.deepEqual(PTFormat.parse(PTFormat.format(I)).tags, I.tags);
+  assert.throws(() => PTFormat.parse(LINE + ';tags=Snare'), /^Error: TURD1 line: tag 'Snare' is invalid \(lowercase/);
+  assert.throws(() => PTFormat.parse(LINE + ';tags=hit|hit'), /a tag is written twice/);
+  assert.deepEqual(PTFormat.tagsFrom('#Snare #hit, crash  big-room|hit'), ['snare', 'hit', 'crash', 'big-room']);
+  assert.deepEqual(PTFormat.tagsFrom('  '), []);
+});

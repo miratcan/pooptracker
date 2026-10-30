@@ -243,7 +243,7 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 |---|---------|----------|
 | 1 | Enstrüman listesi | Seçmek için bir enstrümana tıkla (ya da Shift+↑↓). Nota tuşları seçili olanı çalar. Buradaki bir enstrümanın üstüne video bırakırsan videosu değişir. |
 | 2 | **New** | Listenin sonuna, video yüklenecek boş bir enstrüman ekler |
-| 3 | **Load** | **Seçili** enstrümana bir video verir, sesini korur (ad, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. **Save** ile kaydedilmiş bir video ise kendi ayarlarının hepsini getirir. Hiç enstrüman yoksa Load yeni bir tane yapar. |
+| 3 | **Load** | **Seçili** enstrümana bir video verir, sesini korur (ad, etiketler, taban nota, ince akort, ses, reverb, zarf, döngü modu); bölge ve vuruş yeni videoda yeniden bulunur. **Save** ile kaydedilmiş bir video ise kendi ayarlarının hepsini getirir. Hiç enstrüman yoksa Load yeni bir tane yapar. |
 | 4 | **Save** | Videoyu, bu enstrümanın ayarları metadata'sında olacak şekilde kaydeder. Yeniden encode edilmez. Sadece MP4/MOV. |
 | 5 | **Dup.** | Aynı videodan, aynı ayarlarla yeni bir enstrüman. Aynı klipten başka bir bölge almak için kullan. |
 | 6 | **↑ ↓ Del.** | Enstrümanı listede yukarı ya da aşağı taşır / siler (sadece hiçbir pattern kullanmıyorsa) |
@@ -261,6 +261,7 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | 18 | Film şeridi ve dalga formu | Bölgenin kareleri ve sesi. Koyu kısımlar bölgenin dışında kalır. |
 | 19 | Vuruş karesi | Vuruş anındaki kare. Tıklayınca **odak** belirlenir: bir kare videoyu kırparken görünür tuttuğu nokta. Alt+tıklama odağı ortaya döndürür. |
 | 20 | Source | Bkz. [aşağısı](#enstruman-ayarlari) |
+| 21 | Tags | |
 
 <a id="enstruman-ayarlari"></a>
 ### Enstrüman ayarları
@@ -308,6 +309,11 @@ gider, video da onunla ileri geri oynar.
 A, D ve R'nin her birinin bir birimi var. **tick** tempoyu takip eder. **ms** sabit kalır.
 
 Görüntü sesi takip eder: karenin parlaklığı ses × zarftır.
+
+**Tags:** sesin ne olduğu, onu bulmak için: `snare hit crash`. Boşluk ya da virgülle ayırarak yaz; başlarında `#`
+olabilir, büyük harfler küçülür. Bir etiket küçük harf ve rakamlardan oluşur, kelimeler tireyle birleşir
+(`buyuk-oda`). İsteğe bağlıdır ve enstrümanın adı gibi onunla birlikte saklanır (satırında `tags=snare|hit|crash`):
+başka bir video (Load, Repl.) etiketleri korur.
 
 **Source:** videonun nereden geldiği: bir link ya da herhangi bir metin (`own recording`). Enstrümanla birlikte
 saklanır (satırında `src=`), yani video nereye giderse o da gider: şarkıya, **Save** ile de videonun metadata'sına.

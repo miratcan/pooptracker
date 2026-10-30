@@ -15,6 +15,8 @@ The first public version.
   panel, MCP `set_instrument source`). A piece cut on the bench or by MCP from a video that carries its link (yt-dlp
   `--embed-metadata`: the MP4 comment, Matroska's PURL/COMMENT) gets it by itself, a YouTube one with `t=` set to the
   second the piece starts at. An older PoopTracker refuses a line with `src=` (unknown field).
+- Tags: what an instrument's sound is, to find it by (`tags=snare|hit|crash`; Tags in the instrument panel, MCP
+  `set_instrument tags`). Optional; kept like the name when the video is replaced.
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
 - Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's

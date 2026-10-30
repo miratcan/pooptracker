@@ -33,6 +33,10 @@ const focusStr = keys => keys.map(k => `${t3(k.t)}:${k.x.toFixed(3)},${k.y.toFix
 // It changes the sample itself (the video file stays as it is): 200-200 twice is not 400-400 once.
 const MAX_AMP = 200, MAX_AMP_STEPS = 100;
 const MAX_SOURCE = 500;
+// tags: what the sound is, to find it by (snare, hit, crash): lowercase letters and digits, words joined by dashes,
+// written joined by '|'. tagsFrom reads them as people type them: '#Snare #hit, crash' → ['snare', 'hit', 'crash']
+const MAX_TAGS = 16, MAX_TAG = 24, TAG = /^[\p{Ll}\p{Lo}\p{N}]+(-[\p{Ll}\p{Lo}\p{N}]+)*$/u;
+const tagsFrom = text => [...new Set(String(text).split(/[\s,|]+/).map(t => t.replace(/^#+/, '').toLowerCase()).filter(Boolean))];
 const ampStr = steps => steps.map(s => `${s.a}-${s.b}`).join('|');
 
 function format(I, video) {
@@ -44,6 +48,7 @@ function format(I, video) {
     'loop=' + I.loop, 'ls=' + t3(I.loopStart), 'le=' + t3(I.loopEnd), 'av=' + Math.round(I.avOffset));
   if (I.amp?.length) f.push('amp=' + ampStr(I.amp));
   if (I.focus?.length) f.push('focus=' + focusStr(I.focus));
+  if (I.tags?.length) f.push('tags=' + I.tags.join('|'));
   if (I.source) f.push('src=' + esc(I.source));
   return f.join(';');
 }
@@ -89,9 +94,10 @@ const PARSE = {
   focus,
   // where the video comes from: a link (a YouTube one with the second the piece starts at) or any text
   src: (k, v) => unesc(v),
+  tags: (k, v) => { const t = v.split('|').map(s => s.trim()), e = checkTags(t); if (e) throw new Error(`${VERSION} line: ${e}`); return t; },
 };
 const KEYS = { name: 'name', video: 'video', start: 'start', end: 'end', hit: 'hit', base: 'baseNote', fine: 'fine', vol: 'vol', rev: 'reverb',
-  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', amp: 'amp', focus: 'focus', src: 'source' };
+  a: 'A', d: 'D', s: 'S', r: 'R', loop: 'loop', ls: 'loopStart', le: 'loopEnd', av: 'avOffset', amp: 'amp', focus: 'focus', src: 'source', tags: 'tags' };
 const REQUIRED = ['name', 'start', 'end', 'hit', 'base'];
 
 function parse(line) {
@@ -108,7 +114,7 @@ function parse(line) {
   }
   for (const k of REQUIRED) if (!(k in kv)) throw new Error(`${VERSION} line: field '${k}' is missing`);
   const I = { fine: 0, vol: 64, reverb: 0, A: { v: 0, u: 't' }, D: { v: 0, u: 't' }, S: 64, R: { v: 0, u: 't' }, loop: 'none',
-    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, amp: [], focus: [], source: '' };
+    loopStart: kv.hit, loopEnd: kv.end, avOffset: 0, amp: [], focus: [], source: '', tags: [] };
   for (const k in kv) I[KEYS[k]] = kv[k];
   const e = checkInstrument(I);
   if (e) throw new Error(`${VERSION} line: ${e}`);
@@ -139,12 +145,21 @@ function checkInstrument(I) {
   if (!Number.isInteger(I.avOffset)) return `A/V offset '${I.avOffset}' is invalid (milliseconds, integer)`;
   const ae = checkAmp(I.amp); if (ae) return ae;
   const fe = checkFocus(I.focus); if (fe) return fe;
+  const te = checkTags(I.tags); if (te) return te;
   if (typeof I.source !== 'string' || I.source.length > MAX_SOURCE || /[\r\n]/.test(I.source)) return `source must be at most ${MAX_SOURCE} characters, on one line`;
   if (I.start >= I.end) return `region start (${t3(I.start)}) must be before region end (${t3(I.end)})`;
   if (I.hit < I.start || I.hit > I.end) return `hit point (${t3(I.hit)}) must be inside the region (${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && (I.loopStart < I.start || I.loopEnd > I.end || I.loopStart >= I.loopEnd))
     return `loop (${t3(I.loopStart)}–${t3(I.loopEnd)}) must be inside the region, with loop start before loop end (region ${t3(I.start)}–${t3(I.end)})`;
   if (I.loop !== 'none' && I.loopStart < I.hit) return `loop start (${t3(I.loopStart)}) can't be before the hit point (${t3(I.hit)})`;
+  return null;
+}
+function checkTags(tags) {
+  if (!Array.isArray(tags)) return 'tags must be a list of words';
+  if (tags.length > MAX_TAGS) return `there are ${tags.length} tags; at most ${MAX_TAGS}`;
+  for (const t of tags)
+    if (typeof t !== 'string' || t.length > MAX_TAG || !TAG.test(t)) return `tag '${t}' is invalid (lowercase letters and digits, words joined by dashes, at most ${MAX_TAG} characters, e.g. snare or big-room)`;
+  if (new Set(tags).size !== tags.length) return 'a tag is written twice';
   return null;
 }
 function checkAmp(steps) {
@@ -487,7 +502,7 @@ function mp4WriteTag(b, value) {
   return out;
 }
 
-export const PTFormat = { VERSION, LOOP_MODES, format, focusStr, ampStr, MAX_AMP, MAX_AMP_STEPS, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
+export const PTFormat = { VERSION, LOOP_MODES, format, tagsFrom, checkTags, focusStr, ampStr, MAX_AMP, MAX_AMP_STEPS, parse, noteStr, noteNum, ENV_MAX, KEYOFF, MAX_CHANNELS, FXCH, FX_ALLOWED, E_ALLOWED,
   checkInstrument, checkFocus, checkCell, checkSong, checkOrder, checkRows, checkChannel, formatSong, parseSong, zipStore, unzip, crc32,
   cellField, cellStr, mp4ReadTag, mp4WriteTag, field: (k, v) => PARSE[k](k, String(v).trim()) };
 export default PTFormat;

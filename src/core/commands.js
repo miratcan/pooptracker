@@ -100,12 +100,12 @@ export function setPatternLength(idx, len) {
   return { label: `pattern ${hex2(idx)} length ${len}`, scope: 'patterns', P, apply: () => { P.rows = nu; }, revert: () => { P.rows = old; } };
 }
 
-export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'amp', 'focus', 'source'];
+export const INST_KEYS = ['name', 'start', 'end', 'hit', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop', 'loopStart', 'loopEnd', 'avOffset', 'amp', 'focus', 'source', 'tags'];
 export const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, copy(o[k])]));
-// What an instrument keeps when its video is replaced: how it sounds. The rest are places in the old video
-// (region, hit, loop points, focus, A/V offset) and mean nothing in another one; amp changed the old sample, not this one;
-// the source is where the old video came from.
-export const SOUND_KEYS = ['name', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
+// What an instrument keeps when its video is replaced: what it is (name, tags) and how it sounds. The rest are places in
+// the old video (region, hit, loop points, focus, A/V offset) and mean nothing in another one; amp changed the old
+// sample, not this one; the source is where the old video came from.
+export const SOUND_KEYS = ['name', 'tags', 'baseNote', 'fine', 'vol', 'reverb', 'A', 'D', 'S', 'R', 'loop'];
 // another video for an instrument. Without place, it keeps how it sounds and the places are found again as when a
 // video is loaded (the region is the whole video, the hit is detected). place is a whole instrument line: a video
 // saved with its settings brings all of them (its loop mode too); a caller that keeps the sound puts it in place.
