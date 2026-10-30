@@ -21,6 +21,12 @@
    "name": "Tone",
    "length": 6,
    "bytes": 64076
+  },
+  {
+   "path": "snare/click.mp4",
+   "name": "<i>Odd</i>",
+   "length": 1,
+   "bytes": 41563
   }
  ]
 }

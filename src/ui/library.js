@@ -9,7 +9,7 @@ import { hex2 } from '../util.js';
 import { instruments } from '../core/song.js';
 import { CmdError } from '../core/commands.js';
 import { importVideo, replaceVideo, NO_SOUND } from '../io.js';
-import { $, ed, setStatus } from './common.js';
+import { $, ed, setStatus, escHtml } from './common.js';
 import { coverRect } from './output.js';
 
 const REPO = 'miratcan/pooptracker-instruments', FORMAT = 1;
@@ -123,14 +123,18 @@ async function take(item, replace) {
     const res = await fetch(url(item));
     if (!res.ok) throw new Error(`the video couldn't be loaded (${res.status})`);
     const file = new File([await res.blob()], item.path.split('/').pop(), { type: 'video/mp4' });
+    // the name comes from someone else's file: text, never HTML
     if (replace) {
       const { noSound } = await replaceVideo(idx, file, progress);
       now(`${item.name} → instrument ${hex2(idx)}` + (noSound ? NO_SOUND : ''));
+      setStatus(`From the library: ${escHtml(item.name)} → instrument ${hex2(idx)}` + (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
     } else {
       const { idx: n, noSound } = await importVideo(file, progress);
       now(`${item.name} → instrument ${hex2(n)}` + (noSound ? NO_SOUND : ''));
+      // what to do with it next: the new instrument is the selected one, the one the note keys write
+      setStatus(`From the library: ${escHtml(item.name)} → instrument ${hex2(n)}, selected. To put it in the song: <b>Space</b> (edit mode), then a note key (<b>Z S X D C</b>… or <b>Q 2 W 3 E</b>…) writes it on the cursor's row` +
+        (noSound ? `<span class="err">${NO_SOUND}</span>` : ''));
     }
-    setStatus(`From the library: ${$('#libNow').textContent}`);
   } catch (err) {
     if (!(err instanceof CmdError)) console.error(err);
     now(`⚠ Couldn't load ${item.name}: ${err.message === 'Failed to fetch' ? "the library can't be reached (offline?)" : err.message}`);

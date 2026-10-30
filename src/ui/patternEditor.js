@@ -133,6 +133,10 @@ function clearChanges(R) {
 }
 // edit mode off: keys that would change the pattern say so instead
 const editOff = () => { setStatus('Edit mode is off: <b>Space</b> turns it on'); return true; };
+// a key this column doesn't take: said, never swallowed in silence (a note key pressed off the note column did nothing,
+// and nothing said why)
+const COLUMN = ['', 'instrument', 'instrument', 'volume', 'volume', 'effect', 'effect parameter', 'effect parameter'];
+const wrongColumn = () => setStatus(`The ${COLUMN[ed.col]} column takes ${ed.col === 5 ? 'an effect letter (A, F, S…)' : 'hex digits (0–9, A–F)'}. Notes go in the note column: <b>←</b> to it`);
 export function setEditMode(on) {
   ed.edit = on; $('#patBox').classList.toggle('editing', on); view.patDirty = true;
   setStatus(on ? 'Edit mode <b>on</b>: notes are written into the pattern (Space: off)' : 'Edit mode <b>off</b>: notes only play (Space: on)');
@@ -228,7 +232,8 @@ function onKey(e) {
       const setNib = (val) => hi ? (hv << 4) | (val & 15) : (val & 0xF0) | hv;
       editCell(ed.col <= 2 ? { i: setNib(cell.i) } : ed.col <= 4 ? { v: setNib(Math.max(0, cell.v)) } : { p: setNib(cell.p) },
         ed.col <= 2 ? 'instrument' : ed.col <= 4 ? 'volume' : 'effect parameter');
-    } else handled = false;
+    } else if (!e.metaKey && !e.ctrlKey && !e.altKey) wrongColumn();
+    else handled = false;
   }
   else handled = false;
   return handled;

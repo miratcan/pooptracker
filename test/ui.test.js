@@ -418,8 +418,8 @@ test('the library lists its instruments by folder, finds them, adds one with its
   const page = await app(t, { query: '&library=/test/fixtures/library/' });
   const rows = () => page.eval(() => [...document.querySelectorAll('#libList > div')].map(e => e.textContent.trim()));
   await page.click('#bLib');
-  await page.waitFor(() => document.querySelectorAll('#libList .libItem').length === 2, 5000);
-  assert.deepEqual(await rows(), ['snare', 'Lib Click#click #hit1.00 s', 'vocal', 'Tone6.00 s']);
+  await page.waitFor(() => document.querySelectorAll('#libList .libItem').length === 3, 5000);
+  assert.deepEqual(await rows(), ['snare', '<i>Odd</i>1.00 s', 'Lib Click#click #hit1.00 s', 'vocal', 'Tone6.00 s']); // a name is text, never HTML
   await page.eval(() => { const f = document.querySelector('#libFind'); f.value = '#hit'; f.dispatchEvent(new Event('input')); });
   assert.deepEqual(await rows(), ['snare', 'Lib Click#click #hit1.00 s']);
   await page.click('#libList .libItem');
@@ -433,10 +433,26 @@ test('the library lists its instruments by folder, finds them, adds one with its
   const I = await page.eval(async () => { const I = (await import('/src/core/song.js')).instruments.at(-1); return [I.name, I.baseNote, I.vol, I.hit, I.tags, I.source]; });
   assert.deepEqual(I, ['Lib Click', 50, 48, 2, ['click', 'hit'], 'https://example.com/click']);
   assert.equal(await page.eval(async () => (await import('/src/core/song.js')).instruments.length), n + 1);
+  assert.match(await text(page, '#status'), /Lib Click → instrument 04, selected\. To put it in the song: Space \(edit mode\), then a note key/);
   // Repl.: the selected instrument (01) gets Tone's video; it has no instrument in it, so 01 keeps how it sounds
   await page.eval(async () => { (await import('/src/ui/instrumentPanel.js')).selectInst(1); const f = document.querySelector('#libFind'); f.value = ''; f.dispatchEvent(new Event('input')); });
   await page.eval(() => [...document.querySelectorAll('#libList .libItem')].find(e => e.textContent.startsWith('Tone')).click());
   await page.click('#libRepl');
   await page.waitFor(() => /Tone → instrument 01/.test(document.querySelector('#libNow').textContent), 15000);
   assert.deepEqual(await page.eval(async () => { const I = (await import('/src/core/song.js')).instruments[1]; return [I.name, I.video.file.name]; }), ['Kick', 'tone.mp4']);
+});
+
+// a note key pressed off the note column did nothing and said nothing: now the status says what the column takes
+test('a key the cursor\'s column doesn\'t take says so, and changes nothing', { skip: cdp }, async t => {
+  const page = await app(t);
+  await page.key('Space');
+  await page.waitFor(() => document.querySelector('#patBox').classList.contains('editing'));
+  const rows = () => page.eval(() => JSON.stringify(window.pooptracker.song.patterns[0].rows));
+  const before = await rows();
+  await page.key('ArrowRight'); await page.key('KeyQ'); // the instrument column
+  assert.equal(await rows(), before);
+  assert.match(await text(page, '#status'), /^The instrument column takes hex digits \(0–9, A–F\)\. Notes go in the note column: ← to it$/);
+  for (let i = 0; i < 4; i++) await page.key('ArrowRight'); // the effect column
+  await page.eval(() => document.querySelector('#pat').dispatchEvent(new KeyboardEvent('keydown', { code: 'Comma', key: ',', bubbles: true })));
+  assert.match(await text(page, '#status'), /^The effect column takes an effect letter/);
 });

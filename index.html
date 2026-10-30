@@ -316,7 +316,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
       <input id="iLS" type="number" step="0.001" min="0" aria-label="Loop start (s)"> – <input id="iLE" type="number" step="0.001" min="0" aria-label="Loop end (s)">
     </fieldset>
     <fieldset><legend>Tags</legend>
-      <input id="iTags" style="width:150px" spellcheck="false" placeholder="snare hit" aria-label="Tags" title="What the sound is, to find it by: words split by spaces (snare hit crash; a # in front is fine). Lowercase letters and digits, words joined by dashes (big-room). They travel with the video">
+      <input id="iTags" style="width:150px" spellcheck="false" placeholder="no tags" aria-label="Tags" title="What the sound is, to find it by: words split by spaces (snare hit crash; a # in front is fine). Lowercase letters and digits, words joined by dashes (big-room). They travel with the video">
     </fieldset>
     <fieldset><legend>Source</legend>
       <input id="iSrc" style="width:150px" spellcheck="false" placeholder="link or text" aria-label="Source" title="Where the video comes from: a link (a YouTube one with ?t= for the second the piece starts at) or any text. It travels with the video. A piece cut on the bench from a video downloaded with yt-dlp --embed-metadata gets it by itself"><button id="bSrc" title="Open the source link in a new tab">Open</button>
@@ -428,6 +428,8 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
 <dialog id="welcome">
   <form method="dialog"><button class="close" aria-label="Close">✕</button></form>
   <h2>Welcome to PoopTracker</h2>
+  <p>PoopTracker makes music videos out of video clips: every sound is a clip, and every note plays its picture too.
+  Press <b>Enter</b> to play the demo song, and <b>Lib.</b> under the instruments for ready ones to add.</p>
   <p>Would you like to read the manual? It walks through every part of the screen, with pictures. It is always under <b>Manual</b> at the bottom right.</p>
   <form method="dialog" class="row"><a id="wRead" class="btnLink" href="https://github.com/miratcan/pooptracker/blob/main/docs/MANUAL.md" target="_blank" rel="noopener">Read the manual ↗</a><button>No thanks</button></form>
 </dialog>
@@ -457,11 +459,11 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=5ec77526ba",
-    "./src/ui/library.js": "./src/ui/library.js?v=61e6426def",
+    "./src/ui/library.js": "./src/ui/library.js?v=17582d9d76",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
-    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=18bf427176",
+    "./src/ui/patternEditor.js": "./src/ui/patternEditor.js?v=e8f8603e24",
     "./src/ui/screens.js": "./src/ui/screens.js?v=d4ca41dbe0",
     "./src/ui/songPanel.js": "./src/ui/songPanel.js?v=4a851cc54d",
     "./src/ui/transport.js": "./src/ui/transport.js?v=ce2f8a08e7",
