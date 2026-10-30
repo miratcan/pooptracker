@@ -236,6 +236,7 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 - Ya da enstrüman listesinin altındaki **New** ile boş bir enstrüman ekle, sonra **Load** ile ona bir video yükle.
 - PoopTracker **vuruşu** (sesin patladığı anı) kendisi bulur. Kontrol et: nota, satırına tam vuruş anında oturur.
 - PoopTracker'dan **Save** ile kaydedilmiş bir video, bütün ayarlarıyla geri gelir.
+- Ya da [kütüphaneden](#kutuphane) hazır bir tane al (**Lib.**).
 
 ![Enstrüman listesi ve enstrüman ayarları, numaralı](manual/instrument.png)
 
@@ -262,6 +263,23 @@ Bir enstrüman en fazla **8 saniye** olabilir. Daha uzun bir videonun bir parça
 | 19 | Vuruş karesi | Vuruş anındaki kare. Tıklayınca **odak** belirlenir: bir kare videoyu kırparken görünür tuttuğu nokta. Alt+tıklama odağı ortaya döndürür. |
 | 20 | Source | Bkz. [aşağısı](#enstruman-ayarlari) |
 | 21 | Tags | |
+| 22 | **Lib.** | [Kütüphane](#kutuphane): PoopTracker kullanıcılarının paylaştığı hazır enstrümanlar |
+
+<a id="kutuphane"></a>
+### Kütüphane (Library)
+
+Enstrüman listesinin altındaki **Lib.** kütüphaneyi açar: PoopTracker kullanıcılarının paylaştığı hazır enstrümanlar,
+[pooptracker-instruments](https://github.com/miratcan/pooptracker-instruments) reposundan. Her biri bütün ayarları
+içinde, akordu yapılmış ve vuruşu kontrol edilmiş bir videodur.
+
+- Klasörlere göre listelenirler (`snare`, `lyrics/tr`…). **Find** listeyi daraltır: yazdığın her kelime adda, bir
+  etikette ya da klasörde geçmeli (`#hit`, `snare`).
+- Birine tıklayınca görür ve duyarsın (tekrar duymak için görüntüye tıkla). ↑↓ listede gezer.
+- **Add** (Enter ya da çift tıklama) onu yeni bir enstrüman yapar. **Repl.** (Shift+Enter) onu seçili enstrümanın
+  videosu yapar, bütün ayarlarıyla.
+- **Reload** listeyi, o arada eklenenlerle birlikte yeniden yükler.
+
+Kütüphane internet ister. Kendi enstrümanını paylaşmak için reponun README'sine bak: pull request ile girer.
 
 <a id="enstruman-ayarlari"></a>
 ### Enstrüman ayarları

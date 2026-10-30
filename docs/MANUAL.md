@@ -225,6 +225,7 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 - PoopTracker finds the **hit** (the moment the sound kicks in) automatically. Check it: the note will land on its
   row exactly at the hit.
 - A video saved from PoopTracker with **Save** comes back with all its settings.
+- Or take a ready one from the [library](#the-library) (**Lib.**).
 
 ![The instrument list and the instrument settings, numbered](manual/instrument.png)
 
@@ -251,6 +252,23 @@ An instrument is at most **8 seconds** long. To use part of a longer video, cut 
 | 19 | Hit frame | The frame at the hit. Click it to set the **focus**, the point a tile keeps in view when it crops the video. Alt+click resets the focus to the middle. |
 | 20 | Source | See [below](#instrument-settings) |
 | 21 | Tags | |
+| 22 | **Lib.** | The [library](#the-library): ready instruments shared by PoopTracker users |
+
+### The library
+
+**Lib.** under the instrument list opens the library: ready instruments shared by PoopTracker users, from the
+[pooptracker-instruments](https://github.com/miratcan/pooptracker-instruments) repository. Each one is a video with
+all its settings in it, tuned and with its hit checked.
+
+- They are listed by folder (`snare`, `lyrics/tr`…). **Find** narrows the list: every word you type must be in the
+  name, a tag or the folder (`#hit`, `snare`).
+- Click one to see and hear it (click the picture to hear it again). ↑↓ move through the list.
+- **Add** (Enter, or a double-click) makes it a new instrument. **Repl.** (Shift+Enter) makes it the selected
+  instrument's video, with all its settings.
+- **Reload** loads the list again, with what was added since.
+
+The library needs the internet. To share an instrument of yours, see the repository's README: it goes in with a pull
+request.
 
 ### Instrument settings
 

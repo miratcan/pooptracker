@@ -47,7 +47,7 @@ fieldset legend label{color:inherit}
 button{background:var(--btnFace);color:var(--btnInk);border:1px solid var(--btnLo);box-shadow:var(--btnUp);border-radius:5px;padding:2px 7px;font:inherit;cursor:pointer}
 /* a key that is in effect stays down, like a tape deck's: a playing ▶ until Stop, the open screen until the other one */
 button:active,button.down{background:var(--btnDown);color:var(--btnInkDown);box-shadow:var(--btnSunk);padding:3px 7px 1px}
-button:disabled{color:var(--faint);cursor:default}
+button:disabled{color:color-mix(in srgb,var(--dim) 55%,transparent);cursor:default}
 button:disabled:active{background:var(--btnFace);box-shadow:var(--btnUp);padding:2px 7px}
 input{background:var(--well);color:var(--text);border:1px solid var(--line);padding:3px 5px;font:inherit}
 /* a dropdown is a button (same face, rim and shadow) with our own arrow: the browser's can't be moved off the right
@@ -159,6 +159,29 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 .zapBody{padding:8px;gap:6px}
 #zapDlg .zapHint{margin:0;padding:4px 8px 6px;font:8px/1.6 dos8;color:var(--dim);border-top:1px solid var(--bevelLo)}
 #opening .openBody{padding:8px}
+#libDlg{width:min(620px,calc(100vw - 32px))}
+.libBody{padding:8px;display:flex;flex-direction:column;gap:6px}
+.libBody p{margin:0}
+#libFind{flex:1}
+.libFindRow{margin-top:0}
+#libReload{border-radius:0 5px 5px 0}
+.libMain{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:8px}
+#libList{height:min(50vh,340px);overflow:auto;padding:3px}
+.libGroup{color:var(--dim);padding:6px 4px 2px}
+.libItem{display:flex;gap:8px;align-items:baseline;padding:2px 4px 2px 12px;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.libItem:hover{background:var(--panel2)}
+.libItem.sel{border-color:var(--acc);background:var(--accDim)}
+.libItem .tags{color:var(--dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.libSide{display:flex;flex-direction:column;gap:6px;min-width:0}
+.libSide .btnRow{margin-top:auto}
+#libPrev{display:block;width:100%;aspect-ratio:8/9;object-fit:cover;background:var(--black);cursor:pointer}
+.libPrevBox{position:relative}
+#libPrevNow{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:8px dos8;color:var(--acc);text-transform:uppercase;pointer-events:none;animation:libWait 1s steps(2) infinite}
+#libPrevNow[hidden]{display:none}
+#libPrevNow.err{color:var(--red);animation:none;text-transform:none;padding:6px;text-align:center}
+@keyframes libWait{50%{opacity:.35}}
+#libInfo{overflow-wrap:anywhere}
+@media (max-width:560px){.libMain{grid-template-columns:1fr}}
 #openNow{font:8px/1.6 dos8;color:var(--acc);padding:4px 6px;min-height:3.2em;overflow-wrap:anywhere}
 .openMeter{height:14px;margin-top:6px;padding:1px}
 #openBar{display:block;height:100%;width:0;background:var(--acc2)}
@@ -173,7 +196,7 @@ dialog.win{padding:0;width:min(440px,calc(100vw - 32px));max-width:none;line-hei
 #wave{flex:1;min-width:0;height:126px;background:var(--well);cursor:crosshair;display:block}
 #framePrev{width:224px;height:126px;background:var(--black);flex:none;cursor:crosshair}
 #status{color:var(--acc2)}
-#status a{color:var(--acc)}
+#status a,#libDlg a{color:var(--acc)}
 kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:0 4px;color:var(--text)}
 #drop{position:fixed;inset:0;background:color-mix(in srgb,var(--acc2) 15%,transparent);border:3px dashed var(--acc2);display:none;align-items:center;justify-content:center;font:16px dos8;color:var(--white);z-index:20;pointer-events:none}
 /* brushed metal (--metalHair, --metalSheen) on every panel surface */
@@ -261,7 +284,8 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
       <button id="bVidSave" title="Save the video with this instrument's settings (hit, loop, ADSR…) in its metadata; dropped on the tracker, it arrives as a ready instrument. The video isn't re-encoded. MP4/MOV only.">Save</button>
       <button id="bSplit" title="Duplicate: a new instrument from the same video with the same settings; then change its region">Dup.</button>
       <button id="iUp" title="Move up" aria-label="Move instrument up">↑</button><button id="iDown" title="Move down" aria-label="Move instrument down">↓</button>
-      <button id="iDel" title="Delete the selected instrument (if no pattern uses it)">Del.</button></div>
+      <button id="iDel" title="Delete the selected instrument (if no pattern uses it)">Del.</button>
+      <button id="bLib" title="The library: ready instruments shared by PoopTracker users, each with its settings. Find one, hear it, add it">Lib.</button></div>
   </section>
   <section class="card" id="instEd" aria-label="Instrument settings">
     <div class="cardHead"><button id="bHitPlay">▶ From hit</button><button id="bFull">▶ From start</button>
@@ -381,6 +405,22 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   </form>
   <p class="zapHint">⌘/Ctrl+Z brings back what was zapped. Esc: nothing.</p>
 </dialog>
+<dialog id="libDlg" class="win" aria-labelledby="libTitle">
+  <form method="dialog" class="winHead"><span id="libTitle">Library</span><button class="close" aria-label="Close">✕</button></form>
+  <div class="libBody">
+    <div class="btnRow libFindRow"><input id="libFind" type="search" spellcheck="false" placeholder="find: name, tag or folder" aria-label="Find in the library"><button id="libReload" title="Load the list again, with what was added since">Reload</button></div>
+    <div class="libMain">
+      <div id="libList" class="well" role="listbox" aria-label="Instruments in the library" tabindex="0"></div>
+      <div class="libSide">
+        <div class="libPrevBox"><video id="libPrev" playsinline title="Click to hear it again"></video><div id="libPrevNow" hidden></div></div>
+        <div id="libInfo" class="dim"></div>
+        <div class="btnRow"><button id="libAdd" title="Add it as a new instrument (Enter)">Add</button><button id="libRepl" title="Make it the selected instrument's video, with all its settings (Shift+Enter)">Repl.</button></div>
+      </div>
+    </div>
+    <div id="libNow" class="well tuneLcd" role="status"></div>
+    <p class="dim">Yours could be here: <a href="https://github.com/miratcan/pooptracker-instruments" target="_blank" rel="noopener">pooptracker-instruments ↗</a></p>
+  </div>
+</dialog>
 <dialog id="opening" class="win" aria-labelledby="openTitle">
   <div class="winHead"><span id="openTitle">Opening</span></div>
   <div class="openBody"><div class="well" id="openNow" role="status"></div><div class="well openMeter"><i id="openBar"></i></div></div>
@@ -406,7 +446,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/engine/voice.js": "./src/engine/voice.js?v=0ea7fb10a4",
     "./src/frames.js": "./src/frames.js?v=a0e990fd67",
     "./src/io.js": "./src/io.js?v=8d4397fa56",
-    "./src/main.js": "./src/main.js?v=722ebfda5f",
+    "./src/main.js": "./src/main.js?v=0c51e73db6",
     "./src/mcp.js": "./src/mcp.js?v=f15126e74b",
     "./src/midi.js": "./src/midi.js?v=4aea5cf9e5",
     "./src/mp4.js": "./src/mp4.js?v=d5ff6a34c9",
@@ -417,6 +457,7 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
     "./src/ui/common.js": "./src/ui/common.js?v=df7abd3b77",
     "./src/ui/files.js": "./src/ui/files.js?v=1926859382",
     "./src/ui/instrumentPanel.js": "./src/ui/instrumentPanel.js?v=5ec77526ba",
+    "./src/ui/library.js": "./src/ui/library.js?v=4c83c95e68",
     "./src/ui/opening.js": "./src/ui/opening.js?v=8ad2e10dba",
     "./src/ui/output.js": "./src/ui/output.js?v=be938372ad",
     "./src/ui/palette.js": "./src/ui/palette.js?v=d8faf9d440",
@@ -430,6 +471,6 @@ header,.card,#statusBar,dialog,fieldset legend{background:var(--metalHair) fixed
   }
 }
 </script>
-<script type="module" src="src/main.js?v=722ebfda5f"></script>
+<script type="module" src="src/main.js?v=0c51e73db6"></script>
 </body>
 </html>

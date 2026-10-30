@@ -19,6 +19,7 @@ import { benchScreen } from './ui/bench.js';
 import './ui/transport.js';
 import { setSongFile } from './ui/files.js';
 import './ui/bug.js';
+import './ui/library.js';
 import { askManual } from './ui/welcome.js';
 import { opening } from './ui/opening.js';
 import { startMcp } from './mcp.js';

@@ -17,6 +17,9 @@ The first public version.
   second the piece starts at. An older PoopTracker refuses a line with `src=` (unknown field).
 - Tags: what an instrument's sound is, to find it by (`tags=snare|hit|crash`; Tags in the instrument panel, MCP
   `set_instrument tags`). Optional; kept like the name when the video is replaced.
+- The library (Lib. under the instrument list): ready instruments shared in the pooptracker-instruments repository,
+  listed by folder, found by name, tag or folder, heard before they are added (Add) or made the selected instrument's
+  video (Repl.), with all their settings.
 - Pre-roll uses only free time: a clip never starts before the channel's previous note has gone silent.
 - MCP server: an AI can read and edit the open song, load videos and save files.
 - Backspace clears like Del, unlike FT2 (where it deletes the note above and pulls the channel up): it is the Mac's

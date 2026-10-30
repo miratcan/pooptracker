@@ -99,7 +99,7 @@ const waveX = page => page.eval(async () => {
 
 // the strips each picture needs for its numbers
 const SPACE = { header: [['header', 'after', 34]], statusbar: [['#statusBar', 'before', 34]], pattern: [['#patCol', 'prepend', 30]],
-  bench: [['#bench', 'append', 34]], order: [['#ordCol', 'append', 34]], instrument: [['#instPanel', 'before', 30]] };
+  bench: [['#bench', 'append', 34]], order: [['#ordCol', 'append', 34]], instrument: [['#instPanel', 'before', 30], ['#instCard', 'append', 34]] };
 // ── the pictures: setup(page) → { clip: [places], pad, marks }
 const SHOTS = {
   hero: async page => { await page.click('#bSong'); await sleep(1200); return { clip: ['body'], pad: 0, marks: [], after: () => page.click('#bStop') }; },
@@ -141,12 +141,13 @@ const SHOTS = {
     const w = await page.box('#wave'), x = await waveX(page), row = await page.box('#instList .inst.sel');
     return { clip: ['#instPanel', '.shotRoom'], pad: 0, marks: [
       { n: 1, at: { in: '#instList .inst.sel', x: row.w - 40, y: 0, w: 30, h: row.h }, side: 'inside' }, { n: 2, at: '#iNew', side: 'top' }, { n: 3, at: '#bLoad', side: 'top' }, { n: 4, at: '#bVidSave', side: 'top' },
-      { n: 5, at: '#bSplit', side: 'top' }, { n: 6, at: '#iDel', side: 'right' }, { n: 7, at: '#bHitPlay', side: 'top' }, { n: 8, at: '#bFull', side: 'top' },
+      { n: 5, at: '#bSplit', side: 'top' }, { n: 6, at: '#iDel', side: 'bottom' }, { n: 7, at: '#bHitPlay', side: 'top' }, { n: 8, at: '#bFull', side: 'top' },
       { n: 9, at: '#bSync', side: 'top' }, ...['Sample', 'Region', 'Hit', 'Loop', 'Env.'].map((l, i) => ({ n: 10 + i, at: `legend:${l}`, side: 'legend' })),
       { n: 15, at: { in: '#wave', x: x.start * w.w, y: 0, w: 2, h: 8 }, side: 'left' }, { n: 16, at: { in: '#wave', x: x.hit * w.w, y: 80, w: 2, h: 20 }, side: 'right' },
       { n: 17, at: { in: '#wave', x: (x.start * w.w + x.hit * w.w) / 2, y: 95, w: 2, h: 20 }, side: 'inside' },
       { n: 18, at: { in: '#wave', x: w.w * 0.7, y: 10, w: 2, h: 30 }, side: 'inside' }, { n: 19, at: '#framePrev', side: 'inside' },
-      { n: 20, at: 'legend:Source', side: 'legend' }, { n: 21, at: 'legend:Tags', side: 'legend' }] };
+      { n: 20, at: 'legend:Source', side: 'legend' }, { n: 21, at: 'legend:Tags', side: 'legend' },
+      { n: 22, at: '#bLib', side: 'bottom' }] };
   },
   // channel 1 plays with G21, as the manual says: its tile covers the top row. The label and the hit flash are drawn on
   // the canvas, so they are pointed at by place, in tile 3 (bottom left)

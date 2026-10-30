@@ -1,0 +1,22 @@
+{
+ "format": 1,
+ "instruments": [
+  {
+   "path": "snare/click.mp4",
+   "name": "Lib Click",
+   "length": 1,
+   "bytes": 41563,
+   "tags": [
+    "click",
+    "hit"
+   ],
+   "source": "https://example.com/click"
+  },
+  {
+   "path": "vocal/tone.mp4",
+   "name": "Tone",
+   "length": 6,
+   "bytes": 64076
+  }
+ ]
+}

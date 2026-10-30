@@ -71,8 +71,8 @@ export class Browser {
   }
   // a new tab with the app loaded: no MCP (a port nothing listens on, so it never reaches the user's real server)
   // and the "read the manual?" question already answered. before(page) runs before the app loads; scale: pixels per
-  // CSS pixel (2 for crisp pictures of the pixel fonts)
-  async app({ before, scale = 1 } = {}) {
+  // CSS pixel (2 for crisp pictures of the pixel fonts); query: more of the URL's query ('&library=…')
+  async app({ before, scale = 1, query = '' } = {}) {
     const { targetId } = await this.conn.send('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await this.conn.send('Target.attachToTarget', { targetId, flatten: true });
     const page = new Page(this.conn, sessionId, targetId);
@@ -82,7 +82,7 @@ export class Browser {
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: "try { localStorage.setItem('pooptracker.manualAsked', '1'); } catch {}" +
       "if (!sessionStorage.getItem('pooptracker.fresh')) { sessionStorage.setItem('pooptracker.fresh', '1'); indexedDB.deleteDatabase('pooptracker'); }" });
     if (before) await before(page);
-    await page.goto(this.base + 'index.html?mcp=9');
+    await page.goto(this.base + 'index.html?mcp=9' + query);
     await page.waitFor(() => document.querySelectorAll('#instList .inst').length > 0, 10000); // the demo song is there
     return page;
   }
